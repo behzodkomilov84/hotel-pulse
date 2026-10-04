@@ -112,6 +112,10 @@ class PageRenderingDbTest {
         mvc.perform(get("/admin/hotels/{id}", hotelA.getId()).with(user(owner))).andExpect(status().isOk());
         mvc.perform(get("/admin/users").with(user(owner))).andExpect(status().isOk());
         mvc.perform(get("/admin/users/new").with(user(owner))).andExpect(status().isOk());
+        mvc.perform(get("/profile").with(user(owner))).andExpect(status().isOk());
+        mvc.perform(get("/profile").with(user(hotelOwner)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Telegram")));
     }
 
     @Test

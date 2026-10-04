@@ -45,6 +45,17 @@ Mehmonxona Exely extranet'da: **Property settings → API connections → Create
 - Bitta bronning har bir xona-yashashi alohida qator; narx — `priceAfterTax` (xizmatlarsiz, faqat xona daromadi).
 - Read Reservation API faqat oldindan to'lovni beradi — qarzdorlik Exely PMS API ulanganda ko'rsatiladi.
 
+## Telegram bot
+
+1. Telegram'da [@BotFather](https://t.me/BotFather) → `/newbot` → nom va username bering → tokenni oling.
+2. Tokenni `TELEGRAM_BOT_TOKEN` ga yozing (lokal — `.env`). Server qayta ishga tushganda bot ulanadi.
+3. Saytda **Profil → Telegram'ni ulash** — bir martalik havola (15 daqiqa) botni ochadi, **Start** bosiladi.
+
+Bitta token bilan faqat bitta server ishlay oladi — lokal va production uchun **alohida bot** yarating.
+
+Buyruqlar: `/bugun`, `/hafta`, `/oy`, `/qarzlar`, `/hisobot` (kunlik hisobotni yoqish/o'chirish), `/uzish`, `/yordam`.
+Har kuni 09:00 da (APP_ZONE) kechagi kun hisoboti yuboriladi. Ruxsatlar saytdagi bilan bir xil.
+
 ## Muhit o'zgaruvchilari
 
 | O'zgaruvchi | Tavsif |
@@ -58,6 +69,9 @@ Mehmonxona Exely extranet'da: **Property settings → API connections → Create
 | `EXELY_SYNC_INTERVAL` | Avtomatik sinxronlash oralig'i (standart: PT30M) |
 | `EXELY_SCHEDULER_ENABLED` | Avtomatik sinxronlash (standart: true) |
 | `EXELY_REQUEST_DELAY` | So'rovlar orasidagi pauza (standart: 120ms) |
+| `TELEGRAM_BOT_TOKEN` | @BotFather tokeni (bo'sh — bot o'chirilgan) |
+| `APP_SITE_URL` | Saytning ommaviy manzili — botdagi "Saytda batafsil" tugmasi uchun |
+| `TELEGRAM_DAILY_REPORT_CRON` | Kunlik hisobot vaqti (standart: `0 0 9 * * *`) |
 
 Kalit yaratish: `openssl rand -base64 32`
 
@@ -73,5 +87,5 @@ Kalit yaratish: `openssl rand -base64 32`
 1. ✅ Skelet: kirish, rollar, mehmonxona va foydalanuvchi boshqaruvi
 2. ✅ Ko'rsatkichlar paneli (KPI va grafiklar)
 3. ✅ Exely sinxronizatsiyasi (Read Reservation API)
-4. Telegram bot
+4. ✅ Telegram bot
 5. Docker va server

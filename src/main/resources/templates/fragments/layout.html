@@ -23,8 +23,10 @@
         </th:block>
     </nav>
     <div class="user-box">
-        <span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(currentUser.displayName, 0, 1))}">A</span>
-        <span class="name" th:text="${currentUser.displayName}">Foydalanuvchi</span>
+        <a class="user-link" th:href="@{/profile}" th:classappend="${active == 'profile'} ? 'active'" title="Profil">
+            <span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(currentUser.displayName, 0, 1))}">A</span>
+            <span class="name" th:text="${currentUser.displayName}">Foydalanuvchi</span>
+        </a>
         <form th:action="@{/logout}" method="post">
             <button type="submit" class="btn btn-secondary">Chiqish</button>
         </form>

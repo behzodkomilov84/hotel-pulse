@@ -67,6 +67,21 @@
         setTimeout(() => window.location.reload(), 5000);
     }
 
+    // Telegram'ni ulash: bot yangi oynada ochiladi — ulanish holati ko'rinishi uchun
+    // sahifa 2 daqiqa davomida har 4 soniyada yangilanadi (ulangach "Ulangan" chiqadi).
+    document.querySelectorAll('form[data-wait-link]').forEach(form => {
+        form.addEventListener('submit', () => {
+            let left = 30;
+            const timer = setInterval(() => {
+                if (--left <= 0) { clearInterval(timer); return; }
+                fetch(window.location.href, {credentials: 'same-origin'})
+                    .then(r => r.text())
+                    .then(html => { if (html.includes('badge badge-ok">Ulangan')) window.location.reload(); })
+                    .catch(() => {});
+            }, 4000);
+        });
+    });
+
     // Progress chiziqlari: data-fill="0.57" — kechikish bilan to'ladi (CSS transition).
     requestAnimationFrame(() => {
         setTimeout(() => {

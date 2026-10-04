@@ -9,4 +9,5 @@
     <include file="/db/changelog/init.sql"/>
     <include file="/db/changelog/bookings.sql"/>
     <include file="/db/changelog/exely.sql"/>
+    <include file="/db/changelog/telegram.sql"/>
 </databaseChangeLog>

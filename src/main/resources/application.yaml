@@ -39,6 +39,13 @@ app:
   encryption-key: ${APP_ENCRYPTION_KEY:}
   # Mehmonxona vaqt zonasi — "bugun" va Exely UTC vaqtlarini o'girish uchun.
   zone: ${APP_ZONE:Asia/Tashkent}
+  telegram:
+    # @BotFather'dan olingan token. Bo'sh bo'lsa — bot o'chirilgan.
+    # Diqqat: bitta token bilan faqat bitta server ishlay oladi (lokal va production uchun alohida bot).
+    bot-token: ${TELEGRAM_BOT_TOKEN:}
+    # Botdagi "Saytda batafsil" tugmasi uchun ommaviy manzil (localhost bo'lsa tugma chiqmaydi).
+    site-url: ${APP_SITE_URL:http://localhost:8081}
+    daily-report-cron: ${TELEGRAM_DAILY_REPORT_CRON:0 0 9 * * *}
   exely:
     base-url: ${EXELY_BASE_URL:https://connect.hopenapi.com}
     # Birinchi sinxronlashda shuncha kun oldingacha o'zgargan bronlar olinadi.

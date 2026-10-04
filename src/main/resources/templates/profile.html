@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Profil')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('profile')}"></header>
+<main class="container">
+    <div class="page-head reveal">
+        <div>
+            <h1>Profil</h1>
+            <p class="subtitle">Hisob ma'lumotlari va Telegram bildirishnomalari</p>
+        </div>
+    </div>
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="profile-grid stagger">
+        <!-- ===== Hisob ===== -->
+        <section class="card">
+            <div class="profile-head">
+                <span class="avatar avatar-lg" th:text="${#strings.toUpperCase(#strings.substring(user.fullName != null and !user.fullName.isBlank() ? user.fullName : user.username, 0, 1))}">A</span>
+                <div>
+                    <h3 class="card-title" th:text="${user.fullName != null and !user.fullName.isBlank() ? user.fullName : user.username}">Ism</h3>
+                    <span class="badge badge-role" th:text="${user.role.label}">Rol</span>
+                </div>
+            </div>
+            <dl class="info-list">
+                <div><dt>Login</dt><dd th:text="${user.username}"></dd></div>
+                <div><dt>Telefon</dt><dd th:text="${user.phone} ?: '—'"></dd></div>
+                <div sec:authorize="!hasRole('OWNER')"><dt>Mehmonxonalar</dt><dd th:text="${user.hotels.size()} + ' ta'"></dd></div>
+                <div sec:authorize="hasRole('OWNER')"><dt>Mehmonxonalar</dt><dd>Barchasi</dd></div>
+            </dl>
+        </section>
+
+        <!-- ===== Telegram ===== -->
+        <section class="card tg-card">
+            <div class="tg-head">
+                <span class="tg-logo" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+                </span>
+                <div>
+                    <h3 class="card-title">Telegram</h3>
+                    <span class="badge badge-ok" th:if="${user.telegramChatId != null}">Ulangan</span>
+                    <span class="badge badge-off" th:if="${user.telegramChatId == null}">Ulanmagan</span>
+                </div>
+            </div>
+
+            <th:block th:if="${botUsername == null}">
+                <p class="muted">Telegram bot hali sozlanmagan.</p>
+                <p class="note" sec:authorize="hasRole('OWNER')">Administrator uchun: @BotFather'dan token olib, serverda <code>TELEGRAM_BOT_TOKEN</code> o'zgaruvchisiga yozing.</p>
+            </th:block>
+
+            <th:block th:if="${botUsername != null and user.telegramChatId == null}">
+                <ul class="feature-list">
+                    <li>📊 Bugungi, haftalik va oylik ko'rsatkichlar bir tugmada</li>
+                    <li>☀️ Har kuni 09:00 da kechagi kun hisoboti</li>
+                    <li>⚠️ Qarzdorlik haqida tezkor ma'lumot</li>
+                </ul>
+                <form method="post" th:action="@{/profile/telegram/link}" target="_blank" data-wait-link>
+                    <button type="submit" class="btn btn-telegram btn-block">Telegram'ni ulash</button>
+                </form>
+                <p class="note">Telegram ochiladi — <b>Start</b> tugmasini bosing. Havola 15 daqiqa amal qiladi.</p>
+            </th:block>
+
+            <th:block th:if="${botUsername != null and user.telegramChatId != null}">
+                <p class="muted">
+                    <a th:href="'https://t.me/' + ${botUsername}" target="_blank" rel="noopener" th:text="'@' + ${botUsername}">@bot</a>
+                    <span th:if="${user.telegramLinkedAt != null}"
+                          th:text="' · ' + ${#temporals.format(user.telegramLinkedAt, 'dd.MM.yyyy')} + ' dan beri'"></span>
+                </p>
+                <form method="post" th:action="@{/profile/telegram/daily-report}" class="switch-row">
+                    <div>
+                        <div class="switch-title">Kunlik hisobot</div>
+                        <div class="note">Har kuni 09:00 da kechagi kun natijalari</div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" name="enabled" value="true" th:checked="${user.telegramDailyReport}"
+                               onchange="this.form.submit()" aria-label="Kunlik hisobot">
+                        <span class="slider"></span>
+                    </label>
+                </form>
+                <form method="post" th:action="@{/profile/telegram/unlink}"
+                      onsubmit="return confirm('Telegram hisobingizdan uzilsinmi?')">
+                    <button type="submit" class="btn btn-danger btn-block">Telegram'ni uzish</button>
+                </form>
+            </th:block>
+        </section>
+    </div>
+</main>
+</body>
+</html>

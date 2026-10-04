@@ -387,6 +387,44 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .note { font-size: 12.5px; color: var(--muted); font-style: italic; }
 
+/* ---------- Profil va Telegram ---------- */
+.user-link { display: inline-flex; align-items: center; gap: 10px; color: var(--muted); padding: 4px 10px 4px 4px; border-radius: 999px; transition: background var(--t-fast), color var(--t-fast); }
+.user-link:hover, .user-link.active { background: var(--surface-2); color: var(--text); }
+.profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.profile-head, .tg-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+.profile-head .card-title, .tg-head .card-title { margin: 0 0 4px; }
+.avatar-lg { width: 54px; height: 54px; font-size: 22px; }
+.info-list { display: grid; gap: 10px; margin: 0; }
+.info-list div { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.info-list div:last-child { border-bottom: 0; }
+.info-list dt { color: var(--muted); font-size: 14px; }
+.info-list dd { margin: 0; font-weight: 600; text-align: right; }
+.muted { color: var(--muted); }
+
+.tg-card { display: flex; flex-direction: column; gap: 14px; }
+.tg-card .tg-head { margin-bottom: 4px; }
+.tg-logo {
+    width: 54px; height: 54px; border-radius: 16px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, #37aee2, #1e96c8); color: #fff;
+    box-shadow: 0 6px 18px rgba(30, 150, 200, .35);
+}
+.tg-logo svg { width: 28px; height: 28px; margin-left: -2px; }
+.feature-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.feature-list li { background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; padding: 10px 14px; font-size: 14px; }
+.btn-telegram { background: linear-gradient(135deg, #37aee2, #1e96c8); color: #fff; box-shadow: 0 4px 14px rgba(30, 150, 200, .32); }
+.btn-telegram:hover { color: #fff; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(30, 150, 200, .42); }
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+.switch-title { font-weight: 600; }
+.switch { position: relative; display: inline-block; width: 48px; height: 28px; flex-shrink: 0; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch .slider { position: absolute; inset: 0; cursor: pointer; background: var(--border-strong); border-radius: 999px; transition: background var(--t) var(--ease); }
+.switch .slider::before { content: ""; position: absolute; width: 22px; height: 22px; left: 3px; top: 3px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform var(--t) var(--ease); }
+.switch input:checked + .slider { background: var(--success); }
+.switch input:checked + .slider::before { transform: translateX(20px); }
+.switch input:focus-visible + .slider { box-shadow: var(--ring); }
+code { font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
+
 /* ---------- Login ---------- */
 .login-page {
     min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px;
@@ -413,6 +451,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
     .nav { order: 3; flex-basis: 100%; overflow-x: auto; scrollbar-width: none; }
     .chart-grid { grid-template-columns: 1fr; }
     .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .profile-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 720px) {

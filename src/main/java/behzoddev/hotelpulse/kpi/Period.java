@@ -53,6 +53,8 @@ public record Period(String key, LocalDate from, LocalDate to) {
         }
         return switch (key) {
             case "today" -> new Period(key, today, today);
+            // Faqat Telegram kunlik hisoboti uchun (saytdagi tugmalar ro'yxatida yo'q).
+            case "yesterday" -> new Period(key, today.minusDays(1), today.minusDays(1));
             case "7d" -> new Period(key, today.minusDays(6), today);
             case "30d" -> new Period(key, today.minusDays(29), today);
             case "prevmonth" -> {

@@ -42,6 +42,16 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
+    /** Ulangan Telegram chat'i (bo'lmasa — null). */
+    @Column(name = "telegram_chat_id", unique = true)
+    private Long telegramChatId;
+
+    @Column(name = "telegram_daily_report", nullable = false)
+    private boolean telegramDailyReport = true;
+
+    @Column(name = "telegram_linked_at")
+    private LocalDateTime telegramLinkedAt;
+
     @ManyToMany
     @JoinTable(name = "user_hotels",
             joinColumns = @JoinColumn(name = "user_id"),

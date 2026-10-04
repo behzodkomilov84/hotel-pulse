@@ -18,4 +18,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @EntityGraph(attributePaths = "hotels")
     List<User> findAllByOrderByIdAsc();
+
+    Optional<User> findByTelegramChatId(Long chatId);
+
+    /** Kunlik hisobot oladiganlar: ulangan, faol va hisobotni o'chirmaganlar. */
+    List<User> findAllByTelegramChatIdIsNotNullAndTelegramDailyReportTrueAndEnabledTrue();
 }
