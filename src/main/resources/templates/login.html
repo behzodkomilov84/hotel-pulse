@@ -9,6 +9,7 @@
 
         <div class="alert alert-error" role="alert" th:if="${param.error}">Login yoki parol noto'g'ri</div>
         <div class="alert alert-info" role="status" th:if="${param.logout}">Tizimdan chiqdingiz</div>
+        <div class="alert alert-info" role="status" th:if="${param.expired}">Sessiya muddati tugadi — iltimos, qayta kiring</div>
 
         <form class="form" th:action="@{/login}" method="post">
             <div class="field">

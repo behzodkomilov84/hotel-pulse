@@ -425,6 +425,53 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .switch input:focus-visible + .slider { box-shadow: var(--ring); }
 code { font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
 
+/* ---------- Profil: tugmalar va modal oynalar ---------- */
+.profile-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.profile-actions .btn { width: 100%; }
+
+.modal {
+    width: min(460px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    padding: 0; border: 1px solid var(--border); border-radius: var(--radius-lg);
+    background: var(--surface); color: var(--text); box-shadow: var(--shadow-lg);
+    overflow: auto;
+}
+.modal[open] { animation: modalIn .28s var(--ease); }
+.modal::backdrop { background: rgba(13, 17, 27, .45); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); animation: fadeIn .25s ease; }
+.modal.closing { animation: modalOut .18s ease forwards; }
+.modal.closing::backdrop { animation: fadeOut .18s ease forwards; }
+@keyframes modalIn { from { opacity: 0; transform: translateY(14px) scale(.97); } }
+@keyframes modalOut { to { opacity: 0; transform: translateY(8px) scale(.98); } }
+@keyframes fadeIn { from { opacity: 0; } }
+@keyframes fadeOut { to { opacity: 0; } }
+.modal .form { padding: 22px 24px 24px; gap: 16px; }
+.modal .alert { margin-bottom: 0; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.modal-head h3 { margin: 0; font-size: 19px; font-weight: 800; }
+.modal-close {
+    width: 34px; height: 34px; border-radius: 10px; border: 0; background: var(--surface-2); color: var(--muted);
+    font-size: 22px; line-height: 1; cursor: pointer; transition: background var(--t-fast), color var(--t-fast);
+}
+.modal-close:hover { background: var(--danger-soft); color: var(--danger); }
+.modal .form-actions { margin-top: 2px; }
+
+.password-wrap { position: relative; display: flex; }
+.password-wrap input { flex: 1; padding-right: 44px !important; }
+.pw-toggle {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    border: 0; background: none; cursor: pointer; font-size: 16px; padding: 4px 6px; border-radius: 6px;
+    opacity: .55; transition: opacity var(--t-fast), background var(--t-fast);
+}
+.pw-toggle:hover, .pw-toggle.on { opacity: 1; background: var(--surface-2); }
+.field .meter { margin-top: 2px; }
+.field .hint.text-danger { color: var(--danger); font-weight: 600; }
+.meter-fill.weak { background: linear-gradient(90deg, #f07a6b, #dc3c3c); }
+
+@media (max-width: 420px) {
+    .profile-actions { grid-template-columns: 1fr; }
+    .modal .form { padding: 18px 16px 18px; }
+}
+
 /* ---------- Xato sahifasi ---------- */
 .error-card { text-align: center; }
 .error-code {

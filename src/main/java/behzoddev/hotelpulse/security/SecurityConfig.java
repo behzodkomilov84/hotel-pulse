@@ -1,6 +1,8 @@
 package behzoddev.hotelpulse.security;
 
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -32,6 +34,16 @@ public class SecurityConfig {
                         .defaultSuccessUrl("/", true)
                         .failureUrl("/login?error")
                         .permitAll())
+                // Sessiya eskirgan (masalan, sahifa uzoq ochiq qolib ketgan) bo'lsa, forma
+                // yuborilganda CSRF tokeni mos kelmaydi — "ruxsat yo'q" (403) o'rniga
+                // qayta kirishga tushunarli xabar bilan yo'naltiriladi.
+                .exceptionHandling(ex -> ex.accessDeniedHandler((request, response, denied) -> {
+                    if (denied instanceof CsrfException) {
+                        response.sendRedirect(request.getContextPath() + "/login?expired");
+                    } else {
+                        response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                    }
+                }))
                 .logout(logout -> logout
                         .logoutUrl("/logout")
                         .logoutSuccessUrl("/login?logout")

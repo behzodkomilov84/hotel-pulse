@@ -82,6 +82,77 @@
         });
     });
 
+    // Modal oynalar (<dialog>): data-modal-open="id" ochadi; ×, "Bekor qilish",
+    // Esc yoki orqa fonga bosish yopadi. Server xato qaytarsa (data-open-on-load) — qayta ochiladi.
+    const closeModal = dlg => {
+        if (!dlg.open || dlg.classList.contains('closing')) return;
+        if (reduceMotion) { dlg.close(); return; }
+        dlg.classList.add('closing');
+        setTimeout(() => { dlg.classList.remove('closing'); dlg.close(); }, 170);
+    };
+    const openModal = dlg => {
+        if (!dlg || dlg.open) return;
+        dlg.showModal();
+        const first = dlg.querySelector('input:not([type=hidden])');
+        if (first) first.focus();
+    };
+    document.querySelectorAll('[data-modal-open]').forEach(btn =>
+        btn.addEventListener('click', () => openModal(document.getElementById(btn.dataset.modalOpen))));
+    document.querySelectorAll('dialog.modal').forEach(dlg => {
+        dlg.querySelectorAll('[data-modal-close]').forEach(b => b.addEventListener('click', () => closeModal(dlg)));
+        dlg.addEventListener('cancel', e => { e.preventDefault(); closeModal(dlg); });   // Esc
+        dlg.addEventListener('click', e => { if (e.target === dlg) closeModal(dlg); });    // orqa fon
+        if (dlg.dataset.openOnLoad === 'true') openModal(dlg);
+    });
+
+    // Parol maydonlari: ko'rsatish/yashirish tugmasi.
+    document.querySelectorAll('.pw-toggle').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = btn.parentElement.querySelector('input');
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            btn.classList.toggle('on', show);
+            btn.setAttribute('aria-label', show ? 'Parolni yashirish' : "Parolni ko'rsatish");
+        });
+    });
+
+    // Parol o'zgartirish formasi: kuchlilik ko'rsatkichi va takror mosligi.
+    document.querySelectorAll('form[data-password-form]').forEach(form => {
+        const pw = form.querySelector('[name=newPassword]');
+        const confirm = form.querySelector('[name=confirmPassword]');
+        const bar = form.querySelector('[data-strength]');
+        const label = form.querySelector('[data-strength-label]');
+        const mismatch = form.querySelector('[data-confirm-error]');
+        const levels = [
+            {w: .15, cls: 'weak', text: 'Juda qisqa — kamida 8 belgi'},
+            {w: .35, cls: 'weak', text: 'Zaif'},
+            {w: .6, cls: 'warn', text: "O'rtacha"},
+            {w: .8, cls: 'normal', text: 'Yaxshi'},
+            {w: 1, cls: 'good', text: 'Kuchli'}
+        ];
+        const score = v => {
+            if (v.length < 8) return 0;
+            let s = 1;
+            if (v.length >= 12) s++;
+            if (/[a-z]/.test(v) && /[A-Z]/.test(v)) s++;
+            if (/\d/.test(v) && /[^A-Za-z0-9]/.test(v)) s++;
+            return Math.min(s, 4);
+        };
+        const checkMatch = () => {
+            const bad = confirm.value.length > 0 && confirm.value !== pw.value;
+            mismatch.hidden = !bad;
+            confirm.setCustomValidity(bad ? 'Parollar bir xil emas' : '');
+        };
+        pw.addEventListener('input', () => {
+            const lvl = pw.value ? levels[score(pw.value)] : null;
+            bar.className = 'meter-fill' + (lvl ? ' ' + lvl.cls : '');
+            bar.style.width = lvl ? (lvl.w * 100) + '%' : '0';
+            label.textContent = lvl ? lvl.text : 'Kamida 8 belgi';
+            checkMatch();
+        });
+        confirm.addEventListener('input', checkMatch);
+    });
+
     // Progress chiziqlari: data-fill="0.57" — kechikish bilan to'ladi (CSS transition).
     requestAnimationFrame(() => {
         setTimeout(() => {

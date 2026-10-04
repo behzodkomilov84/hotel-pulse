@@ -80,6 +80,40 @@ public class UserService {
         }
     }
 
+    /** Profil sahifasidan: foydalanuvchi o'z ismi va telefonini o'zgartiradi (login/rol/mehmonxonalar — yo'q). */
+    @Transactional
+    public User updateOwnProfile(Long userId, String fullName, String phone) {
+        String name = blankToNull(fullName);
+        String tel = blankToNull(phone);
+        if (name != null && name.length() > 150) {
+            throw new IllegalArgumentException("F.I.Sh. 150 belgidan oshmasin");
+        }
+        if (tel != null && !tel.matches("\\+?[0-9 ()\\-]{7,32}")) {
+            throw new IllegalArgumentException("Telefon raqami noto'g'ri (masalan: +998 90 123 45 67)");
+        }
+        User user = getById(userId);
+        user.setFullName(name);
+        user.setPhone(tel);
+        return user;
+    }
+
+    /** Profil sahifasidan parol almashtirish — joriy parol tekshiriladi. */
+    @Transactional
+    public void changeOwnPassword(Long userId, String currentPassword, String newPassword, String confirmPassword) {
+        User user = getById(userId);
+        if (currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Joriy parol noto'g'ri");
+        }
+        validatePassword(newPassword);
+        if (!newPassword.equals(confirmPassword)) {
+            throw new IllegalArgumentException("Yangi parol va uning takrori bir xil emas");
+        }
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new IllegalArgumentException("Yangi parol eskisidan farq qilishi kerak");
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+    }
+
     private LinkedHashSet<Hotel> loadHotels(List<Long> hotelIds) {
         return hotelIds == null ? new LinkedHashSet<>() : new LinkedHashSet<>(hotelRepository.findAllById(hotelIds));
     }
