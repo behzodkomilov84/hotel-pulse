@@ -3,23 +3,228 @@
 <head th:replace="~{fragments/layout :: head(${hotel.name})}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('dashboard')}"></header>
-<main class="container">
+<main class="container" th:with="cur=${hotel.currency}">
     <div class="page-head">
         <div>
             <h1 th:text="${hotel.name}">Mehmonxona</h1>
             <p class="subtitle">
                 <span th:if="${hotel.city}" th:text="${hotel.city} + ' · '"></span>
                 <span th:text="${hotel.roomsCount} + ' ta xona'"></span>
+                <span class="badge badge-ok" th:if="${hotel.exelyConnected}">Exely ulangan</span>
+                <span class="badge badge-warn" th:unless="${hotel.exelyConnected}">Exely ulanmagan</span>
             </p>
         </div>
-        <a sec:authorize="hasRole('OWNER')" class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">Tahrirlash</a>
+        <div class="head-actions" sec:authorize="hasRole('OWNER')">
+            <form th:if="${hasData}" method="post" th:action="@{/admin/hotels/{id}/demo-data/delete(id=${hotel.id})}"
+                  onsubmit="return confirm('Sinov ma\'lumotlarini o\'chirasizmi?')">
+                <button type="submit" class="btn btn-danger">Sinov ma'lumotlarini o'chirish</button>
+            </form>
+            <a class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">Tahrirlash</a>
+        </div>
+    </div>
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+    <!-- ===== Ma'lumot yo'q ===== -->
+    <div class="card empty" th:unless="${hasData}">
+        <p><strong>Hali ma'lumot yo'q</strong></p>
+        <p th:unless="${hotel.exelyConnected}">Exely ulangach, bronlar va to'lovlar shu yerda avtomatik ko'rinadi.</p>
+        <th:block sec:authorize="hasRole('OWNER')">
+            <p>Panelni hozirdan sinab ko'rish uchun sinov ma'lumotlarini yaratish mumkin (o'tgan 6 oy va kelgusi 45 kun).</p>
+            <form method="post" th:action="@{/admin/hotels/{id}/demo-data(id=${hotel.id})}">
+                <button type="submit" class="btn btn-primary">Sinov ma'lumotlarini yaratish</button>
+            </form>
+        </th:block>
     </div>
 
-    <div class="card empty">
-        <p><strong>Ko'rsatkichlar paneli tez orada.</strong></p>
-        <p>Bandlik, ADR, RevPAR, daromad va qarzdorlik shu yerda ko'rinadi.</p>
-        <p th:unless="${hotel.exelyConnected}"><span class="badge badge-warn">Exely hali ulanmagan</span></p>
-    </div>
+    <th:block th:if="${hasData}" th:with="s=${kpi.stays}, ps=${kpi.previousStays}">
+
+        <!-- ===== Bugun ===== -->
+        <h2 class="section-title">Bugun</h2>
+        <div class="stats-grid">
+            <div class="card stat">
+                <div class="stat-label">Bandlik</div>
+                <div class="stat-value" th:text="${@fmt.pct(today.occupancy)}">0%</div>
+                <div class="stat-sub" th:text="${today.inHouseRooms} + ' / ' + ${hotel.roomsCount} + ' xona band'"></div>
+            </div>
+            <div class="card stat">
+                <div class="stat-label">Keladiganlar</div>
+                <div class="stat-value" th:text="${today.arrivals}">0</div>
+                <div class="stat-sub">bron</div>
+            </div>
+            <div class="card stat">
+                <div class="stat-label">Ketadiganlar</div>
+                <div class="stat-value" th:text="${today.departures}">0</div>
+                <div class="stat-sub">bron</div>
+            </div>
+            <div class="card stat" th:classappend="${today.debtorCount > 0} ? 'stat-alert'">
+                <div class="stat-label">Qarzdorlik</div>
+                <div class="stat-value" th:text="${@fmt.moneyShort(today.debt, cur)}">0</div>
+                <div class="stat-sub" th:text="${today.debtorCount} + ' ta bron to\'liq to\'lanmagan'"></div>
+            </div>
+        </div>
+
+        <!-- ===== Davr tanlash ===== -->
+        <div class="period-bar">
+            <nav class="segmented">
+                <a th:each="opt : ${periodOptions}"
+                   th:href="@{/hotels/{id}(id=${hotel.id}, period=${opt.key})}"
+                   th:classappend="${kpi.period.key == opt.key} ? 'active'"
+                   th:text="${opt.value}">Davr</a>
+            </nav>
+            <form class="custom-period" method="get" th:action="@{/hotels/{id}(id=${hotel.id})}">
+                <input type="hidden" name="period" value="custom">
+                <input type="date" name="from" required th:value="${kpi.period.from}" aria-label="Boshlanish sanasi">
+                <span>—</span>
+                <input type="date" name="to" required th:value="${kpi.period.to}" aria-label="Tugash sanasi">
+                <button type="submit" class="btn btn-secondary">Ko'rsatish</button>
+            </form>
+        </div>
+        <p class="period-caption">
+            <strong th:text="${kpi.period.label}"></strong>
+            <span th:text="'· taqqoslash: ' + ${kpi.previousPeriod.label}"></span>
+            <span th:if="${kpi.period.to.isAfter(todayDate)}" class="badge badge-role">kelajak — hozircha bron qilingani</span>
+        </p>
+
+        <!-- ===== Asosiy ko'rsatkichlar ===== -->
+        <div class="stats-grid">
+            <div class="card stat">
+                <div class="stat-label" title="Sotilgan xona-kechalar / mavjud xona-kechalar">Bandlik</div>
+                <div class="stat-value" th:text="${@fmt.pct(s.occupancy)}">0%</div>
+                <div class="delta" th:classappend="${@fmt.trend(s.occupancy, ps.occupancy)}"
+                     th:text="${@fmt.pointChange(s.occupancy, ps.occupancy)}"></div>
+                <div class="stat-sub" th:text="${s.soldRoomNights} + ' / ' + ${s.availableRoomNights} + ' xona-kecha'"></div>
+            </div>
+            <div class="card stat">
+                <div class="stat-label" title="Sotilgan bitta xona-kechaning o'rtacha narxi">ADR</div>
+                <div class="stat-value" th:text="${@fmt.money(s.adr, cur)}">0</div>
+                <div class="delta" th:if="${@fmt.change(s.adr, ps.adr)}"
+                     th:classappend="${@fmt.trend(s.adr, ps.adr)}" th:text="${@fmt.change(s.adr, ps.adr)}"></div>
+                <div class="stat-sub">xonaning o'rtacha narxi</div>
+            </div>
+            <div class="card stat">
+                <div class="stat-label" title="Daromad / mavjud xona-kechalar">RevPAR</div>
+                <div class="stat-value" th:text="${@fmt.money(s.revpar, cur)}">0</div>
+                <div class="delta" th:if="${@fmt.change(s.revpar, ps.revpar)}"
+                     th:classappend="${@fmt.trend(s.revpar, ps.revpar)}" th:text="${@fmt.change(s.revpar, ps.revpar)}"></div>
+                <div class="stat-sub">har bir mavjud xonaga</div>
+            </div>
+            <div class="card stat">
+                <div class="stat-label">Xona daromadi</div>
+                <div class="stat-value" th:text="${@fmt.moneyShort(s.roomRevenue, cur)}">0</div>
+                <div class="delta" th:if="${@fmt.change(s.roomRevenue, ps.roomRevenue)}"
+                     th:classappend="${@fmt.trend(s.roomRevenue, ps.roomRevenue)}"
+                     th:text="${@fmt.change(s.roomRevenue, ps.roomRevenue)}"></div>
+                <div class="stat-sub" th:text="${@fmt.money(s.roomRevenue, cur)}"></div>
+            </div>
+            <div class="card stat">
+                <div class="stat-label">Tushgan to'lovlar</div>
+                <div class="stat-value" th:text="${@fmt.moneyShort(kpi.paymentsReceived, cur)}">0</div>
+                <div class="delta" th:if="${@fmt.change(kpi.paymentsReceived, kpi.previousPaymentsReceived)}"
+                     th:classappend="${@fmt.trend(kpi.paymentsReceived, kpi.previousPaymentsReceived)}"
+                     th:text="${@fmt.change(kpi.paymentsReceived, kpi.previousPaymentsReceived)}"></div>
+                <div class="stat-sub" th:text="${@fmt.money(kpi.paymentsReceived, cur)}"></div>
+            </div>
+            <div class="card stat">
+                <div class="stat-label">Yangi bronlar</div>
+                <div class="stat-value" th:text="${kpi.newBookings}">0</div>
+                <div class="stat-sub">shu davrda qabul qilingan</div>
+            </div>
+            <div class="card stat">
+                <div class="stat-label">Bekor qilingan / kelmagan</div>
+                <div class="stat-value" th:text="${kpi.cancellations} + ' / ' + ${s.noShows}">0</div>
+                <div class="stat-sub" th:text="${kpi.newBookings > 0} ? 'bekor qilish: ' + ${@fmt.pct(1.0 * kpi.cancellations / kpi.newBookings)} : '—'"></div>
+            </div>
+            <div class="card stat">
+                <div class="stat-label">O'rtacha yashash</div>
+                <div class="stat-value" th:text="${@fmt.number(s.avgLengthOfStay)} + ' kecha'">0</div>
+                <div class="stat-sub">shu davrda kelganlar</div>
+            </div>
+        </div>
+
+        <!-- ===== Grafiklar ===== -->
+        <div class="chart-grid">
+            <div class="card">
+                <h3 class="card-title">Kunlik bandlik va daromad</h3>
+                <div class="chart-box"><canvas id="dailyChart"></canvas></div>
+            </div>
+            <div class="card">
+                <h3 class="card-title">Savdo kanallari</h3>
+                <div class="chart-box chart-box-sm" th:if="${!s.sources.isEmpty()}"><canvas id="sourceChart"></canvas></div>
+                <table class="compact" th:if="${!s.sources.isEmpty()}">
+                    <tr th:each="src : ${s.sources}">
+                        <td th:text="${src.source}"></td>
+                        <td class="num" th:text="${@fmt.pct(src.share)}"></td>
+                        <td class="num" th:text="${@fmt.moneyShort(src.revenue, cur)}"></td>
+                    </tr>
+                </table>
+                <p class="empty" th:if="${s.sources.isEmpty()}">Bu davrda bron yo'q</p>
+            </div>
+        </div>
+    </th:block>
 </main>
+
+<th:block th:if="${hasData}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script th:inline="javascript">
+        (function () {
+            const labels = /*[[${chartLabels}]]*/ [];
+            const occupancy = /*[[${chartOccupancy}]]*/ [];
+            const revenue = /*[[${chartRevenue}]]*/ [];
+            const sourceLabels = /*[[${sourceLabels}]]*/ [];
+            const sourceRevenue = /*[[${sourceRevenue}]]*/ [];
+            const currency = /*[[${@fmt.currencyLabel(hotel.currency)}]]*/ "so'm";
+
+            const css = getComputedStyle(document.documentElement);
+            const primary = css.getPropertyValue('--primary').trim();
+            const accent = css.getPropertyValue('--accent').trim();
+            const grid = css.getPropertyValue('--border').trim();
+            const muted = css.getPropertyValue('--muted').trim();
+            const money = v => new Intl.NumberFormat('ru-RU').format(v) + ' ' + currency;
+            Chart.defaults.color = muted;
+            Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+
+            new Chart(document.getElementById('dailyChart'), {
+                data: {
+                    labels,
+                    datasets: [
+                        {type: 'line', label: 'Bandlik, %', data: occupancy, yAxisID: 'occ',
+                         borderColor: primary, backgroundColor: primary, tension: .3, pointRadius: labels.length > 45 ? 0 : 2},
+                        {type: 'bar', label: 'Daromad', data: revenue, yAxisID: 'rev',
+                         backgroundColor: accent, borderRadius: 3}
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    interaction: {mode: 'index', intersect: false},
+                    scales: {
+                        occ: {position: 'left', min: 0, suggestedMax: 100, grid: {color: grid},
+                              ticks: {callback: v => v + '%'}},
+                        rev: {position: 'right', beginAtZero: true, grid: {display: false},
+                              ticks: {callback: v => v >= 1e6 ? (v / 1e6).toFixed(1) + ' mln' : v}},
+                        x: {grid: {display: false}, ticks: {maxTicksLimit: 12}}
+                    },
+                    plugins: {
+                        tooltip: {callbacks: {label: c => c.dataset.yAxisID === 'occ'
+                                    ? ' Bandlik: ' + c.parsed.y + '%' : ' Daromad: ' + money(c.parsed.y)}}
+                    }
+                }
+            });
+
+            const sourceCanvas = document.getElementById('sourceChart');
+            if (sourceCanvas) {
+                const palette = [primary, accent, '#8b5cf6', '#f59e0b', '#ef4444', '#64748b'];
+                new Chart(sourceCanvas, {
+                    type: 'doughnut',
+                    data: {labels: sourceLabels, datasets: [{data: sourceRevenue, backgroundColor: palette, borderWidth: 0}]},
+                    options: {
+                        maintainAspectRatio: false, cutout: '62%',
+                        plugins: {legend: {display: false},
+                                  tooltip: {callbacks: {label: c => ' ' + c.label + ': ' + money(c.parsed)}}}
+                    }
+                });
+            }
+        })();
+    </script>
+</th:block>
 </body>
 </html>

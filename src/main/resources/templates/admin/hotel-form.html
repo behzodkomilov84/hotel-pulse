@@ -28,16 +28,26 @@
                 <span class="hint">Bandlik foizi va RevPAR shu son asosida hisoblanadi</span>
             </div>
             <div class="field">
-                <label for="exelyPropertyId">Exely mehmonxona ID (property id)</label>
-                <input type="text" id="exelyPropertyId" name="exelyPropertyId" maxlength="64" th:value="${hotel?.exelyPropertyId}">
+                <label for="currency">Valyuta</label>
+                <select id="currency" name="currency">
+                    <option th:each="c : ${currencies}" th:value="${c}" th:text="${c}"
+                            th:selected="${hotel != null ? hotel.currency == c : c == 'UZS'}"></option>
+                </select>
+                <span class="hint">Barcha summalar shu valyutada ko'rsatiladi</span>
             </div>
         </div>
 
-        <div class="field">
-            <label for="exelyApiKey">Exely API kaliti</label>
-            <input type="password" id="exelyApiKey" name="exelyApiKey" autocomplete="off"
-                   th:placeholder="${hotel != null and hotel.exelyConnected} ? 'Kalit saqlangan — almashtirish uchun yangisini kiriting' : 'Mehmonxona bergan kalit (bo\'lmasa bo\'sh qoldiring)'">
-            <span class="hint">Kalit bazada shifrlangan holda saqlanadi va sahifada hech qachon ko'rsatilmaydi.</span>
+        <div class="form-grid">
+            <div class="field">
+                <label for="exelyPropertyId">Exely mehmonxona ID (property id)</label>
+                <input type="text" id="exelyPropertyId" name="exelyPropertyId" maxlength="64" th:value="${hotel?.exelyPropertyId}">
+            </div>
+            <div class="field">
+                <label for="exelyApiKey">Exely API kaliti</label>
+                <input type="password" id="exelyApiKey" name="exelyApiKey" autocomplete="off"
+                       th:placeholder="${hotel != null and hotel.exelyConnected} ? 'Kalit saqlangan — almashtirish uchun yangisini kiriting' : 'Mehmonxona bergan kalit (bo\'lmasa bo\'sh qoldiring)'">
+                <span class="hint">Kalit bazada shifrlangan holda saqlanadi va sahifada hech qachon ko'rsatilmaydi.</span>
+            </div>
         </div>
 
         <label class="check">

@@ -14,6 +14,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class HotelService {
 
+    public static final List<String> SUPPORTED_CURRENCIES = List.of("UZS", "USD", "EUR");
+
     private final HotelRepository hotelRepository;
 
     /** OWNER — hamma mehmonxonalar; qolganlar — faqat o'ziga biriktirilganlari. */
@@ -45,7 +47,7 @@ public class HotelService {
     }
 
     @Transactional
-    public Hotel save(Long id, String name, String city, int roomsCount,
+    public Hotel save(Long id, String name, String city, int roomsCount, String currency,
                       String exelyPropertyId, String exelyApiKey, boolean active) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Mehmonxona nomi bo'sh bo'lmasligi kerak");
@@ -57,6 +59,10 @@ public class HotelService {
         hotel.setName(name.trim());
         hotel.setCity(blankToNull(city));
         hotel.setRoomsCount(roomsCount);
+        if (currency == null || !SUPPORTED_CURRENCIES.contains(currency)) {
+            throw new IllegalArgumentException("Valyutani tanlang");
+        }
+        hotel.setCurrency(currency);
         hotel.setExelyPropertyId(blankToNull(exelyPropertyId));
         // Kalit maydoni bo'sh qoldirilsa — eskisi o'zgarmaydi (sahifada kalit
         // hech qachon ko'rsatilmaydi, shuning uchun har safar qayta kiritish shart emas).

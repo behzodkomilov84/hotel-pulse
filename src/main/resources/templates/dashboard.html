@@ -25,6 +25,16 @@
                 <span class="badge badge-warn" th:unless="${h.exelyConnected}">Exely ulanmagan</span>
                 <span class="badge badge-off" th:unless="${h.active}">Nofaol</span>
             </div>
+            <div class="hotel-stats" th:if="${summaries[h.id].soldRoomNights > 0}" th:with="m=${summaries[h.id]}">
+                <div>
+                    <div class="k">Bandlik (shu oy)</div>
+                    <div class="v" th:text="${@fmt.pct(m.occupancy)}">0%</div>
+                </div>
+                <div>
+                    <div class="k">Daromad (shu oy)</div>
+                    <div class="v" th:text="${@fmt.moneyShort(m.roomRevenue, h.currency)}">0</div>
+                </div>
+            </div>
         </a>
     </div>
 

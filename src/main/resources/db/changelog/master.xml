@@ -7,4 +7,5 @@
         https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.23.xsd">
 
     <include file="/db/changelog/init.sql"/>
+    <include file="/db/changelog/bookings.sql"/>
 </databaseChangeLog>

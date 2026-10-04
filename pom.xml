@@ -16,6 +16,9 @@
 
     <properties>
         <java.version>17</java.version>
+        <!-- "db" tegli testlar lokal MySQL talab qiladi — odatiy build'da o'tkazib
+             yuboriladi. Ishga tushirish: ./mvnw test -Dtest.excluded= -Dgroups=db -->
+        <test.excluded>db</test.excluded>
     </properties>
 
     <dependencies>
@@ -62,6 +65,11 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -69,6 +77,13 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${test.excluded}</excludedGroups>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

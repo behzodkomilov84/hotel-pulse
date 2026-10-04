@@ -21,3 +21,6 @@ backups/
 .settings
 .springBeans
 .sts4-cache
+
+### Claude Code (lokal) ###
+.claude/

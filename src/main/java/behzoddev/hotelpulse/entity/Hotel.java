@@ -28,6 +28,9 @@ public class Hotel {
     @Column(name = "rooms_count", nullable = false)
     private int roomsCount;
 
+    @Column(nullable = false, length = 3)
+    private String currency = "UZS";
+
     @Column(name = "exely_property_id", length = 64)
     private String exelyPropertyId;
 
