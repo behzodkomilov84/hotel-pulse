@@ -5,10 +5,8 @@ Docker loyihasi sifatida ishlaydi — `/opt/hotelpulse`, konteynerlar `hotelpuls
 `hotelpulse-mysql`, `hotelpulse-backup`. StudyGrow (`/opt/studygrow`) fayllari va
 konteynerlariga tegilmaydi.
 
-Domen hali yo'q — sayt: **http://62.238.102.84:8081** (HTTPS'siz).
-
-> ⚠️ HTTPS yo'qligi sababli parol va ma'lumotlar shifrlanmasdan uzatiladi. Haqiqiy
-> mehmonxonalarni ulashdan oldin domen + HTTPS qo'shish kerak (pastda).
+Sayt: **https://hotel-pulse.uz** (Let's Encrypt). `www` va `http://` → `https://hotel-pulse.uz` ga yo'naltiriladi.
+8081 port tashqaridan yopiq (`APP_BIND=127.0.0.1`) — kirish faqat nginx orqali.
 
 ## Server RAM'i
 
@@ -73,10 +71,19 @@ docker compose -f docker-compose.prod.yml ps    # holat (/opt/hotelpulse ichida)
 docker compose -f docker-compose.prod.yml restart app
 ```
 
-## Domen olingach (keyin)
+## Domen va HTTPS
 
-1. DNS: domen A yozuvi → `62.238.102.84`.
-2. 80/443 portlari StudyGrow nginx'ida — HotelPulse domeni uchun alohida `server { }` bloki
-   qo'shiladi (proxy → `hotelpulse-app:8081`, umumiy Docker tarmog'i orqali) va Let's Encrypt
-   sertifikati olinadi.
-3. `APP_SITE_URL=https://<domen>`, 8081 port tashqaridan yopiladi.
+- Domen: **hotel-pulse.uz** — ahost.uz'da ro'yxatdan o'tgan; DNS — Cloudflare (Free, nameserver'lar
+  `marge`/`peter.ns.cloudflare.com`), A yozuvlari `@` va `www` → `62.238.102.84`, **DNS only** (proksisiz).
+- 80/443 portlari StudyGrow'ning `nginx-proxy` konteynerida. HotelPulse bloki:
+  `/opt/studygrow/nginx/templates/hotel-pulse.conf.template` (manbasi: `deploy/nginx/`).
+  StudyGrow'ning boshqa fayllari o'zgartirilmagan.
+- `hotelpulse-app` StudyGrow tarmog'iga (`studygrow_default`) ham ulangan — nginx unga `hotelpulse-app:8081` orqali murojaat qiladi.
+  Upstream o'zgaruvchi + Docker resolver orqali yozilgan: HotelPulse to'xtasa ham nginx (va StudyGrow) ishlayveradi.
+- Sertifikat StudyGrow'ning `certbot` konteyneri tomonidan avtomatik yangilanadi (`certbot renew` — barcha sertifikatlar).
+  Yangilangan sertifikatni nginx faqat reload'dan keyin ko'radi — shuning uchun serverda
+  `/etc/cron.d/nginx-proxy-reload`: har kuni 04:00 da `nginx -t` + `nginx -s reload` (uzilishsiz,
+  study-grow.uz uchun ham).
+
+Qayta sozlash (masalan, nginx bloki o'zgarganda): `./scripts/enable-https.sh` — har qadamni tekshiradi,
+nginx sozlamasi xato bo'lsa o'zgarishni qaytaradi.

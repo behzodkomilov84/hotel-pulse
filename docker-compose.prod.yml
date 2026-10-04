@@ -61,8 +61,16 @@ services:
       EXELY_SCHEDULER_ENABLED: ${EXELY_SCHEDULER_ENABLED:-true}
       JAVA_OPTS: ${JAVA_OPTS:--Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Xss512k -XX:+ExitOnOutOfMemoryError}
       TZ: Asia/Tashkent
+      # nginx (HTTPS) orqasida: X-Forwarded-Proto'ni Tomcat darajasida tan oladi —
+      # yo'naltirishlar https:// bo'ladi, sessiya cookie'si "Secure" bilan chiqadi.
+      SERVER_FORWARD_HEADERS_STRATEGY: native
     ports:
-      - "${APP_PORT:-8081}:8081"
+      # HTTPS yoqilgach APP_BIND=127.0.0.1 — port tashqaridan yopiladi (faqat nginx orqali).
+      - "${APP_BIND:-0.0.0.0}:${APP_PORT:-8081}:8081"
+    networks:
+      - default
+      # StudyGrow'ning nginx'i hotelpulse-app:8081 ga shu tarmoq orqali murojaat qiladi.
+      - studygrow
     mem_limit: 512m
     logging: *logging
     restart: unless-stopped
@@ -95,3 +103,10 @@ services:
 
 volumes:
   mysql-data:
+
+networks:
+  default: {}
+  # StudyGrow loyihasining tarmog'i (nginx-proxy shu yerda) — faqat ulanamiz, boshqarmaymiz.
+  studygrow:
+    external: true
+    name: studygrow_default

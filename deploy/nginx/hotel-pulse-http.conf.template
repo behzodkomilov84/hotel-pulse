@@ -1,0 +1,27 @@
+# HotelPulse — 1-BOSQICH (sertifikat hali yo'q): faqat 80-port.
+# Let's Encrypt tekshiruvi (ACME challenge) uchun /.well-known ochiq, qolgani
+# vaqtincha to'g'ridan-to'g'ri ilovaga uzatiladi. Sertifikat olingach,
+# hotel-pulse.conf.template bilan almashtiriladi (scripts/enable-https.sh).
+#
+# StudyGrow serveridagi umumiy nginx'da turadi (/opt/studygrow/nginx/templates/).
+# MUHIM: upstream o'zgaruvchi + Docker resolver orqali — hotelpulse-app to'xtab
+# qolsa ham nginx ishga tushaveradi (aks holda StudyGrow ham yiqilardi).
+
+server {
+    listen 80;
+    server_name hotel-pulse.uz www.hotel-pulse.uz;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        resolver 127.0.0.11 valid=30s ipv6=off;
+        set $hotelpulse_upstream http://hotelpulse-app:8081;
+        proxy_pass $hotelpulse_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
