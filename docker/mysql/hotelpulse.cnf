@@ -1,0 +1,17 @@
+# HotelPulse MySQL — kichik xotira profili.
+# Server RAM'i (3.8 GB, swap yo'q) StudyGrow bilan bo'lishiladi; HotelPulse
+# bazasi kichik (bir necha o'n ming bron), shuning uchun standart 128 MB+
+# buffer va performance_schema (~200 MB) shart emas.
+[mysqld]
+performance_schema = OFF
+innodb_buffer_pool_size = 64M
+innodb_log_buffer_size = 8M
+key_buffer_size = 8M
+tmp_table_size = 16M
+max_heap_table_size = 16M
+max_connections = 30
+thread_cache_size = 4
+table_open_cache = 400
+host_cache_size = 0
+skip-name-resolve
+default-time-zone = '+05:00'

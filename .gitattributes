@@ -1,0 +1,6 @@
+# Linux konteynerlarda ishlaydigan fayllar har doim LF bilan (CRLF bash'ni buzadi).
+*.sh text eol=lf
+*.cnf text eol=lf
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+mvnw text eol=lf

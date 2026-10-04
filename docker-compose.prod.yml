@@ -1,0 +1,97 @@
+# HotelPulse production — StudyGrow serverida, lekin to'liq ALOHIDA Docker loyihasi:
+# o'z konteynerlari (hotelpulse-*), o'z tarmog'i, o'z MySQL'i va zaxiralari.
+# StudyGrow'ning nginx/konteynerlariga tegmaydi.
+#
+# Domen hali yo'q — ilova to'g'ridan-to'g'ri http://<server-IP>:${APP_PORT} da ochiladi.
+# Domen olingach: nginx + Let's Encrypt (HTTPS) qo'shiladi va port tashqaridan yopiladi.
+#
+# Ishga tushirish (serverda, /opt/hotelpulse):
+#   docker compose -f docker-compose.prod.yml up -d --build
+# Batafsil: docs/DEPLOYMENT.md
+
+name: hotelpulse
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: hotelpulse-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD .env faylida bo'lishi shart}
+      MYSQL_DATABASE: hotel_pulse
+      TZ: Asia/Tashkent
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # Kichik xotira uchun sozlamalar (server RAM'i StudyGrow bilan bo'lishiladi).
+      - ./docker/mysql/hotelpulse.cnf:/etc/mysql/conf.d/hotelpulse.cnf:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 10
+      start_period: 30s
+    mem_limit: 400m
+    logging: *logging
+    restart: unless-stopped
+    # Port tashqariga ochilmaydi — faqat ichki tarmoqdan (app, backup).
+
+  app:
+    build: .
+    container_name: hotelpulse-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/hotel_pulse?createDatabaseIfNotExist=true&rewriteBatchedStatements=true
+      DB_USERNAME: root
+      DB_PASSWORD: ${DB_PASSWORD}
+      SERVER_PORT: 8081
+      OWNER_USERNAME: ${OWNER_USERNAME:-owner}
+      OWNER_PASSWORD: ${OWNER_PASSWORD:?OWNER_PASSWORD .env faylida bo'lishi shart}
+      APP_ENCRYPTION_KEY: ${APP_ENCRYPTION_KEY:?APP_ENCRYPTION_KEY .env faylida bo'lishi shart}
+      APP_ZONE: Asia/Tashkent
+      APP_SITE_URL: ${APP_SITE_URL:-}
+      # Production uchun ALOHIDA bot (lokal bilan bir xil token — 409 konflikt).
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      EXELY_SCHEDULER_ENABLED: ${EXELY_SCHEDULER_ENABLED:-true}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Xss512k -XX:+ExitOnOutOfMemoryError}
+      TZ: Asia/Tashkent
+    ports:
+      - "${APP_PORT:-8081}:8081"
+    mem_limit: 512m
+    logging: *logging
+    restart: unless-stopped
+
+  # Har kuni 03:30 da (StudyGrow zaxirasi bilan bir vaqtga to'g'ri kelmasin)
+  # bazaning zaxira nusxasi → /opt/hotelpulse/backups. Tiklash: docs/DEPLOYMENT.md.
+  backup:
+    image: mysql:8.0
+    container_name: hotelpulse-backup
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: hotel_pulse
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+      BACKUP_HOUR: "03"
+      BACKUP_MINUTE: "30"
+      TZ: Asia/Tashkent
+    entrypoint: ["/bin/bash", "/scripts/backup.sh"]
+    volumes:
+      - ./scripts/backup.sh:/scripts/backup.sh:ro
+      - ./scripts/restore-db.sh:/scripts/restore-db.sh:ro
+      - ./backups:/backups
+    mem_limit: 128m
+    logging: *logging
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
