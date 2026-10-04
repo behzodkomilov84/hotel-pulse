@@ -114,6 +114,12 @@ class PageRenderingDbTest {
         mvc.perform(get("/admin/users/new").with(user(owner))).andExpect(status().isOk());
     }
 
+    @Test
+    void devLoginDoesNotExistWithoutLocalProfile() throws Exception {
+        mvc.perform(get("/dev-login").param("user", "owner-t"))
+                .andExpect(status().isNotFound());
+    }
+
     private Hotel hotel(String name, int rooms) {
         Hotel h = new Hotel();
         h.setName(name);

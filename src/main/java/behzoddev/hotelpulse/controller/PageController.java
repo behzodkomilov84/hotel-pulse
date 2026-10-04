@@ -27,6 +27,8 @@ import java.util.List;
 public class PageController {
 
     private static final DateTimeFormatter CHART_DATE = DateTimeFormatter.ofPattern("dd.MM");
+    private static final List<String> SOURCE_PALETTE =
+            List.of("#2457d6", "#7fb3a3", "#8b5cf6", "#f59e0b", "#ef4444", "#64748b");
 
     private final HotelService hotelService;
     private final KpiService kpiService;
@@ -64,10 +66,13 @@ public class PageController {
         LocalDate today = kpiService.today();
         model.addAttribute("todayDate", today);
         model.addAttribute("periodOptions", Period.OPTIONS);
+        // Diagramma va jadvaldagi rang belgilari bir xil bo'lishi uchun bitta ro'yxat.
+        model.addAttribute("palette", SOURCE_PALETTE);
         Period p = Period.resolve(period, from, to, today);
         HotelKpi kpi = kpiService.report(hotel, p);
         model.addAttribute("kpi", kpi);
         model.addAttribute("today", kpiService.todaySnapshot(hotel));
+        model.addAttribute("paymentsComplete", kpiService.paymentsComplete(hotel));
 
         StayMetrics s = kpi.stays();
         model.addAttribute("chartLabels", s.daily().stream().map(d -> d.date().format(CHART_DATE)).toList());

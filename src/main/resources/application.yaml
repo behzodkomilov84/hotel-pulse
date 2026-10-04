@@ -37,3 +37,15 @@ app:
   # bo'sh bo'lsa, faqat lokal ishlab chiqish uchun mo'ljallangan vaqtinchalik
   # kalit ishlatiladi (EncryptionConfig).
   encryption-key: ${APP_ENCRYPTION_KEY:}
+  # Mehmonxona vaqt zonasi — "bugun" va Exely UTC vaqtlarini o'girish uchun.
+  zone: ${APP_ZONE:Asia/Tashkent}
+  exely:
+    base-url: ${EXELY_BASE_URL:https://connect.hopenapi.com}
+    # Birinchi sinxronlashda shuncha kun oldingacha o'zgargan bronlar olinadi.
+    initial-days: ${EXELY_INITIAL_DAYS:400}
+    page-size: 1000
+    # Bron tafsilotlari so'rovlari orasidagi pauza (API limitlari uchun).
+    request-delay: ${EXELY_REQUEST_DELAY:120ms}
+    scheduler-enabled: ${EXELY_SCHEDULER_ENABLED:true}
+    sync-interval: ${EXELY_SYNC_INTERVAL:PT30M}
+    initial-delay: PT1M

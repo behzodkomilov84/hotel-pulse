@@ -21,6 +21,9 @@ public class SecurityConfig {
                                 .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico", "/login", "/error").permitAll()
+                        // Faqat "local" profilda mavjud (DevLoginController); boshqa
+                        // muhitlarda bu manzilda controller yo'q — 404.
+                        .requestMatchers("/dev-login").permitAll()
                         // Mehmonxona/foydalanuvchi boshqaruvi — faqat platforma egasi.
                         .requestMatchers("/admin/**").hasRole("OWNER")
                         .anyRequest().authenticated())

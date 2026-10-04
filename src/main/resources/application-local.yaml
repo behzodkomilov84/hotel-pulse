@@ -1,0 +1,12 @@
+# Faqat lokal ishlab chiqish uchun (-Dspring-boot.run.profiles=local):
+# shablon va CSS/JS to'g'ridan-to'g'ri src papkasidan, keshsiz o'qiladi —
+# o'zgarishlar serverni qayta ishga tushirmasdan darhol ko'rinadi.
+spring:
+  thymeleaf:
+    cache: false
+    prefix: file:src/main/resources/templates/
+  web:
+    resources:
+      static-locations: file:src/main/resources/static/
+      cache:
+        period: 0

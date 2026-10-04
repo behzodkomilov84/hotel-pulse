@@ -21,6 +21,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
                               @Param("toExclusive") LocalDateTime toExclusive);
 
     @Modifying
+    @Query("delete from Payment p where p.hotelId = :hotelId and p.origin = :origin and p.externalId like concat(:prefix, '%')")
+    int deleteByExternalPrefix(@Param("hotelId") Long hotelId, @Param("origin") DataOrigin origin,
+                               @Param("prefix") String prefix);
+
+    @Modifying
     @Query("delete from Payment p where p.hotelId = :hotelId and p.origin = :origin")
     int deleteByHotelIdAndOrigin(@Param("hotelId") Long hotelId, @Param("origin") DataOrigin origin);
 }

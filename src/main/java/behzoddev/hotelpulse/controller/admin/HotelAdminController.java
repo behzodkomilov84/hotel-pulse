@@ -1,6 +1,8 @@
 package behzoddev.hotelpulse.controller.admin;
 
 import behzoddev.hotelpulse.entity.Hotel;
+import behzoddev.hotelpulse.exely.ExelyException;
+import behzoddev.hotelpulse.exely.ExelySyncService;
 import behzoddev.hotelpulse.service.DemoDataService;
 import behzoddev.hotelpulse.service.HotelService;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +18,7 @@ public class HotelAdminController {
 
     private final HotelService hotelService;
     private final DemoDataService demoDataService;
+    private final ExelySyncService exelySyncService;
 
     @GetMapping
     public String list(Model model) {
@@ -27,6 +30,7 @@ public class HotelAdminController {
     public String createForm(Model model) {
         model.addAttribute("hotel", null);
         model.addAttribute("currencies", HotelService.SUPPORTED_CURRENCIES);
+        model.addAttribute("syncRunning", false);
         return "admin/hotel-form";
     }
 
@@ -34,6 +38,7 @@ public class HotelAdminController {
     public String editForm(@PathVariable Long id, Model model) {
         model.addAttribute("hotel", hotelService.getById(id));
         model.addAttribute("currencies", HotelService.SUPPORTED_CURRENCIES);
+        model.addAttribute("syncRunning", exelySyncService.isRunning(id));
         return "admin/hotel-form";
     }
 
@@ -44,23 +49,62 @@ public class HotelAdminController {
                        @RequestParam(defaultValue = "0") int roomsCount,
                        @RequestParam(defaultValue = "UZS") String currency,
                        @RequestParam(required = false) String exelyPropertyId,
-                       @RequestParam(required = false) String exelyApiKey,
+                       @RequestParam(required = false) String exelyClientId,
+                       @RequestParam(required = false) String exelyClientSecret,
                        @RequestParam(defaultValue = "false") boolean active,
                        RedirectAttributes ra) {
         try {
-            hotelService.save(id, name, city, roomsCount, currency, exelyPropertyId, exelyApiKey, active);
+            Hotel saved = hotelService.save(id, name, city, roomsCount, currency,
+                    exelyPropertyId, exelyClientId, exelyClientSecret, active);
             ra.addFlashAttribute("success", "Mehmonxona saqlandi");
-            return "redirect:/admin/hotels";
+            return "redirect:/admin/hotels/" + saved.getId();
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
             return id == null ? "redirect:/admin/hotels/new" : "redirect:/admin/hotels/" + id;
         }
     }
 
-    @PostMapping("/{id}/remove-key")
-    public String removeKey(@PathVariable Long id, RedirectAttributes ra) {
-        hotelService.removeExelyKey(id);
-        ra.addFlashAttribute("success", "Exely kaliti o'chirildi");
+    /** Saqlangan kirish ma'lumotlari bilan Exely'ga ulanib ko'radi. */
+    @PostMapping("/{id}/exely/test")
+    public String testExely(@PathVariable Long id, RedirectAttributes ra) {
+        Hotel hotel = hotelService.getById(id);
+        if (!hotel.isExelyConnected()) {
+            ra.addFlashAttribute("error", "Avval mehmonxona ID, Client ID va Client Secret'ni kiriting va saqlang");
+            return "redirect:/admin/hotels/" + id;
+        }
+        try {
+            exelySyncService.testConnection(hotel.getExelyPropertyId(), hotel.getExelyClientId(), hotel.getExelyClientSecret());
+            ra.addFlashAttribute("success", "Exely bilan ulanish muvaffaqiyatli ✓");
+        } catch (ExelyException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/hotels/" + id;
+    }
+
+    @PostMapping("/{id}/exely/sync")
+    public String syncExely(@PathVariable Long id, RedirectAttributes ra) {
+        Hotel hotel = hotelService.getById(id);
+        if (!hotel.isExelyConnected()) {
+            ra.addFlashAttribute("error", "Exely ulanmagan");
+        } else if (exelySyncService.startAsync(id)) {
+            ra.addFlashAttribute("success", "Sinxronlash fonda boshlandi — natija shu sahifada ko'rinadi");
+        } else {
+            ra.addFlashAttribute("error", "Sinxronlash allaqachon ishlayapti");
+        }
+        return "redirect:/admin/hotels/" + id;
+    }
+
+    @PostMapping("/{id}/exely/reset")
+    public String resetExely(@PathVariable Long id, RedirectAttributes ra) {
+        hotelService.resetExelySync(id);
+        ra.addFlashAttribute("success", "Keyingi sinxronlash barcha bronlarni boshidan yuklaydi");
+        return "redirect:/admin/hotels/" + id;
+    }
+
+    @PostMapping("/{id}/exely/disconnect")
+    public String disconnectExely(@PathVariable Long id, RedirectAttributes ra) {
+        hotelService.disconnectExely(id);
+        ra.addFlashAttribute("success", "Exely ulanishi o'chirildi (olingan bronlar saqlanib qoldi)");
         return "redirect:/admin/hotels/" + id;
     }
 

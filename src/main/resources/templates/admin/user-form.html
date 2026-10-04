@@ -5,13 +5,13 @@
 <header th:replace="~{fragments/layout :: header('admin-users')}"></header>
 <main class="container"
       th:with="isOwner=${user != null and user.role.name() == 'OWNER'}">
-    <div class="page-head">
+    <div class="page-head reveal">
         <h1 th:text="${user == null} ? 'Yangi foydalanuvchi' : ${user.username}">Foydalanuvchi</h1>
         <a class="btn btn-secondary" th:href="@{/admin/users}">← Ro'yxatga qaytish</a>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
-    <form class="card form" method="post"
+    <form class="card form reveal" method="post"
           th:action="${user == null} ? @{/admin/users} : @{/admin/users/{id}(id=${user.id})}">
         <div class="form-grid">
             <div class="field" th:if="${user == null}">

@@ -1,6 +1,7 @@
 package behzoddev.hotelpulse.service;
 
 import behzoddev.hotelpulse.entity.Booking;
+import behzoddev.hotelpulse.entity.DataOrigin;
 import behzoddev.hotelpulse.entity.Hotel;
 import behzoddev.hotelpulse.kpi.*;
 import behzoddev.hotelpulse.repository.BookingRepository;
@@ -84,6 +85,16 @@ public class KpiService {
             result.put(hotel.getId(), stays(hotel, month));
         }
         return result;
+    }
+
+    /**
+     * To'lovlar to'liqmi: Exely Read Reservation API faqat oldindan to'lovni
+     * beradi (joyida to'langani yo'q), shuning uchun Exely ma'lumotlarida
+     * qarzdorlikni hisoblab bo'lmaydi — buning uchun Exely PMS API kerak.
+     */
+    @Transactional(readOnly = true)
+    public boolean paymentsComplete(Hotel hotel) {
+        return !bookingRepository.existsByHotelIdAndOrigin(hotel.getId(), DataOrigin.EXELY);
     }
 
     @Transactional(readOnly = true)

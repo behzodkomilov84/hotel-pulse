@@ -218,6 +218,10 @@ public class DemoDataService {
         switch (b.getStatus()) {
             case CHECKED_OUT -> {
                 double r = rnd.nextDouble();
+                // Eski qarzlar odatda undirilgan bo'ladi — qarz faqat oxirgi ~30 kunda qoladi.
+                if (b.getDepartureDate().isBefore(today.minusDays(30))) {
+                    r = 1;
+                }
                 if (r < 0.06) {
                     rest = round(rest * 0.5);       // qisman to'langan — qarz qoladi
                 } else if (r < 0.08) {

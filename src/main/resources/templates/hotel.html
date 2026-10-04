@@ -4,11 +4,12 @@
 <body>
 <header th:replace="~{fragments/layout :: header('dashboard')}"></header>
 <main class="container" th:with="cur=${hotel.currency}">
-    <div class="page-head">
+    <div class="page-head reveal">
         <div>
             <h1 th:text="${hotel.name}">Mehmonxona</h1>
             <p class="subtitle">
-                <span th:if="${hotel.city}" th:text="${hotel.city} + ' · '"></span>
+                <span th:if="${hotel.city}" th:text="${hotel.city}"></span>
+                <span th:if="${hotel.city}">·</span>
                 <span th:text="${hotel.roomsCount} + ' ta xona'"></span>
                 <span class="badge badge-ok" th:if="${hotel.exelyConnected}">Exely ulangan</span>
                 <span class="badge badge-warn" th:unless="${hotel.exelyConnected}">Exely ulanmagan</span>
@@ -25,7 +26,10 @@
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
     <!-- ===== Ma'lumot yo'q ===== -->
-    <div class="card empty" th:unless="${hasData}">
+    <div class="card empty reveal" th:unless="${hasData}">
+        <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
+        </div>
         <p><strong>Hali ma'lumot yo'q</strong></p>
         <p th:unless="${hotel.exelyConnected}">Exely ulangach, bronlar va to'lovlar shu yerda avtomatik ko'rinadi.</p>
         <th:block sec:authorize="hasRole('OWNER')">
@@ -39,33 +43,52 @@
     <th:block th:if="${hasData}" th:with="s=${kpi.stays}, ps=${kpi.previousStays}">
 
         <!-- ===== Bugun ===== -->
-        <h2 class="section-title">Bugun</h2>
-        <div class="stats-grid">
+        <h2 class="section-title"><span class="live-dot"></span>Bugun</h2>
+        <div class="stats-grid stagger">
             <div class="card stat">
-                <div class="stat-label">Bandlik</div>
-                <div class="stat-value" th:text="${@fmt.pct(today.occupancy)}">0%</div>
+                <div class="stat-top">
+                    <span class="stat-label">Bandlik</span>
+                    <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9"/></svg></span>
+                </div>
+                <div class="stat-value" data-count th:text="${@fmt.pct(today.occupancy)}">0%</div>
+                <div class="meter"><div class="meter-fill" th:attr="data-fill=${today.occupancy}"></div></div>
                 <div class="stat-sub" th:text="${today.inHouseRooms} + ' / ' + ${hotel.roomsCount} + ' xona band'"></div>
             </div>
             <div class="card stat">
-                <div class="stat-label">Keladiganlar</div>
-                <div class="stat-value" th:text="${today.arrivals}">0</div>
-                <div class="stat-sub">bron</div>
+                <div class="stat-top">
+                    <span class="stat-label">Keladiganlar</span>
+                    <span class="stat-icon i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg></span>
+                </div>
+                <div class="stat-value" data-count th:text="${today.arrivals}">0</div>
+                <div class="stat-sub">bron bugun keladi</div>
             </div>
             <div class="card stat">
-                <div class="stat-label">Ketadiganlar</div>
-                <div class="stat-value" th:text="${today.departures}">0</div>
-                <div class="stat-sub">bron</div>
+                <div class="stat-top">
+                    <span class="stat-label">Ketadiganlar</span>
+                    <span class="stat-icon i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span>
+                </div>
+                <div class="stat-value" data-count th:text="${today.departures}">0</div>
+                <div class="stat-sub">bron bugun ketadi</div>
             </div>
-            <div class="card stat" th:classappend="${today.debtorCount > 0} ? 'stat-alert'">
-                <div class="stat-label">Qarzdorlik</div>
-                <div class="stat-value" th:text="${@fmt.moneyShort(today.debt, cur)}">0</div>
-                <div class="stat-sub" th:text="${today.debtorCount} + ' ta bron to\'liq to\'lanmagan'"></div>
+            <div class="card stat" th:classappend="${paymentsComplete and today.debtorCount > 0} ? 'stat-alert'">
+                <div class="stat-top">
+                    <span class="stat-label">Qarzdorlik</span>
+                    <span class="stat-icon i-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span>
+                </div>
+                <th:block th:if="${paymentsComplete}">
+                    <div class="stat-value" data-count th:text="${@fmt.moneyShort(today.debt, cur)}">0</div>
+                    <div class="stat-sub" th:text="${today.debtorCount} + ' ta bron to\'liq to\'lanmagan'"></div>
+                </th:block>
+                <th:block th:unless="${paymentsComplete}">
+                    <div class="stat-value">—</div>
+                    <div class="stat-sub" title="Read Reservation API faqat oldindan to'lovlarni beradi">Exely PMS API ulanganda ko'rinadi</div>
+                </th:block>
             </div>
         </div>
 
         <!-- ===== Davr tanlash ===== -->
-        <div class="period-bar">
-            <nav class="segmented">
+        <div class="period-bar reveal">
+            <nav class="segmented" aria-label="Davr">
                 <a th:each="opt : ${periodOptions}"
                    th:href="@{/hotels/{id}(id=${hotel.id}, period=${opt.key})}"
                    th:classappend="${kpi.period.key == opt.key} ? 'active'"
@@ -79,80 +102,104 @@
                 <button type="submit" class="btn btn-secondary">Ko'rsatish</button>
             </form>
         </div>
-        <p class="period-caption">
+        <p class="period-caption reveal">
             <strong th:text="${kpi.period.label}"></strong>
             <span th:text="'· taqqoslash: ' + ${kpi.previousPeriod.label}"></span>
             <span th:if="${kpi.period.to.isAfter(todayDate)}" class="badge badge-role">kelajak — hozircha bron qilingani</span>
         </p>
 
         <!-- ===== Asosiy ko'rsatkichlar ===== -->
-        <div class="stats-grid">
+        <div class="stats-grid stagger">
             <div class="card stat">
-                <div class="stat-label" title="Sotilgan xona-kechalar / mavjud xona-kechalar">Bandlik</div>
-                <div class="stat-value" th:text="${@fmt.pct(s.occupancy)}">0%</div>
+                <div class="stat-top">
+                    <span class="stat-label" title="Sotilgan xona-kechalar / mavjud xona-kechalar">Bandlik</span>
+                    <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></span>
+                </div>
+                <div class="stat-value" data-count th:text="${@fmt.pct(s.occupancy)}">0%</div>
                 <div class="delta" th:classappend="${@fmt.trend(s.occupancy, ps.occupancy)}"
                      th:text="${@fmt.pointChange(s.occupancy, ps.occupancy)}"></div>
                 <div class="stat-sub" th:text="${s.soldRoomNights} + ' / ' + ${s.availableRoomNights} + ' xona-kecha'"></div>
             </div>
             <div class="card stat">
-                <div class="stat-label" title="Sotilgan bitta xona-kechaning o'rtacha narxi">ADR</div>
-                <div class="stat-value" th:text="${@fmt.money(s.adr, cur)}">0</div>
+                <div class="stat-top">
+                    <span class="stat-label" title="Sotilgan bitta xona-kechaning o'rtacha narxi">ADR</span>
+                    <span class="stat-icon i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/></svg></span>
+                </div>
+                <div class="stat-value" data-count th:text="${@fmt.money(s.adr, cur)}">0</div>
                 <div class="delta" th:if="${@fmt.change(s.adr, ps.adr)}"
                      th:classappend="${@fmt.trend(s.adr, ps.adr)}" th:text="${@fmt.change(s.adr, ps.adr)}"></div>
                 <div class="stat-sub">xonaning o'rtacha narxi</div>
             </div>
             <div class="card stat">
-                <div class="stat-label" title="Daromad / mavjud xona-kechalar">RevPAR</div>
-                <div class="stat-value" th:text="${@fmt.money(s.revpar, cur)}">0</div>
+                <div class="stat-top">
+                    <span class="stat-label" title="Daromad / mavjud xona-kechalar">RevPAR</span>
+                    <span class="stat-icon i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg></span>
+                </div>
+                <div class="stat-value" data-count th:text="${@fmt.money(s.revpar, cur)}">0</div>
                 <div class="delta" th:if="${@fmt.change(s.revpar, ps.revpar)}"
                      th:classappend="${@fmt.trend(s.revpar, ps.revpar)}" th:text="${@fmt.change(s.revpar, ps.revpar)}"></div>
                 <div class="stat-sub">har bir mavjud xonaga</div>
             </div>
             <div class="card stat">
-                <div class="stat-label">Xona daromadi</div>
-                <div class="stat-value" th:text="${@fmt.moneyShort(s.roomRevenue, cur)}">0</div>
+                <div class="stat-top">
+                    <span class="stat-label">Xona daromadi</span>
+                    <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20M16 15h2"/></svg></span>
+                </div>
+                <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.roomRevenue, cur)}">0</div>
                 <div class="delta" th:if="${@fmt.change(s.roomRevenue, ps.roomRevenue)}"
                      th:classappend="${@fmt.trend(s.roomRevenue, ps.roomRevenue)}"
                      th:text="${@fmt.change(s.roomRevenue, ps.roomRevenue)}"></div>
                 <div class="stat-sub" th:text="${@fmt.money(s.roomRevenue, cur)}"></div>
             </div>
             <div class="card stat">
-                <div class="stat-label">Tushgan to'lovlar</div>
-                <div class="stat-value" th:text="${@fmt.moneyShort(kpi.paymentsReceived, cur)}">0</div>
+                <div class="stat-top">
+                    <span class="stat-label">Tushgan to'lovlar</span>
+                    <span class="stat-icon i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
+                </div>
+                <div class="stat-value" data-count th:text="${@fmt.moneyShort(kpi.paymentsReceived, cur)}">0</div>
                 <div class="delta" th:if="${@fmt.change(kpi.paymentsReceived, kpi.previousPaymentsReceived)}"
                      th:classappend="${@fmt.trend(kpi.paymentsReceived, kpi.previousPaymentsReceived)}"
                      th:text="${@fmt.change(kpi.paymentsReceived, kpi.previousPaymentsReceived)}"></div>
-                <div class="stat-sub" th:text="${@fmt.money(kpi.paymentsReceived, cur)}"></div>
+                <div class="stat-sub" th:text="${paymentsComplete} ? ${@fmt.money(kpi.paymentsReceived, cur)} : 'faqat oldindan to\'lovlar (Exely)'"></div>
             </div>
             <div class="card stat">
-                <div class="stat-label">Yangi bronlar</div>
-                <div class="stat-value" th:text="${kpi.newBookings}">0</div>
+                <div class="stat-top">
+                    <span class="stat-label">Yangi bronlar</span>
+                    <span class="stat-icon i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg></span>
+                </div>
+                <div class="stat-value" data-count th:text="${kpi.newBookings}">0</div>
                 <div class="stat-sub">shu davrda qabul qilingan</div>
             </div>
             <div class="card stat">
-                <div class="stat-label">Bekor qilingan / kelmagan</div>
+                <div class="stat-top">
+                    <span class="stat-label">Bekor qilingan / kelmagan</span>
+                    <span class="stat-icon i-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg></span>
+                </div>
                 <div class="stat-value" th:text="${kpi.cancellations} + ' / ' + ${s.noShows}">0</div>
-                <div class="stat-sub" th:text="${kpi.newBookings > 0} ? 'bekor qilish: ' + ${@fmt.pct(1.0 * kpi.cancellations / kpi.newBookings)} : '—'"></div>
+                <div class="stat-sub" th:text="${kpi.newBookings > 0} ? 'yangi bronlarga nisbatan: ' + ${@fmt.pct(1.0 * kpi.cancellations / kpi.newBookings)} : '—'"></div>
             </div>
             <div class="card stat">
-                <div class="stat-label">O'rtacha yashash</div>
-                <div class="stat-value" th:text="${@fmt.number(s.avgLengthOfStay)} + ' kecha'">0</div>
+                <div class="stat-top">
+                    <span class="stat-label">O'rtacha yashash</span>
+                    <span class="stat-icon i-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
+                </div>
+                <div class="stat-value" data-count th:text="${@fmt.number(s.avgLengthOfStay)} + ' kecha'">0</div>
                 <div class="stat-sub">shu davrda kelganlar</div>
             </div>
         </div>
 
         <!-- ===== Grafiklar ===== -->
-        <div class="chart-grid">
+        <div class="chart-grid stagger">
             <div class="card">
                 <h3 class="card-title">Kunlik bandlik va daromad</h3>
-                <div class="chart-box"><canvas id="dailyChart"></canvas></div>
+                <div class="chart-box"><canvas id="dailyChart" aria-label="Kunlik bandlik va daromad grafigi" role="img"></canvas></div>
             </div>
             <div class="card">
                 <h3 class="card-title">Savdo kanallari</h3>
-                <div class="chart-box chart-box-sm" th:if="${!s.sources.isEmpty()}"><canvas id="sourceChart"></canvas></div>
+                <div class="chart-box chart-box-sm" th:if="${!s.sources.isEmpty()}"><canvas id="sourceChart" aria-label="Savdo kanallari ulushi" role="img"></canvas></div>
                 <table class="compact" th:if="${!s.sources.isEmpty()}">
-                    <tr th:each="src : ${s.sources}">
-                        <td th:text="${src.source}"></td>
+                    <tr th:each="src, st : ${s.sources}">
+                        <td><span class="swatch" th:style="'background:' + ${palette[st.index % palette.size()]}"></span><span th:text="${src.source}"></span></td>
                         <td class="num" th:text="${@fmt.pct(src.share)}"></td>
                         <td class="num" th:text="${@fmt.moneyShort(src.revenue, cur)}"></td>
                     </tr>
@@ -173,53 +220,73 @@
             const sourceLabels = /*[[${sourceLabels}]]*/ [];
             const sourceRevenue = /*[[${sourceRevenue}]]*/ [];
             const currency = /*[[${@fmt.currencyLabel(hotel.currency)}]]*/ "so'm";
+            const palette = /*[[${palette}]]*/ [];
 
             const css = getComputedStyle(document.documentElement);
             const primary = css.getPropertyValue('--primary').trim();
             const accent = css.getPropertyValue('--accent').trim();
             const grid = css.getPropertyValue('--border').trim();
             const muted = css.getPropertyValue('--muted').trim();
+            const surface = css.getPropertyValue('--surface').trim();
             const money = v => new Intl.NumberFormat('ru-RU').format(v) + ' ' + currency;
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             Chart.defaults.color = muted;
             Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
+            Chart.defaults.animation = reduceMotion ? false : {duration: 900, easing: 'easeOutQuart'};
 
-            new Chart(document.getElementById('dailyChart'), {
+            const tooltip = {
+                backgroundColor: surface, titleColor: css.getPropertyValue('--text').trim(), bodyColor: muted,
+                borderColor: grid, borderWidth: 1, padding: 12, cornerRadius: 10, boxPadding: 4, usePointStyle: true
+            };
+
+            const canvas = document.getElementById('dailyChart');
+            const ctx = canvas.getContext('2d');
+            const fill = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight || 320);
+            fill.addColorStop(0, primary + '40');
+            fill.addColorStop(1, primary + '00');
+
+            new Chart(canvas, {
                 data: {
                     labels,
                     datasets: [
-                        {type: 'line', label: 'Bandlik, %', data: occupancy, yAxisID: 'occ',
-                         borderColor: primary, backgroundColor: primary, tension: .3, pointRadius: labels.length > 45 ? 0 : 2},
-                        {type: 'bar', label: 'Daromad', data: revenue, yAxisID: 'rev',
-                         backgroundColor: accent, borderRadius: 3}
+                        {type: 'line', label: 'Bandlik, %', data: occupancy, yAxisID: 'occ', order: 0,
+                         borderColor: primary, backgroundColor: fill, fill: true, borderWidth: 2.5, tension: .35,
+                         pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: primary,
+                         pointHoverBorderColor: surface, pointHoverBorderWidth: 2},
+                        {type: 'bar', label: 'Daromad', data: revenue, yAxisID: 'rev', order: 1,
+                         backgroundColor: accent + 'b3', hoverBackgroundColor: accent, borderRadius: 6,
+                         maxBarThickness: 28}
                     ]
                 },
                 options: {
                     maintainAspectRatio: false,
                     interaction: {mode: 'index', intersect: false},
                     scales: {
-                        occ: {position: 'left', min: 0, suggestedMax: 100, grid: {color: grid},
-                              ticks: {callback: v => v + '%'}},
-                        rev: {position: 'right', beginAtZero: true, grid: {display: false},
-                              ticks: {callback: v => v >= 1e6 ? (v / 1e6).toFixed(1) + ' mln' : v}},
-                        x: {grid: {display: false}, ticks: {maxTicksLimit: 12}}
+                        occ: {position: 'left', min: 0, suggestedMax: 100, border: {display: false},
+                              grid: {color: grid}, ticks: {callback: v => v + '%'}},
+                        rev: {position: 'right', beginAtZero: true, border: {display: false}, grid: {display: false},
+                              ticks: {callback: v => v >= 1e6 ? (v / 1e6).toFixed(1).replace('.', ',') + ' mln' : v}},
+                        x: {grid: {display: false}, border: {display: false}, ticks: {maxTicksLimit: 12}}
                     },
                     plugins: {
-                        tooltip: {callbacks: {label: c => c.dataset.yAxisID === 'occ'
-                                    ? ' Bandlik: ' + c.parsed.y + '%' : ' Daromad: ' + money(c.parsed.y)}}
+                        legend: {labels: {usePointStyle: true, pointStyle: 'circle', boxWidth: 8, padding: 16}},
+                        tooltip: {...tooltip, callbacks: {label: c => c.dataset.yAxisID === 'occ'
+                                    ? ' Bandlik: ' + String(c.parsed.y).replace('.', ',') + '%' : ' Daromad: ' + money(c.parsed.y)}}
                     }
                 }
             });
 
             const sourceCanvas = document.getElementById('sourceChart');
             if (sourceCanvas) {
-                const palette = [primary, accent, '#8b5cf6', '#f59e0b', '#ef4444', '#64748b'];
                 new Chart(sourceCanvas, {
                     type: 'doughnut',
-                    data: {labels: sourceLabels, datasets: [{data: sourceRevenue, backgroundColor: palette, borderWidth: 0}]},
+                    data: {labels: sourceLabels, datasets: [{data: sourceRevenue, backgroundColor: palette,
+                            borderColor: surface, borderWidth: 3, hoverOffset: 8, borderRadius: 4}]},
                     options: {
-                        maintainAspectRatio: false, cutout: '62%',
+                        maintainAspectRatio: false, cutout: '66%',
+                        animation: reduceMotion ? false : {animateRotate: true, duration: 1000},
                         plugins: {legend: {display: false},
-                                  tooltip: {callbacks: {label: c => ' ' + c.label + ': ' + money(c.parsed)}}}
+                                  tooltip: {...tooltip, callbacks: {label: c => ' ' + c.label + ': ' + money(c.parsed)}}}
                     }
                 });
             }

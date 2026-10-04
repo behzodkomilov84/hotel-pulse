@@ -4,14 +4,15 @@
 <body>
 <header th:replace="~{fragments/layout :: header('admin-hotels')}"></header>
 <main class="container">
-    <div class="page-head">
+    <div class="page-head reveal">
         <h1 th:text="${hotel == null} ? 'Yangi mehmonxona' : ${hotel.name}">Mehmonxona</h1>
         <a class="btn btn-secondary" th:href="@{/admin/hotels}">← Ro'yxatga qaytish</a>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
-    <form class="card form" method="post"
+    <form class="card form reveal" method="post"
           th:action="${hotel == null} ? @{/admin/hotels} : @{/admin/hotels/{id}(id=${hotel.id})}">
+        <div class="form-section">Asosiy ma'lumotlar</div>
         <div class="form-grid">
             <div class="field">
                 <label for="name">Nomi *</label>
@@ -37,16 +38,34 @@
             </div>
         </div>
 
+        <div class="form-section">Exely integratsiyasi</div>
+        <details class="howto">
+            <summary>Mehmonxona bu ma'lumotlarni qayerdan oladi?</summary>
+            <ol>
+                <li>Exely extranet'da <b>Property settings → API connections</b> bo'limiga kirib, <b>Create a connection</b> tugmasini bosadi.</li>
+                <li>Ulanishga nom beradi (masalan, "HotelPulse").</li>
+                <li><b>Public APIs</b> yorlig'ida <b>Read Reservation API</b>'ni belgilaydi.</li>
+                <li><b>Save</b> → <b>Save and enable access</b> tugmalarini bosadi.</li>
+                <li>Ochilgan sahifadagi <b>client_id</b> va <b>client_secret</b>'ni sizga yuboradi.</li>
+            </ol>
+            <p>Mehmonxona ID — Exely'dagi raqamli identifikator (bron raqamining o'rtasidagi son ham shu: 20210325-<b>500360</b>-6987835).</p>
+        </details>
         <div class="form-grid">
             <div class="field">
-                <label for="exelyPropertyId">Exely mehmonxona ID (property id)</label>
-                <input type="text" id="exelyPropertyId" name="exelyPropertyId" maxlength="64" th:value="${hotel?.exelyPropertyId}">
+                <label for="exelyPropertyId">Mehmonxona ID (property ID)</label>
+                <input type="text" id="exelyPropertyId" name="exelyPropertyId" maxlength="64" inputmode="numeric"
+                       placeholder="masalan, 500360" th:value="${hotel?.exelyPropertyId}">
             </div>
             <div class="field">
-                <label for="exelyApiKey">Exely API kaliti</label>
-                <input type="password" id="exelyApiKey" name="exelyApiKey" autocomplete="off"
-                       th:placeholder="${hotel != null and hotel.exelyConnected} ? 'Kalit saqlangan — almashtirish uchun yangisini kiriting' : 'Mehmonxona bergan kalit (bo\'lmasa bo\'sh qoldiring)'">
-                <span class="hint">Kalit bazada shifrlangan holda saqlanadi va sahifada hech qachon ko'rsatilmaydi.</span>
+                <label for="exelyClientId">Client ID</label>
+                <input type="text" id="exelyClientId" name="exelyClientId" maxlength="128" autocomplete="off"
+                       th:value="${hotel?.exelyClientId}">
+            </div>
+            <div class="field field-wide">
+                <label for="exelyClientSecret">Client Secret</label>
+                <input type="password" id="exelyClientSecret" name="exelyClientSecret" autocomplete="new-password"
+                       th:placeholder="${hotel != null and hotel.hasExelySecret()} ? 'Saqlangan — almashtirish uchun yangisini kiriting' : 'Mehmonxona bergan client_secret (bo\'lmasa bo\'sh qoldiring)'">
+                <span class="hint">Bazada shifrlangan holda saqlanadi va sahifada hech qachon ko'rsatilmaydi.</span>
             </div>
         </div>
 
@@ -60,11 +79,49 @@
         </div>
     </form>
 
-    <form th:if="${hotel != null and hotel.exelyConnected}" method="post" style="margin-top:12px"
-          th:action="@{/admin/hotels/{id}/remove-key(id=${hotel.id})}"
-          onsubmit="return confirm('Exely kalitini o\'chirasizmi?')">
-        <button type="submit" class="btn btn-danger">Exely kalitini o'chirish</button>
-    </form>
+    <!-- ===== Exely sinxronlash holati ===== -->
+    <section class="card sync-card reveal" th:if="${hotel != null}" th:attr="data-running=${syncRunning}">
+        <div class="sync-head">
+            <div>
+                <h3 class="card-title">Exely sinxronizatsiyasi</h3>
+                <p class="subtitle" th:unless="${hotel.exelyConnected}">Ulanish uchun yuqoridagi uchala maydonni to'ldirib saqlang.</p>
+                <p class="subtitle" th:if="${hotel.exelyConnected}">Avtomatik ravishda har 30 daqiqada yangilanadi.</p>
+            </div>
+            <span th:if="${syncRunning}" class="badge badge-role"><span class="spinner"></span>Sinxronlanmoqda…</span>
+            <span th:if="${!syncRunning and hotel.exelyLastSyncOk == true}" class="badge badge-ok">Ishlayapti</span>
+            <span th:if="${!syncRunning and hotel.exelyLastSyncOk == false}" class="badge badge-warn">Xatolik</span>
+            <span th:if="${!syncRunning and hotel.exelyLastSyncOk == null}" class="badge badge-off">Hali sinxronlanmagan</span>
+        </div>
+
+        <dl class="sync-meta" th:if="${hotel.exelyLastSyncAt != null}">
+            <div>
+                <dt>Oxirgi sinxronlash</dt>
+                <dd th:text="${#temporals.format(hotel.exelyLastSyncAt, 'dd.MM.yyyy HH:mm')}"></dd>
+            </div>
+            <div>
+                <dt>Natija</dt>
+                <dd th:text="${hotel.exelyLastSyncMessage} ?: '—'"
+                    th:classappend="${hotel.exelyLastSyncOk == false} ? 'text-danger'"></dd>
+            </div>
+        </dl>
+
+        <div class="sync-actions" th:if="${hotel.exelyConnected}">
+            <form method="post" th:action="@{/admin/hotels/{id}/exely/test(id=${hotel.id})}">
+                <button type="submit" class="btn btn-secondary">Ulanishni tekshirish</button>
+            </form>
+            <form method="post" th:action="@{/admin/hotels/{id}/exely/sync(id=${hotel.id})}">
+                <button type="submit" class="btn btn-primary" th:disabled="${syncRunning}">Hozir sinxronlash</button>
+            </form>
+            <form method="post" th:action="@{/admin/hotels/{id}/exely/reset(id=${hotel.id})}"
+                  onsubmit="return confirm('Keyingi sinxronlash barcha bronlarni boshidan yuklaydi. Davom etasizmi?')">
+                <button type="submit" class="btn btn-secondary">Boshidan qayta yuklash</button>
+            </form>
+            <form method="post" class="push-right" th:action="@{/admin/hotels/{id}/exely/disconnect(id=${hotel.id})}"
+                  onsubmit="return confirm('Exely ulanishini o\'chirasizmi? Olingan bronlar saqlanib qoladi.')">
+                <button type="submit" class="btn btn-danger">Ulanishni o'chirish</button>
+            </form>
+        </div>
+    </section>
 </main>
 </body>
 </html>

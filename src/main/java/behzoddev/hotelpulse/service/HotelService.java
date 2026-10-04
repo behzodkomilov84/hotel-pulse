@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +49,7 @@ public class HotelService {
 
     @Transactional
     public Hotel save(Long id, String name, String city, int roomsCount, String currency,
-                      String exelyPropertyId, String exelyApiKey, boolean active) {
+                      String exelyPropertyId, String exelyClientId, String exelyClientSecret, boolean active) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Mehmonxona nomi bo'sh bo'lmasligi kerak");
         }
@@ -63,19 +64,37 @@ public class HotelService {
             throw new IllegalArgumentException("Valyutani tanlang");
         }
         hotel.setCurrency(currency);
-        hotel.setExelyPropertyId(blankToNull(exelyPropertyId));
-        // Kalit maydoni bo'sh qoldirilsa — eskisi o'zgarmaydi (sahifada kalit
+        String newPropertyId = blankToNull(exelyPropertyId);
+        String newClientId = blankToNull(exelyClientId);
+        // Boshqa mehmonxona/akkauntga ulansa — sinxronlash boshidan boshlanishi kerak.
+        if (!Objects.equals(newPropertyId, hotel.getExelyPropertyId())
+                || !Objects.equals(newClientId, hotel.getExelyClientId())) {
+            hotel.setExelyContinueToken(null);
+        }
+        hotel.setExelyPropertyId(newPropertyId);
+        hotel.setExelyClientId(newClientId);
+        // Secret maydoni bo'sh qoldirilsa — eskisi o'zgarmaydi (sahifada u
         // hech qachon ko'rsatilmaydi, shuning uchun har safar qayta kiritish shart emas).
-        if (exelyApiKey != null && !exelyApiKey.isBlank()) {
-            hotel.setExelyApiKey(exelyApiKey.trim());
+        if (exelyClientSecret != null && !exelyClientSecret.isBlank()) {
+            hotel.setExelyClientSecret(exelyClientSecret.trim());
         }
         hotel.setActive(active);
         return hotelRepository.save(hotel);
     }
 
+    /** Exely ulanishini butunlay o'chiradi (allaqachon olingan bronlar qoladi). */
     @Transactional
-    public void removeExelyKey(Long id) {
-        getById(id).setExelyApiKey(null);
+    public void disconnectExely(Long id) {
+        Hotel hotel = getById(id);
+        hotel.setExelyClientId(null);
+        hotel.setExelyClientSecret(null);
+        hotel.setExelyContinueToken(null);
+    }
+
+    /** Keyingi sinxronlash boshidan (oxirgi initial-days kun) qayta yuklaydi. */
+    @Transactional
+    public void resetExelySync(Long id) {
+        getById(id).setExelyContinueToken(null);
     }
 
     private static String blankToNull(String s) {

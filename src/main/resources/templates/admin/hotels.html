@@ -4,7 +4,7 @@
 <body>
 <header th:replace="~{fragments/layout :: header('admin-hotels')}"></header>
 <main class="container">
-    <div class="page-head">
+    <div class="page-head reveal">
         <div>
             <h1>Mehmonxonalar boshqaruvi</h1>
             <p class="subtitle" th:text="'Jami: ' + ${hotels.size()}"></p>
@@ -13,7 +13,7 @@
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
-    <div class="card table-wrap" th:if="${!hotels.isEmpty()}">
+    <div class="card table-wrap reveal" th:if="${!hotels.isEmpty()}">
         <table>
             <thead>
             <tr><th>#</th><th>Nomi</th><th>Shahar</th><th>Xonalar</th><th>Exely</th><th>Holati</th><th></th></tr>
@@ -25,8 +25,11 @@
                 <td th:text="${h.city} ?: '—'"></td>
                 <td th:text="${h.roomsCount}"></td>
                 <td>
-                    <span class="badge badge-ok" th:if="${h.exelyConnected}">Ulangan</span>
-                    <span class="badge badge-warn" th:unless="${h.exelyConnected}">Ulanmagan</span>
+                    <span class="badge badge-ok" th:if="${h.exelyConnected and h.exelyLastSyncOk != false}"
+                          th:title="${h.exelyLastSyncMessage}">Ulangan</span>
+                    <span class="badge badge-warn" th:if="${h.exelyConnected and h.exelyLastSyncOk == false}"
+                          th:title="${h.exelyLastSyncMessage}">Sinxronlash xatosi</span>
+                    <span class="badge badge-off" th:unless="${h.exelyConnected}">Ulanmagan</span>
                 </td>
                 <td>
                     <span class="badge badge-ok" th:if="${h.active}">Faol</span>
@@ -37,7 +40,7 @@
             </tbody>
         </table>
     </div>
-    <div class="card empty" th:if="${hotels.isEmpty()}">Hali mehmonxona qo'shilmagan.</div>
+    <div class="card empty reveal" th:if="${hotels.isEmpty()}">Hali mehmonxona qo'shilmagan.</div>
 </main>
 </body>
 </html>

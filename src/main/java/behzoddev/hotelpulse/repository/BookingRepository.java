@@ -46,7 +46,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             select b.totalAmount, coalesce(sum(p.amount), 0) from Booking b
             left join Payment p on p.bookingId = b.id
             where b.hotelId = :hotelId and b.arrivalDate <= :today
-              and b.status in (behzoddev.hotelpulse.entity.BookingStatus.CHECKED_IN,
+              and b.status in (behzoddev.hotelpulse.entity.BookingStatus.CONFIRMED,
+                               behzoddev.hotelpulse.entity.BookingStatus.CHECKED_IN,
                                behzoddev.hotelpulse.entity.BookingStatus.CHECKED_OUT)
             group by b.id, b.totalAmount
             having b.totalAmount > coalesce(sum(p.amount), 0)
@@ -54,6 +55,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Object[]> findUnpaidStays(@Param("hotelId") Long hotelId, @Param("today") LocalDate today);
 
     boolean existsByHotelId(Long hotelId);
+
+    boolean existsByHotelIdAndOrigin(Long hotelId, DataOrigin origin);
+
+    /** Exely bronining barcha xona-yashash qatorlari ("{raqam}#0", "{raqam}#1", ...). */
+    @Modifying
+    @Query("delete from Booking b where b.hotelId = :hotelId and b.origin = :origin and b.externalId like concat(:prefix, '%')")
+    int deleteByExternalPrefix(@Param("hotelId") Long hotelId, @Param("origin") DataOrigin origin,
+                               @Param("prefix") String prefix);
 
     @Modifying
     @Query("delete from Booking b where b.hotelId = :hotelId and b.origin = :origin")

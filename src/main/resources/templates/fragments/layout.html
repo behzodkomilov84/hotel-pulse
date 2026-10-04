@@ -3,8 +3,13 @@
 <head th:fragment="head(title)">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
     <title th:text="${title} + ' — HotelPulse'">HotelPulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
     <link rel="stylesheet" th:href="@{/css/app.css}">
+    <script th:src="@{/js/app.js}" defer></script>
 </head>
 <body>
 
@@ -18,7 +23,8 @@
         </th:block>
     </nav>
     <div class="user-box">
-        <span th:text="${currentUser.displayName}">Foydalanuvchi</span>
+        <span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(currentUser.displayName, 0, 1))}">A</span>
+        <span class="name" th:text="${currentUser.displayName}">Foydalanuvchi</span>
         <form th:action="@{/logout}" method="post">
             <button type="submit" class="btn btn-secondary">Chiqish</button>
         </form>
@@ -26,8 +32,8 @@
 </header>
 
 <th:block th:fragment="alerts">
-    <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
-    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+    <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
+    <div class="alert alert-error" role="alert" th:if="${error}" th:text="${error}"></div>
 </th:block>
 
 </body>

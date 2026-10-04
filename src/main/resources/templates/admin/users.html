@@ -4,7 +4,7 @@
 <body>
 <header th:replace="~{fragments/layout :: header('admin-users')}"></header>
 <main class="container">
-    <div class="page-head">
+    <div class="page-head reveal">
         <div>
             <h1>Foydalanuvchilar</h1>
             <p class="subtitle" th:text="'Jami: ' + ${users.size()}"></p>
@@ -13,7 +13,7 @@
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
-    <div class="card table-wrap">
+    <div class="card table-wrap reveal">
         <table>
             <thead>
             <tr><th>#</th><th>Login</th><th>F.I.Sh.</th><th>Roli</th><th>Mehmonxonalar</th><th>Holati</th><th></th></tr>
