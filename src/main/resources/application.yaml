@@ -1,0 +1,39 @@
+server:
+  # StudyGrow lokal 8080'da ishlaydi — ikkalasi bir vaqtda ishga tushishi uchun.
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: HotelPulse
+  # Lokal maxfiy qiymatlar (DB_PASSWORD, OWNER_PASSWORD, ...) loyiha
+  # ildizidagi .env faylidan o'qiladi — u .gitignore'da, git'ga tushmaydi.
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/hotel_pulse?createDatabaseIfNotExist=true&rewriteBatchedStatements=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 5
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        default_batch_fetch_size: 50
+  liquibase:
+    change-log: classpath:db/changelog/master.xml
+
+app:
+  # Ilk ishga tushishda OWNER yo'q bo'lsa, shu login bilan yaratiladi
+  # (OwnerBootstrap). Parol berilmasa — tasodifiy parol generatsiya qilinib,
+  # logga BIR MARTA chiqariladi.
+  owner:
+    username: ${OWNER_USERNAME:owner}
+    password: ${OWNER_PASSWORD:}
+  # Exely API kalitlarini bazada shifrlash uchun (AES-256-GCM). Base64
+  # ko'rinishidagi 32 baytlik kalit. Production'da ALBATTA berilishi shart —
+  # bo'sh bo'lsa, faqat lokal ishlab chiqish uchun mo'ljallangan vaqtinchalik
+  # kalit ishlatiladi (EncryptionConfig).
+  encryption-key: ${APP_ENCRYPTION_KEY:}

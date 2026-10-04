@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Mehmonxonalar boshqaruvi')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-hotels')}"></header>
+<main class="container">
+    <div class="page-head">
+        <div>
+            <h1>Mehmonxonalar boshqaruvi</h1>
+            <p class="subtitle" th:text="'Jami: ' + ${hotels.size()}"></p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/admin/hotels/new}">+ Mehmonxona qo'shish</a>
+    </div>
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="card table-wrap" th:if="${!hotels.isEmpty()}">
+        <table>
+            <thead>
+            <tr><th>#</th><th>Nomi</th><th>Shahar</th><th>Xonalar</th><th>Exely</th><th>Holati</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="h : ${hotels}">
+                <td th:text="${h.id}"></td>
+                <td class="wrap"><strong th:text="${h.name}"></strong></td>
+                <td th:text="${h.city} ?: '—'"></td>
+                <td th:text="${h.roomsCount}"></td>
+                <td>
+                    <span class="badge badge-ok" th:if="${h.exelyConnected}">Ulangan</span>
+                    <span class="badge badge-warn" th:unless="${h.exelyConnected}">Ulanmagan</span>
+                </td>
+                <td>
+                    <span class="badge badge-ok" th:if="${h.active}">Faol</span>
+                    <span class="badge badge-off" th:unless="${h.active}">Nofaol</span>
+                </td>
+                <td><a class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${h.id})}">Tahrirlash</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card empty" th:if="${hotels.isEmpty()}">Hali mehmonxona qo'shilmagan.</div>
+</main>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' — HotelPulse'">HotelPulse</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+
+<header th:fragment="header(active)" class="topbar">
+    <a class="brand" th:href="@{/}"><span class="brand-dot"></span>HotelPulse</a>
+    <nav class="nav">
+        <a th:href="@{/}" th:classappend="${active == 'dashboard'} ? 'active'">Mehmonxonalar</a>
+        <th:block sec:authorize="hasRole('OWNER')">
+            <a th:href="@{/admin/hotels}" th:classappend="${active == 'admin-hotels'} ? 'active'">Boshqaruv: mehmonxonalar</a>
+            <a th:href="@{/admin/users}" th:classappend="${active == 'admin-users'} ? 'active'">Boshqaruv: foydalanuvchilar</a>
+        </th:block>
+    </nav>
+    <div class="user-box">
+        <span th:text="${currentUser.displayName}">Foydalanuvchi</span>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="btn btn-secondary">Chiqish</button>
+        </form>
+    </div>
+</header>
+
+<th:block th:fragment="alerts">
+    <div class="alert alert-success" th:if="${success}" th:text="${success}"></div>
+    <div class="alert alert-error" th:if="${error}" th:text="${error}"></div>
+</th:block>
+
+</body>
+</html>

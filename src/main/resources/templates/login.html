@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Kirish')}"></head>
+<body>
+<main class="login-page">
+    <div class="card login-card">
+        <div class="brand"><span class="brand-dot"></span>HotelPulse</div>
+        <p class="subtitle">Mehmonxonangiz ko'rsatkichlari bir joyda</p>
+
+        <div class="alert alert-error" th:if="${param.error}">Login yoki parol noto'g'ri</div>
+        <div class="alert alert-info" th:if="${param.logout}">Tizimdan chiqdingiz</div>
+
+        <form class="form" th:action="@{/login}" method="post">
+            <div class="field">
+                <label for="username">Login</label>
+                <input type="text" id="username" name="username" autocomplete="username" required autofocus>
+            </div>
+            <div class="field">
+                <label for="password">Parol</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Kirish</button>
+        </form>
+    </div>
+</main>
+</body>
+</html>

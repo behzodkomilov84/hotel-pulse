@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head(${hotel.name})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('dashboard')}"></header>
+<main class="container">
+    <div class="page-head">
+        <div>
+            <h1 th:text="${hotel.name}">Mehmonxona</h1>
+            <p class="subtitle">
+                <span th:if="${hotel.city}" th:text="${hotel.city} + ' · '"></span>
+                <span th:text="${hotel.roomsCount} + ' ta xona'"></span>
+            </p>
+        </div>
+        <a sec:authorize="hasRole('OWNER')" class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">Tahrirlash</a>
+    </div>
+
+    <div class="card empty">
+        <p><strong>Ko'rsatkichlar paneli tez orada.</strong></p>
+        <p>Bandlik, ADR, RevPAR, daromad va qarzdorlik shu yerda ko'rinadi.</p>
+        <p th:unless="${hotel.exelyConnected}"><span class="badge badge-warn">Exely hali ulanmagan</span></p>
+    </div>
+</main>
+</body>
+</html>

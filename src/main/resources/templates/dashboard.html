@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Mehmonxonalar')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('dashboard')}"></header>
+<main class="container">
+    <div class="page-head">
+        <div>
+            <h1>Mehmonxonalar</h1>
+            <p class="subtitle" sec:authorize="hasRole('OWNER')">Platformadagi barcha mehmonxonalar</p>
+            <p class="subtitle" sec:authorize="!hasRole('OWNER')">Sizga biriktirilgan mehmonxonalar</p>
+        </div>
+        <a sec:authorize="hasRole('OWNER')" class="btn btn-primary" th:href="@{/admin/hotels/new}">+ Mehmonxona qo'shish</a>
+    </div>
+
+    <div class="hotel-grid" th:if="${!hotels.isEmpty()}">
+        <a class="card hotel-card" th:each="h : ${hotels}" th:href="@{/hotels/{id}(id=${h.id})}">
+            <h3 th:text="${h.name}">Mehmonxona</h3>
+            <div class="hotel-meta">
+                <span th:if="${h.city}" th:text="${h.city}">Shahar</span>
+                <span th:text="${h.roomsCount} + ' ta xona'">0 ta xona</span>
+            </div>
+            <div>
+                <span class="badge badge-ok" th:if="${h.exelyConnected}">Exely ulangan</span>
+                <span class="badge badge-warn" th:unless="${h.exelyConnected}">Exely ulanmagan</span>
+                <span class="badge badge-off" th:unless="${h.active}">Nofaol</span>
+            </div>
+        </a>
+    </div>
+
+    <div class="card empty" th:if="${hotels.isEmpty()}">
+        <p sec:authorize="hasRole('OWNER')">Hali mehmonxona qo'shilmagan.</p>
+        <p sec:authorize="!hasRole('OWNER')">Sizga hali mehmonxona biriktirilmagan. Administrator bilan bog'laning.</p>
+    </div>
+</main>
+</body>
+</html>

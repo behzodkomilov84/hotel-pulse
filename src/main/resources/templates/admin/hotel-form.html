@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${hotel == null} ? 'Yangi mehmonxona' : ${hotel.name})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-hotels')}"></header>
+<main class="container">
+    <div class="page-head">
+        <h1 th:text="${hotel == null} ? 'Yangi mehmonxona' : ${hotel.name}">Mehmonxona</h1>
+        <a class="btn btn-secondary" th:href="@{/admin/hotels}">← Ro'yxatga qaytish</a>
+    </div>
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+    <form class="card form" method="post"
+          th:action="${hotel == null} ? @{/admin/hotels} : @{/admin/hotels/{id}(id=${hotel.id})}">
+        <div class="form-grid">
+            <div class="field">
+                <label for="name">Nomi *</label>
+                <input type="text" id="name" name="name" maxlength="150" required th:value="${hotel?.name}">
+            </div>
+            <div class="field">
+                <label for="city">Shahar</label>
+                <input type="text" id="city" name="city" maxlength="100" th:value="${hotel?.city}">
+            </div>
+            <div class="field">
+                <label for="roomsCount">Xonalar soni</label>
+                <input type="number" id="roomsCount" name="roomsCount" min="0"
+                       th:value="${hotel != null} ? ${hotel.roomsCount} : 0">
+                <span class="hint">Bandlik foizi va RevPAR shu son asosida hisoblanadi</span>
+            </div>
+            <div class="field">
+                <label for="exelyPropertyId">Exely mehmonxona ID (property id)</label>
+                <input type="text" id="exelyPropertyId" name="exelyPropertyId" maxlength="64" th:value="${hotel?.exelyPropertyId}">
+            </div>
+        </div>
+
+        <div class="field">
+            <label for="exelyApiKey">Exely API kaliti</label>
+            <input type="password" id="exelyApiKey" name="exelyApiKey" autocomplete="off"
+                   th:placeholder="${hotel != null and hotel.exelyConnected} ? 'Kalit saqlangan — almashtirish uchun yangisini kiriting' : 'Mehmonxona bergan kalit (bo\'lmasa bo\'sh qoldiring)'">
+            <span class="hint">Kalit bazada shifrlangan holda saqlanadi va sahifada hech qachon ko'rsatilmaydi.</span>
+        </div>
+
+        <label class="check">
+            <input type="checkbox" name="active" value="true" th:checked="${hotel == null or hotel.active}"> Faol
+        </label>
+
+        <div class="form-actions">
+            <a class="btn btn-secondary" th:href="@{/admin/hotels}">Bekor qilish</a>
+            <button type="submit" class="btn btn-primary">Saqlash</button>
+        </div>
+    </form>
+
+    <form th:if="${hotel != null and hotel.exelyConnected}" method="post" style="margin-top:12px"
+          th:action="@{/admin/hotels/{id}/remove-key(id=${hotel.id})}"
+          onsubmit="return confirm('Exely kalitini o\'chirasizmi?')">
+        <button type="submit" class="btn btn-danger">Exely kalitini o'chirish</button>
+    </form>
+</main>
+</body>
+</html>
