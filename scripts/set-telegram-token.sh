@@ -3,14 +3,22 @@
 # Token ekranga chiqmaydi, buyruqlar tarixiga ham tushmaydi.
 #
 # Ishlatilishi (lokal kompyuterda, Git Bash'da):
-#   ./scripts/set-telegram-token.sh
+#   1) lokal .env ga  TELEGRAM_BOT_TOKEN_PROD=<token>  qatorini yozing (yoki skript o'zi so'raydi)
+#   2) ./scripts/set-telegram-token.sh
 set -euo pipefail
 
 SERVER="${HOTELPULSE_SERVER:-root@62.238.102.84}"
 cd "$(dirname "$0")/.."
 
-read -r -s -p "Production bot tokenini kiriting (@BotFather bergan): " TOKEN
-echo
+# Avval lokal .env'dagi TELEGRAM_BOT_TOKEN_PROD qatoridan olinadi; bo'sh bo'lsa — so'raladi.
+TOKEN=""
+if [ -f .env ]; then
+    TOKEN=$(grep -m1 '^TELEGRAM_BOT_TOKEN_PROD=' .env | cut -d= -f2- | tr -d '\r[:space:]' || true)
+fi
+if [ -z "$TOKEN" ]; then
+    read -r -s -p "Production bot tokenini kiriting (@BotFather bergan): " TOKEN
+    echo
+fi
 
 if ! [[ "$TOKEN" =~ ^[0-9]+:[A-Za-z0-9_-]{30,}$ ]]; then
     echo "❌ Token formati noto'g'ri (masalan: 123456789:AAH...)." >&2
