@@ -22,9 +22,13 @@ public record TelegramProperties(String botToken, String siteUrl, String apiUrl)
         return botToken != null && !botToken.isBlank();
     }
 
-    /** Telegram URL tugmalari faqat ommaviy https/http manzillarni qabul qiladi. */
+    /**
+     * "Saytda batafsil" tugmasi faqat ommaviy HTTPS manzil bo'lsa chiqadi:
+     * Telegram localhost/IP-HTTP manzilli tugmani rad etsa, butun xabar
+     * (hisobot) yuborilmay qoladi — domen + HTTPS bo'lguncha tugmasiz.
+     */
     public boolean hasPublicSiteUrl() {
-        return siteUrl != null && siteUrl.startsWith("http") && !siteUrl.contains("localhost") && !siteUrl.contains("127.0.0.1");
+        return siteUrl != null && siteUrl.startsWith("https://") && !siteUrl.contains("localhost");
     }
 
     @Override

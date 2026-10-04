@@ -98,6 +98,14 @@ class TelegramApiTest {
     }
 
     @Test
+    void siteButtonOnlyForPublicHttps() {
+        assertTrue(new TelegramProperties("t", "https://hotelpulse.uz", null).hasPublicSiteUrl());
+        assertFalse(new TelegramProperties("t", "http://62.238.102.84:8081", null).hasPublicSiteUrl());
+        assertFalse(new TelegramProperties("t", "http://localhost:8081", null).hasPublicSiteUrl());
+        assertFalse(new TelegramProperties("t", null, null).hasPublicSiteUrl());
+    }
+
+    @Test
     void commandParsing() {
         assertEquals("/bugun", TelegramBotService.commandOf("/bugun@HotelPulseBot"));
         assertEquals("/start", TelegramBotService.commandOf("/start abc"));
