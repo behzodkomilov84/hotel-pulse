@@ -425,6 +425,16 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .switch input:focus-visible + .slider { box-shadow: var(--ring); }
 code { font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 1px 6px; }
 
+/* ---------- Xato sahifasi ---------- */
+.error-card { text-align: center; }
+.error-code {
+    font-size: 72px; font-weight: 800; line-height: 1; letter-spacing: -.04em;
+    background: var(--primary-grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin-bottom: 10px;
+}
+.error-title { font-size: 21px; margin: 0 0 6px; }
+.error-card .subtitle { display: block; margin-bottom: 24px; }
+
 /* ---------- Login ---------- */
 .login-page {
     min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 16px;
