@@ -58,6 +58,8 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     boolean existsByHotelIdAndOrigin(Long hotelId, DataOrigin origin);
 
+    long countByHotelIdAndOrigin(Long hotelId, DataOrigin origin);
+
     List<Booking> findByHotelIdAndOriginAndExternalIdStartingWith(Long hotelId, DataOrigin origin, String prefix);
 
     /** Qarzdorlik hisoboti: PMS qoldig'i bor, zaselenie qilingan yashashlar. */

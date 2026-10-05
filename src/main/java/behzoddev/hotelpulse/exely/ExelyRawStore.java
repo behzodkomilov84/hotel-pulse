@@ -99,6 +99,23 @@ public class ExelyRawStore {
         return result;
     }
 
+    /** Shu turdagi yozuvlarning kalitlari (masalan, saqlangan barcha bron raqamlari). */
+    @Transactional(readOnly = true)
+    public java.util.Set<String> externalIds(Long hotelId, String kind) {
+        return new java.util.HashSet<>(jdbc.queryForList(
+                "select external_id from exely_raw where hotel_id = ? and kind = ?", String.class, hotelId, kind));
+    }
+
+    /** Saqlangan bronlardagi yashashlar (roomStays) soni — bookings jadvali bilan solishtirish uchun. */
+    @Transactional(readOnly = true)
+    public long bookingRoomStays(Long hotelId) {
+        Long n = jdbc.queryForObject("""
+                select coalesce(sum(json_length(payload, '$.roomStays')), 0) from exely_raw
+                where hotel_id = ? and kind = 'booking'
+                """, Long.class, hotelId);
+        return n == null ? 0 : n;
+    }
+
     private static String trim(String s, int max) {
         return s.length() > max ? s.substring(0, max) : s;
     }

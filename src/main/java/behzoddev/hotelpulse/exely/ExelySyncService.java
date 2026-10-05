@@ -42,16 +42,19 @@ public class ExelySyncService {
     private final Clock clock;
     private final CurrencyRates rates;
     private final ExelyRawStore raw;
+    private final ExelyVerifyService verifyService;
 
-    /** Hozir sinxronlanayotgan mehmonxonalar — bir vaqtda ikki marta ishga tushmasligi uchun. */
     /**
      * Bronlar ro'yxati so'raladigan oraliq (API 365 kungacha ruxsat beradi, lekin katta mehmonxonada
      * uzun oraliq javobi 60 soniyadan oshib ketishi kuzatildi — kichikroq bo'laklar ishonchliroq).
      */
     static final int BOOKING_WINDOW_DAYS = 90;
-    /** Xizmatlar (kunlik daromad) shuncha kun oldinga ham olinadi — kelgusi davr hisobotlari uchun. */
-    static final int SERVICES_AHEAD_DAYS = 180;
+    /** Xizmatlar (kunlik daromad) shuncha kun oldinga ham olinadi (Exely chegarasi ~1000 kun). */
+    static final int SERVICES_AHEAD_DAYS = 990;
+    /** PMS ma'lumotlari shu sanadan boshlab olinadi (butun tarix). */
+    static final LocalDate PMS_HISTORY_FROM = LocalDate.of(2020, 1, 1);
 
+    /** Hozir sinxronlanayotgan (yoki solishtirilayotgan) mehmonxonalar — bir vaqtda ikki marta ishga tushmasligi uchun. */
     private final Set<Long> running = ConcurrentHashMap.newKeySet();
 
     public boolean isRunning(Long hotelId) {
@@ -65,6 +68,42 @@ public class ExelySyncService {
         }
         exelySyncExecutor.submit(() -> sync(hotelId));
         return true;
+    }
+
+    /** Fonda: avval sinxronlaydi, keyin Exely bilan solishtiradi. false — allaqachon ishlayapti. */
+    public boolean startVerifyAsync(Long hotelId) {
+        if (running.contains(hotelId)) {
+            return false;
+        }
+        exelySyncExecutor.submit(() -> syncAndVerify(hotelId));
+        return true;
+    }
+
+    /** Har kuni: PMS ulangan mehmonxonalarni sinxronlab, Exely bilan solishtiradi. */
+    @Scheduled(cron = "${app.exely.verify-cron:0 30 4 * * *}", zone = "${app.zone:Asia/Tashkent}")
+    public void verifyAll() {
+        if (!props.schedulerEnabled()) {
+            return;
+        }
+        hotelRepository.findAll().stream()
+                .filter(h -> h.isActive() && h.hasPmsKey())
+                .map(Hotel::getId)
+                .toList()
+                .forEach(this::syncAndVerify);
+    }
+
+    void syncAndVerify(Long hotelId) {
+        sync(hotelId);
+        if (!running.add(hotelId)) {
+            return;
+        }
+        try {
+            verifyService.verify(hotelId);
+        } catch (RuntimeException e) {
+            log.error("Exely solishtirish xatosi (mehmonxona {})", hotelId, e);
+        } finally {
+            running.remove(hotelId);
+        }
     }
 
     /** Davriy avtomatik sinxronlash — barcha faol, Exely ulangan mehmonxonalar. */
@@ -165,7 +204,8 @@ public class ExelySyncService {
         Long hotelId = hotel.getId();
         String key = hotel.getExelyPmsKey().trim();
         LocalDateTime now = LocalDateTime.now(clock).withSecond(0).withNano(0);
-        LocalDateTime initial = now.minusDays(props.initialDays());
+        // Birinchi to'liq sinxronlash Exely'dagi butun tarixni oladi (bo'sh yillar uchun so'rovlar arzon).
+        LocalDateTime initial = PMS_HISTORY_FROM.atStartOfDay();
         StringBuilder note = new StringBuilder();
 
         // OTA bronlari (Booking.com, Trip.com) ko'pincha USD'da keladi — mehmonxona valyutasiga o'giriladi.

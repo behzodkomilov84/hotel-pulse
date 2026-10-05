@@ -4,6 +4,7 @@ import behzoddev.hotelpulse.entity.Hotel;
 import behzoddev.hotelpulse.exely.ExelyException;
 import behzoddev.hotelpulse.exely.ExelyRawStore;
 import behzoddev.hotelpulse.exely.ExelySyncService;
+import behzoddev.hotelpulse.exely.ExelyVerifyService;
 import behzoddev.hotelpulse.service.DemoDataService;
 import behzoddev.hotelpulse.service.HotelService;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,7 @@ public class HotelAdminController {
         model.addAttribute("currencies", HotelService.SUPPORTED_CURRENCIES);
         model.addAttribute("syncRunning", exelySyncService.isRunning(id));
         model.addAttribute("archive", exelyRawStore.counts(id));
+        model.addAttribute("verify", ExelyVerifyService.read(hotelService.getById(id)));
         model.addAttribute("archiveLabels", ARCHIVE_LABELS);
         return "admin/hotel-form";
     }
@@ -101,6 +103,19 @@ public class HotelAdminController {
             ra.addFlashAttribute("success", "Sinxronlash fonda boshlandi — natija shu sahifada ko'rinadi");
         } else {
             ra.addFlashAttribute("error", "Sinxronlash allaqachon ishlayapti");
+        }
+        return "redirect:/admin/hotels/" + id;
+    }
+
+    @PostMapping("/{id}/exely/verify")
+    public String verifyExely(@PathVariable Long id, RedirectAttributes ra) {
+        Hotel hotel = hotelService.getById(id);
+        if (!hotel.hasPmsKey()) {
+            ra.addFlashAttribute("error", "Solishtirish uchun Exely PMS kaliti kerak");
+        } else if (exelySyncService.startVerifyAsync(id)) {
+            ra.addFlashAttribute("success", "Sinxronlash va Exely bilan solishtirish fonda boshlandi — natija shu sahifada ko'rinadi");
+        } else {
+            ra.addFlashAttribute("error", "Sinxronlash ishlayapti — tugagach qayta urinib ko'ring");
         }
         return "redirect:/admin/hotels/" + id;
     }

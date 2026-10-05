@@ -115,3 +115,20 @@ SET pms_services_from  = NULL,
     pms_services_until = NULL
 WHERE exely_pms_key IS NOT NULL;
 DELETE FROM service_revenue;
+
+--changeset behzod:19
+-- "Exely bilan solishtirish" tekshiruvining oxirgi natijasi (saytdagi ma'lumot Exely'dagi bilan bir xilmi).
+ALTER TABLE hotels
+    ADD COLUMN exely_verified_at    DATETIME(6) NULL,
+    ADD COLUMN exely_verify_ok      BOOLEAN     NULL,
+    ADD COLUMN exely_verify_report  MEDIUMTEXT  NULL;
+
+--changeset behzod:20
+-- Sinxronlash endi Exely'dagi butun tarixni (2020-yildan) va ~990 kun oldinga xizmatlarni oladi —
+-- hammasi bir marta boshidan yuklanadi.
+UPDATE hotels
+SET pms_bookings_synced_until = NULL,
+    pms_payments_synced_until = NULL,
+    pms_services_from         = NULL,
+    pms_services_until        = NULL
+WHERE exely_pms_key IS NOT NULL;

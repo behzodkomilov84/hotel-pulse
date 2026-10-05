@@ -81,6 +81,16 @@ public class Hotel {
     @Column(name = "exely_last_sync_message", length = 500)
     private String exelyLastSyncMessage;
 
+    /** "Exely bilan solishtirish" — oxirgi tekshiruv vaqti, natijasi va hisoboti (JSON). */
+    @Column(name = "exely_verified_at")
+    private LocalDateTime exelyVerifiedAt;
+
+    @Column(name = "exely_verify_ok")
+    private Boolean exelyVerifyOk;
+
+    @Column(name = "exely_verify_report", columnDefinition = "MEDIUMTEXT")
+    private String exelyVerifyReport;
+
     @Column(nullable = false)
     private boolean active = true;
 

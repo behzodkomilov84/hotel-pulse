@@ -11,6 +11,16 @@ import java.util.List;
 
 public interface ServiceRevenueRepository extends JpaRepository<ServiceRevenue, Long> {
 
+    /** Tekshiruv uchun: kunlar bo'yicha [sana, qatorlar soni, summa]. */
+    @Query("""
+            select s.serviceDate, count(s), coalesce(sum(s.amount), 0)
+            from ServiceRevenue s
+            where s.hotelId = :hotelId and s.serviceDate >= :from and s.serviceDate <= :to
+            group by s.serviceDate
+            """)
+    List<Object[]> dailyCountsAndSums(@Param("hotelId") Long hotelId, @Param("from") LocalDate from,
+                                      @Param("to") LocalDate to);
+
     /** [from, to] (ikkala chegara ham kiradi) oynasidagi xizmatlar — qayta olinadigan oyna uchun. */
     @Modifying
     @Query("delete from ServiceRevenue s where s.hotelId = :hotelId and s.serviceDate >= :from and s.serviceDate <= :to")

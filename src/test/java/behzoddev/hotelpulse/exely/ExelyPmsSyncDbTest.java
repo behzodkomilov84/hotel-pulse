@@ -71,6 +71,8 @@ class ExelyPmsSyncDbTest {
     @Autowired
     private ExelyRawStore rawStore;
     @Autowired
+    private ExelyVerifyService verifyService;
+    @Autowired
     private DemoDataService demoDataService;
     @Autowired
     private KpiService kpiService;
@@ -177,6 +179,22 @@ class ExelyPmsSyncDbTest {
         assertEquals(1L, archive.get(ExelyRawStore.RESERVATION));
         assertEquals(5L, archive.get(ExelyRawStore.PAYMENT), "xomda bekor qilingan to'lovlar ham bor");
         assertTrue(archive.get(ExelyRawStore.GUEST) >= 1, "mehmon profillari");
+
+        // Solishtirish: sinxronlashdan keyin sayt = Exely.
+        ExelyVerifyService.Report report = verifyService.verify(hotel.getId());
+        assertNull(report.error());
+        assertTrue(report.ok(), () -> report.checks().toString());
+        assertEquals(4, report.checks().size());
+        Hotel verified = hotelRepository.findById(hotel.getId()).orElseThrow();
+        assertEquals(Boolean.TRUE, verified.getExelyVerifyOk());
+        assertTrue(ExelyVerifyService.read(verified).ok(), "saqlangan natija o'qiladi");
+
+        // Saytdan bitta xizmat qatori o'chsa — farq topiladi.
+        serviceRevenueRepository.delete(serviceRevenueRepository.findAll().stream()
+                .filter(x -> x.getHotelId().equals(hotel.getId())).findFirst().orElseThrow());
+        ExelyVerifyService.Report broken = verifyService.verify(hotel.getId());
+        assertFalse(broken.ok());
+        assertTrue(broken.checks().stream().anyMatch(c -> c.name().startsWith("Xizmatlar") && !c.ok() && !c.details().isEmpty()));
         assertEquals(3L, archive.get(ExelyRawStore.ROOM));
         assertEquals(1L, archive.get(ExelyRawStore.COMPANY));
         assertTrue(r.message().contains("xonalar soni: 20 → 3"), r.message());

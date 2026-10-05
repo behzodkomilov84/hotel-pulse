@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
@@ -19,6 +20,14 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     BigDecimal sumPaidBetween(@Param("hotelId") Long hotelId,
                               @Param("from") LocalDateTime from,
                               @Param("toExclusive") LocalDateTime toExclusive);
+
+    /** Tekshiruv uchun: [from, to) oralig'idagi shu manba to'lovlari [soni, summasi]. */
+    @Query("""
+            select count(p), coalesce(sum(p.amount), 0) from Payment p
+            where p.hotelId = :hotelId and p.origin = :origin and p.paidAt >= :from and p.paidAt < :to
+            """)
+    List<Object[]> countAndSum(@Param("hotelId") Long hotelId, @Param("origin") DataOrigin origin,
+                               @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Modifying
     @Query("delete from Payment p where p.hotelId = :hotelId and p.origin = :origin and p.externalId like concat(:prefix, '%')")
