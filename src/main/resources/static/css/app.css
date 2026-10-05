@@ -608,6 +608,9 @@ code { font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--
 }
 .rooms-toggle:hover { filter: brightness(.96); }
 .booking-group.open .booking-row td { background: var(--surface-2); }
+/* Uzun matn (masalan, guruh to'lovchilari) qatorni cho'zsa ham — mazmun yuqorida, bo'sh joy pastda emas o'rtada qolmasin. */
+.inv-table td { vertical-align: top; }
+.inv-table .inv-numbers { white-space: nowrap; max-width: none; }
 .stay-row td { background: var(--surface-2); font-size: 13px; padding-top: 8px; padding-bottom: 8px; }
 .stay-row .stay-indent { padding-left: 22px; white-space: nowrap; }
 .inv-table td .badge + .badge { margin-left: 4px; }

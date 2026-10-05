@@ -101,8 +101,11 @@
                 </td>
                 <td class="num col-paid" th:text="${b.ageDays > 0} ? ${b.ageDays} + ' kun' : '—'"
                     th:classappend="${b.ageDays > 90} ? 'text-danger'"></td>
-                <td class="inv-numbers mono" th:text="${b.accountNumbers.isEmpty()} ? '—' : ${b.accountNumbers}"></td>
-                <td class="wrap col-total" th:text="${b.payer.isEmpty()} ? '—' : ${b.payer}"></td>
+                <td class="inv-numbers mono">
+                    <span th:text="${b.accountNumbers.isEmpty()} ? '—' : ${b.accountsShort()}"></span><th:block
+                        th:if="${b.accountsTruncated()}"><span th:replace="~{fragments/layout :: tip(${b.accountNumbers})}"></span></th:block>
+                </td>
+                <td class="wrap col-total" th:text="${b.payer.isEmpty()} ? '—' : ${b.payersShort()}"></td>
                 <td class="num col-total" th:text="${b.accountCount > 0} ? ${@fmt.money(b.accountTotal, b.currency)} : '—'"></td>
             </tr>
             <tr class="stay-row" th:each="r : ${b.stays}" th:if="${b.debtorRooms > 1}" hidden

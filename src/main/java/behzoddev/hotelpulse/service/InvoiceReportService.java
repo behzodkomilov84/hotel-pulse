@@ -71,6 +71,33 @@ public class InvoiceReportService {
         public String key() {
             return hotelId + ":" + bookingNumber;
         }
+
+        /** Jadval uchun qisqa: "1255527456-01 · +63 ta" (to'liq ro'yxat — izohda va Excel'da). */
+        public String accountsShort() {
+            return shortList(accountNumbers);
+        }
+
+        public String payersShort() {
+            return shortList(payer);
+        }
+
+        /** Izoh (ⓘ) matni — ro'yxat qisqartirilgan bo'lsa. */
+        public boolean accountsTruncated() {
+            return count(accountNumbers) > 2;
+        }
+    }
+
+    /** "a, b, c, d" → "a · +3 ta"; 2 tagacha — o'zgarishsiz. */
+    public static String shortList(String joined) {
+        int n = count(joined);
+        if (n <= 2) {
+            return joined;
+        }
+        return joined.substring(0, joined.indexOf(", ")) + " · +" + (n - 1) + " ta";
+    }
+
+    private static int count(String joined) {
+        return joined == null || joined.isEmpty() ? 0 : joined.split(", ").length;
     }
 
     public record Summary(long bookings, long stays, BigDecimal debt) {

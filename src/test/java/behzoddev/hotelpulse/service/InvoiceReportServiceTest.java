@@ -33,6 +33,15 @@ class InvoiceReportServiceTest {
     }
 
     @Test
+    void longAccountListsAreShortenedForTable() {
+        assertEquals("A-01", InvoiceReportService.shortList("A-01"));
+        assertEquals("A-01, A-02", InvoiceReportService.shortList("A-01, A-02"));
+        assertEquals("A-1 · +63 ta", InvoiceReportService.shortList(String.join(", ",
+                java.util.stream.IntStream.rangeClosed(1, 64).mapToObj(i -> "A-" + i).toList())));
+        assertEquals("", InvoiceReportService.shortList(""));
+    }
+
+    @Test
     void serviceLabels() {
         assertEquals("Yashash", InvoiceReportService.label(0, "Accommodation"));
         assertEquals("Erta kirish", InvoiceReportService.label(3, null));
