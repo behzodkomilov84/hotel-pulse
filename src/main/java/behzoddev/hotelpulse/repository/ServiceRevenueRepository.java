@@ -11,6 +11,9 @@ import java.util.List;
 
 public interface ServiceRevenueRepository extends JpaRepository<ServiceRevenue, Long> {
 
+    /** Bitta yashashning (roomStay) barcha kunlik xizmatlari. */
+    List<ServiceRevenue> findByHotelIdAndReservationIdOrderByServiceDate(Long hotelId, Long reservationId);
+
     /** Tekshiruv uchun: kunlar bo'yicha [sana, qatorlar soni, summa]. */
     @Query("""
             select s.serviceDate, count(s), coalesce(sum(s.amount), 0)

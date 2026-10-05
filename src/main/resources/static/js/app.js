@@ -105,6 +105,23 @@
         if (dlg.dataset.openOnLoad === 'true') openModal(dlg);
     });
 
+    // Tafsilot oynasi: [data-detail-url] bosilsa — serverdan HTML parcha olinib, data-detail-target oynasida ko'rsatiladi.
+    document.querySelectorAll('[data-detail-url]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const dlg = document.getElementById(btn.dataset.detailTarget);
+            const body = dlg.querySelector('[data-detail-body]');
+            body.innerHTML = '<div class="ai-loading"><div class="ai-dots"><span></span><span></span><span></span></div></div>';
+            openModal(dlg);
+            try {
+                const res = await fetch(btn.dataset.detailUrl, { credentials: 'same-origin', headers: { 'Accept': 'text/html' } });
+                if (res.redirected || !res.ok) throw new Error(res.status);
+                body.innerHTML = await res.text();   // server shabloni — matnlar escape qilingan
+            } catch (e) {
+                body.innerHTML = '<p class="ai-error">Ma\'lumotni olib bo\'lmadi — sahifani yangilang.</p>';
+            }
+        });
+    });
+
     // Parol maydonlari: ko'rsatish/yashirish tugmasi.
     document.querySelectorAll('.pw-toggle').forEach(btn => {
         btn.addEventListener('click', () => {

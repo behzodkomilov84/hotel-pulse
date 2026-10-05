@@ -225,11 +225,23 @@ class DebtReportDbTest {
         assertTrue(csv.lines().findFirst().orElseThrow().contains("Exely hisob raqamlari"));
         assertTrue(csv.contains("pms-num-1;Karimov;") && csv.contains(";1;INV-1;Tour LLC;1000000;"));
 
+        // Qarz bosilganda — tafsilot: narx, to'langan, qarz, Exely hisobi.
+        assertTrue(html.contains("data-detail-url"), "qarz summasi bosiladigan");
+        String detail = mvc.perform(get("/services/invoices/detail").param("hotel", hotel.getId().toString())
+                        .param("stay", "pms:pms-num-1#rs1").with(user(owner)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertTrue(detail.contains("Karimov") && detail.contains("Jami — xona narxi") && detail.contains("INV-1")
+                && detail.contains("xonaning o&#39;z hisobi"), detail);
+        assertFalse(detail.contains("<html"), "faqat HTML parcha");
+
         // Boshqa mehmonxona egasi bu mehmonxonani ko'rmaydi (hotel parametri bilan ham).
         CustomUserDetails stranger = new CustomUserDetails(saveUser("stranger-inv", Role.HOTEL_OWNER, Set.of(other)));
         String foreign = mvc.perform(get("/services/invoices").param("hotel", hotel.getId().toString()).with(user(stranger)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertFalse(foreign.contains("Karimov"));
+        mvc.perform(get("/services/invoices/detail").param("hotel", hotel.getId().toString())
+                        .param("stay", "pms:pms-num-1#rs1").with(user(stranger)))
+                .andExpect(status().isForbidden());
     }
 
     @Autowired

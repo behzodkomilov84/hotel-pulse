@@ -59,6 +59,15 @@ public class ServicesController {
         return "services/invoices";
     }
 
+    /** Qarz bosilganda: yashash tafsiloti (xizmatlar, qaysi hisobda, narx, to'langan, qarz) — HTML parcha. */
+    @GetMapping("/invoices/detail")
+    public String invoiceDetail(@AuthenticationPrincipal CustomUserDetails user,
+                                @RequestParam Long hotel, @RequestParam String stay, Model model) {
+        Hotel h = hotelService.getAccessible(user, hotel);
+        model.addAttribute("d", invoices.detail(h, stay).orElse(null));
+        return "services/invoice-detail :: detail";
+    }
+
     /** Excel uchun CSV — filtr va saralashga mos BARCHA qatorlar (sahifalashsiz). */
     @GetMapping(value = "/invoices.csv", produces = "text/csv")
     public ResponseEntity<byte[]> invoicesCsv(@AuthenticationPrincipal CustomUserDetails user,

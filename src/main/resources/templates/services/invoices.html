@@ -50,7 +50,7 @@
         <p class="table-caption">
             <b th:text="${@fmt.number(result.total)} + ' ta yashash'"></b>
             <span th:if="${q != null and !q.isBlank()}" th:text="' · «' + ${q} + '»'"></span>
-            <span class="muted">· ustun nomini bosing — saralash</span>
+            <span class="muted">· ustun nomini bosing — saralash · qarz summasini bosing — tafsilot</span>
         </p>
         <table class="debt-table inv-table">
             <thead>
@@ -77,7 +77,11 @@
                     <span class="badge" th:text="${r.category.label}"
                           th:classappend="${r.category.name() == 'IN_HOUSE'} ? 'badge-role' : (${r.category.name() == 'CHECKED_OUT'} ? 'badge-off' : 'badge-warn')"></span>
                 </td>
-                <td class="num debt-cell" th:text="${@fmt.money(r.debt, r.currency)}"></td>
+                <td class="num">
+                    <button type="button" class="debt-link" data-detail-target="stayModal"
+                            th:attr="data-detail-url=@{/services/invoices/detail(hotel=${r.hotelId}, stay=${r.stayKey})}"
+                            th:text="${@fmt.money(r.debt, r.currency)}" title="Tafsilot"></button>
+                </td>
                 <td class="num col-paid" th:text="${r.ageDays > 0} ? ${r.ageDays} + ' kun' : '—'"
                     th:classappend="${r.ageDays > 90} ? 'text-danger'"></td>
                 <td class="inv-numbers mono" th:text="${r.accountNumbers.isEmpty()} ? '—' : ${r.accountNumbers}"></td>
@@ -103,6 +107,15 @@
            th:href="@{/services/invoices(hotel=${hotel}, q=${q}, sort=${sort}, dir=${dir}, page=${result.page + 1})}">Keyingi →</a>
     </nav>
 </main>
+
+<!-- Qarz bosilganda — yashash tafsiloti (app.js: data-detail-url). -->
+<dialog class="modal modal-wide" id="stayModal" aria-labelledby="stayModalTitle">
+    <div class="modal-head">
+        <h3 id="stayModalTitle">Qarz tafsiloti</h3>
+        <button type="button" class="modal-close" data-modal-close aria-label="Yopish">×</button>
+    </div>
+    <div data-detail-body></div>
+</dialog>
 
 <!-- Saralanadigan ustun sarlavhasi: bosilsa — shu ustun bo'yicha; qayta bosilsa — teskari.
      Sahifaning o'zida ko'rinmaydi (th:remove), faqat yuqoridagi jadvalga qo'yiladi. -->
