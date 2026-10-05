@@ -70,7 +70,10 @@
                 <div class="stat-value" data-count th:text="${today.departures}">0</div>
                 <div class="stat-sub">bron bugun ketadi</div>
             </div>
-            <div class="card stat" th:classappend="${paymentsComplete and today.debtorCount > 0} ? 'stat-alert'">
+            <!-- Bosilsa — qarzdorlik bo'yicha batafsil hisobot. -->
+            <a class="card stat stat-link" th:href="@{/hotels/{id}/debts(id=${hotel.id})}"
+               th:classappend="${paymentsComplete and today.debtorCount > 0} ? 'stat-alert'"
+               title="Qarzdorlik bo'yicha batafsil hisobot">
                 <div class="stat-top">
                     <span class="stat-label">Qarzdorlik</span>
                     <span class="stat-icon i-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span>
@@ -83,7 +86,8 @@
                     <div class="stat-value">—</div>
                     <div class="stat-sub" title="Read Reservation API faqat oldindan to'lovlarni beradi">Exely PMS API ulanganda ko'rinadi</div>
                 </th:block>
-            </div>
+                <div class="stat-more">Batafsil →</div>
+            </a>
         </div>
 
         <!-- ===== Davr tanlash ===== -->

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Qarzdorlik — ' + ${hotel.name})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('dashboard')}"></header>
+<main class="container" th:with="cur=${hotel.currency}, s=${report.summary}">
+    <div class="page-head reveal">
+        <div>
+            <a class="back-link" th:href="@{/hotels/{id}(id=${hotel.id})}">← <span th:text="${hotel.name}">Mehmonxona</span></a>
+            <h1>Qarzdorlik</h1>
+            <p class="subtitle">
+                <span th:text="${s.count} + ' ta yashash to\'liq to\'lanmagan'"></span>
+                <span>·</span>
+                <span th:text="'holat: ' + ${#temporals.format(#temporals.createNow(), 'dd.MM.yyyy HH:mm')}"></span>
+            </p>
+        </div>
+        <a class="btn btn-secondary"
+           th:href="@{/hotels/{id}/debts.csv(id=${hotel.id}, category=${category}, q=${q}, sort=${sort})}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+            Excel'ga yuklash
+        </a>
+    </div>
+
+    <div class="alert alert-info reveal" th:unless="${paymentsComplete}">
+        Bu mehmonxona Exely Connect orqali ulangan — u faqat oldindan to'lovlarni beradi, shuning uchun qarz to'liq emas.
+        Aniq qarzdorlik uchun admin sahifasida <b>Exely PMS kaliti</b>ni kiriting.
+    </div>
+
+    <!-- ===== Toifalar (bosilsa — filtr) ===== -->
+    <div class="stats-grid stagger">
+        <a class="card stat stat-link stat-alert" th:href="@{/hotels/{id}/debts(id=${hotel.id})}"
+           th:classappend="${category == null} ? 'selected'">
+            <div class="stat-top"><span class="stat-label">Jami qarz</span></div>
+            <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.total, cur)}">0</div>
+            <div class="stat-sub" th:text="${s.count} + ' ta yashash'"></div>
+        </a>
+        <a class="card stat stat-link" th:href="@{/hotels/{id}/debts(id=${hotel.id}, category='IN_HOUSE')}"
+           th:classappend="${category != null and category.name() == 'IN_HOUSE'} ? 'selected'">
+            <div class="stat-top">
+                <span class="stat-label">Hozir yashayapti</span>
+                <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9"/></svg></span>
+            </div>
+            <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.inHouse, cur)}">0</div>
+            <div class="stat-sub" th:text="${s.inHouseCount} + ' ta yashash'"></div>
+        </a>
+        <a class="card stat stat-link" th:href="@{/hotels/{id}/debts(id=${hotel.id}, category='CHECKED_OUT')}"
+           th:classappend="${category != null and category.name() == 'CHECKED_OUT'} ? 'selected'">
+            <div class="stat-top">
+                <span class="stat-label">Ketgan</span>
+                <span class="stat-icon i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span>
+            </div>
+            <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.checkedOut, cur)}">0</div>
+            <div class="stat-sub" th:text="${s.checkedOutCount} + ' ta yashash'"></div>
+        </a>
+        <a class="card stat stat-link stat-warn" th:href="@{/hotels/{id}/debts(id=${hotel.id}, category='NOT_CHECKED_OUT')}"
+           th:classappend="${category != null and category.name() == 'NOT_CHECKED_OUT'} ? 'selected'">
+            <div class="stat-top">
+                <span class="stat-label">Vyselenie qilinmagan</span>
+                <span class="stat-icon i-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
+            </div>
+            <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.notCheckedOut, cur)}">0</div>
+            <div class="stat-sub" th:text="${s.notCheckedOutCount} + ' ta — ketish sanasi o\'tgan, PMS\'da hamon yashayapti'"></div>
+        </a>
+    </div>
+
+    <!-- ===== Qarz yoshi ===== -->
+    <section class="card aging-card reveal" th:if="${s.count > 0}">
+        <h3 class="card-title">Qarz yoshi <span class="muted">— ketish sanasidan beri o'tgan vaqt</span></h3>
+        <div class="aging-grid">
+            <div class="aging-item" th:each="a, st : ${report.aging}">
+                <div class="aging-top">
+                    <span class="aging-label" th:text="${a.label}"></span>
+                    <span class="aging-pct" th:text="${@fmt.pct(a.share)}"></span>
+                </div>
+                <div class="meter"><div class="meter-fill" th:classappend="${st.index >= 2} ? 'weak'"
+                                        th:attr="data-fill=${a.share}"></div></div>
+                <div class="aging-sum">
+                    <b th:text="${@fmt.moneyShort(a.amount, cur)}"></b>
+                    <span class="muted" th:text="' · ' + ${a.count} + ' ta'"></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tahlil (faqat tugma bosilganda) ===== -->
+    <section class="card ai-card reveal" id="aiCard" th:if="${s.count > 0}"
+             th:attr="data-url=@{/hotels/{id}/debts/analysis(id=${hotel.id})}">
+        <div class="ai-head">
+            <div class="ai-title">
+                <span class="ai-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></svg></span>
+                <div>
+                    <h3 class="card-title">Qarzdorlik tahlili</h3>
+                    <p class="ai-sub muted" data-ai-sub>Asosiy xulosa, xavfli nuqtalar, tavsiyalar va birinchi navbatda tekshiriladigan bronlar</p>
+                </div>
+            </div>
+            <button type="button" class="btn btn-ai" data-ai-run>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 4.6L18.5 9.5l-4.6 1.9L12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/></svg>
+                <span data-ai-label>Tahlil qilish</span>
+            </button>
+        </div>
+        <div class="ai-body" data-ai-body>
+            <p class="ai-note muted">Tahlil tugma bosilganda, joriy ma'lumotlar bo'yicha tayyorlanadi.</p>
+        </div>
+    </section>
+
+    <!-- ===== Filtr ===== -->
+    <form class="debt-filter reveal" method="get" th:action="@{/hotels/{id}/debts(id=${hotel.id})}">
+        <input type="hidden" name="category" th:if="${category != null}" th:value="${category}">
+        <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" name="q" th:value="${q}" placeholder="Mehmon ismi yoki bron raqami" aria-label="Qidiruv">
+        </div>
+        <select name="sort" aria-label="Saralash" onchange="this.form.submit()">
+            <option value="debt" th:selected="${sort == 'debt'}">Eng katta qarz</option>
+            <option value="age" th:selected="${sort == 'age'}">Eng eski qarz</option>
+            <option value="arrival" th:selected="${sort == 'arrival'}">Kelish sanasi (yangi)</option>
+            <option value="guest" th:selected="${sort == 'guest'}">Mehmon (A–Z)</option>
+        </select>
+        <button type="submit" class="btn btn-primary">Qidirish</button>
+        <a class="btn btn-secondary" th:if="${q != null and !q.isBlank()}"
+           th:href="@{/hotels/{id}/debts(id=${hotel.id}, category=${category}, sort=${sort})}">Tozalash</a>
+    </form>
+
+    <!-- ===== Jadval ===== -->
+    <div class="card table-wrap reveal" th:if="${!report.rows.isEmpty()}">
+        <p class="table-caption">
+            <b th:text="${report.rows.size()} + ' ta yashash'"></b>
+            <span th:if="${category != null}" th:text="' · ' + ${category.label}"></span>
+            <span th:if="${q != null and !q.isBlank()}" th:text="' · «' + ${q} + '»'"></span>
+        </p>
+        <table class="debt-table">
+            <thead>
+            <tr>
+                <th>Bron</th><th>Mehmon</th><th class="col-source">Manba</th><th>Yashash</th><th>Holat</th>
+                <th class="num col-total">Narx</th><th class="num col-paid">To'langan</th><th class="num">Qarz</th><th class="num">O'tdi</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="r : ${report.rows}">
+                <td class="mono" th:text="${r.bookingNumber}"></td>
+                <td class="wrap"><strong th:text="${r.guestName} ?: '—'"></strong></td>
+                <td class="wrap muted col-source" th:text="${r.source}"></td>
+                <td>
+                    <span th:text="${#temporals.format(r.arrival, 'dd.MM.yy')} + ' → ' + ${#temporals.format(r.departure, 'dd.MM.yy')}"></span>
+                    <span class="muted" th:text="' · ' + ${r.nights} + ' k.'"></span>
+                </td>
+                <td>
+                    <span class="badge" th:text="${r.category.label}"
+                          th:classappend="${r.category.name() == 'IN_HOUSE'} ? 'badge-role' : (${r.category.name() == 'CHECKED_OUT'} ? 'badge-off' : 'badge-warn')"></span>
+                </td>
+                <td class="num col-total" th:text="${@fmt.money(r.total, cur)}"></td>
+                <td class="num muted col-paid" th:text="${@fmt.money(r.paid, cur)}"></td>
+                <td class="num debt-cell" th:text="${@fmt.money(r.debt, cur)}"></td>
+                <td class="num" th:text="${r.ageDays > 0} ? ${r.ageDays} + ' kun' : '—'"
+                    th:classappend="${r.ageDays > 90} ? 'text-danger'"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card empty reveal" th:if="${report.rows.isEmpty()}">
+        <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <p><strong th:text="${s.count == 0} ? 'Qarzdorlik yo\'q' : 'Bu filtr bo\'yicha qarz topilmadi'">Qarzdorlik yo'q</strong></p>
+    </div>
+</main>
+<script th:src="@{/js/analysis.js}" defer></script>
+</body>
+</html>

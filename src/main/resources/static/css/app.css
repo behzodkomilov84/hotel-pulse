@@ -484,6 +484,146 @@ code { font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--
     .modal .form { padding: 18px 16px 18px; }
 }
 
+/* ---------- Qarzdorlik hisoboti ---------- */
+.back-link { display: inline-block; color: var(--muted); font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.back-link:hover { color: var(--primary); }
+.stat-link { color: var(--text); cursor: pointer; }
+.stat-link:hover { color: var(--text); }
+.stat-link.selected { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft), var(--shadow); }
+.stat-warn { border-color: color-mix(in srgb, var(--warning) 35%, var(--border)); background: linear-gradient(180deg, var(--warning-soft), var(--surface) 70%); }
+.stat-more { margin-top: 4px; font-size: 12.5px; font-weight: 700; color: var(--danger); opacity: 0; transform: translateX(-4px); transition: opacity var(--t), transform var(--t) var(--ease); }
+.stat-link:hover .stat-more, .stat-link:focus-visible .stat-more { opacity: 1; transform: none; }
+
+.aging-card { margin-bottom: 20px; }
+.aging-card .card-title .muted { font-weight: 500; font-size: 14px; }
+.aging-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+.aging-top { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: var(--muted); }
+.aging-pct { color: var(--text); }
+.aging-sum { margin-top: 6px; font-size: 15px; }
+
+.debt-filter { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.search-wrap { position: relative; flex: 1; min-width: 220px; }
+.search-wrap svg { position: absolute; left: 12px; top: 50%; width: 17px; height: 17px; transform: translateY(-50%); color: var(--muted); }
+.search-wrap input, .debt-filter select {
+    width: 100%; font: inherit; font-size: 14px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 11px;
+    background: var(--surface); color: var(--text); transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.search-wrap input { padding-left: 38px; }
+.debt-filter select { width: auto; }
+.search-wrap input:focus, .debt-filter select:focus { outline: none; border-color: var(--primary); box-shadow: var(--ring); }
+
+.table-caption { margin: 6px 6px 10px; color: var(--muted); font-size: 14px; }
+.table-caption b { color: var(--text); }
+.debt-table td { font-size: 14px; padding: 11px 12px; }
+.debt-table .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12.5px; color: var(--muted); }
+.debt-table th.num, .debt-table td.num { text-align: right; }
+.debt-cell { color: var(--danger); font-weight: 700; }
+
+@media (max-width: 960px) {
+    .aging-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+/* Tor ekranda ikkinchi darajali ustunlar yashiriladi — "Qarz" doim ko'rinib tursin. */
+@media (max-width: 1100px) {
+    .debt-table .col-source, .debt-table .col-paid { display: none; }
+}
+@media (max-width: 760px) {
+    .debt-table .col-total { display: none; }
+    .debt-table td, .debt-table th { padding: 9px 8px; }
+}
+
+/* ---------- AI tahlil ---------- */
+.ai-card { margin-bottom: 20px; position: relative; overflow: hidden; }
+.ai-card::before {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 3px;
+    background: linear-gradient(90deg, var(--primary), var(--violet), var(--accent), var(--primary));
+    background-size: 300% 100%; opacity: .7;
+}
+.ai-card.busy::before { opacity: 1; animation: ai-flow 2.4s linear infinite; }
+@keyframes ai-flow { to { background-position: -300% 0; } }
+.ai-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.ai-title { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.ai-title .card-title { margin: 0; }
+.ai-sub { margin: 2px 0 0; font-size: 13.5px; }
+.ai-icon {
+    flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: #fff;
+    background: linear-gradient(135deg, var(--primary), var(--violet));
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--violet) 35%, transparent);
+}
+.ai-icon svg { width: 21px; height: 21px; }
+.btn-ai { color: #fff; border: 0; background: linear-gradient(135deg, var(--primary), var(--violet)); box-shadow: var(--shadow-sm); }
+.btn-ai:hover { color: #fff; filter: brightness(1.08); }
+.btn-ai:disabled { opacity: .55; cursor: not-allowed; filter: none; }
+.ai-card.busy .btn-ai svg { animation: spin 1.4s linear infinite; }
+.ai-body { margin-top: 14px; }
+.ai-note { margin: 0; font-size: 13.5px; }
+.ai-note code { font-size: 12.5px; padding: 1px 6px; border-radius: 6px; background: var(--surface-2); }
+.ai-error { margin: 0; padding: 12px 14px; border-radius: 11px; background: var(--danger-soft); color: var(--danger); font-size: 14px; }
+
+.ai-loading p { margin: 10px 0 14px; font-size: 14px; }
+.ai-dots { display: flex; gap: 6px; }
+.ai-dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--violet); animation: ai-bounce 1.2s ease-in-out infinite; }
+.ai-dots span:nth-child(2) { animation-delay: .15s; background: var(--primary); }
+.ai-dots span:nth-child(3) { animation-delay: .3s; background: var(--accent); }
+@keyframes ai-bounce { 0%, 80%, 100% { transform: scale(.6); opacity: .5; } 40% { transform: scale(1); opacity: 1; } }
+.ai-skeleton { display: grid; gap: 9px; }
+.ai-skeleton i {
+    display: block; height: 11px; border-radius: 6px;
+    background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%);
+    background-size: 200% 100%; animation: ai-shimmer 1.4s ease-in-out infinite;
+}
+.ai-skeleton i:nth-child(1) { width: 92%; }
+.ai-skeleton i:nth-child(2) { width: 78%; }
+.ai-skeleton i:nth-child(3) { width: 85%; }
+.ai-skeleton i:nth-child(4) { width: 55%; }
+@keyframes ai-shimmer { to { background-position: -200% 0; } }
+
+.ai-result { font-size: 14.5px; line-height: 1.65; animation: ai-in .45s var(--ease) both; }
+@keyframes ai-in { from { opacity: 0; transform: translateY(6px); } }
+.ai-result h4 { margin: 18px 0 6px; font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.ai-result h4::before { content: ""; flex: none; width: 4px; height: 16px; border-radius: 2px; background: linear-gradient(180deg, var(--primary), var(--violet)); }
+.ai-result h4:first-child { margin-top: 0; }
+.ai-result p { margin: 0 0 8px; }
+.ai-result ul { margin: 0 0 8px; padding-left: 20px; }
+.ai-result li { margin: 4px 0; }
+.ai-result li::marker { color: var(--primary); }
+.ai-warning { padding: 10px 14px; border-radius: 11px; background: var(--warning-soft); color: var(--warning); font-size: 13.5px; }
+.ai-result .ai-points { list-style: none; padding: 0; display: grid; gap: 8px; }
+.ai-points li {
+    margin: 0; padding: 10px 14px; border-radius: 11px; background: var(--surface-2);
+    border-left: 4px solid var(--border-strong); display: grid; gap: 2px;
+}
+.ai-points li.lvl-high { border-left-color: var(--danger); background: color-mix(in srgb, var(--danger-soft) 60%, var(--surface)); }
+.ai-points li.lvl-medium { border-left-color: var(--warning); background: color-mix(in srgb, var(--warning-soft) 55%, var(--surface)); }
+.ai-points li span { color: var(--muted); font-size: 14px; }
+.ai-actions { padding-left: 22px; }
+.ai-actions li { padding-left: 4px; }
+.ai-actions li::marker { font-weight: 700; }
+.ai-who {
+    display: inline-block; margin-right: 6px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    background: var(--primary-soft); color: var(--primary); vertical-align: 1px;
+}
+.ai-priorities { display: grid; gap: 8px; }
+.ai-prio {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+    padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px;
+    transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.ai-prio:hover { border-color: var(--border-strong); box-shadow: var(--shadow-sm); }
+.ai-rank {
+    width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px;
+    color: #fff; background: linear-gradient(135deg, var(--primary), var(--violet));
+}
+.ai-prio-top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
+.ai-prio-top .mono { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12.5px; color: var(--muted); }
+.ai-prio-reason { font-size: 13px; line-height: 1.45; }
+.ai-prio-sum { text-align: right; display: grid; font-size: 14px; }
+.ai-prio-sum .muted { font-size: 12px; }
+@media (max-width: 560px) {
+    .ai-head .btn-ai { width: 100%; justify-content: center; }
+    .ai-prio { grid-template-columns: auto minmax(0, 1fr); }
+    .ai-prio-sum { grid-column: 2; text-align: left; }
+}
+
 /* ---------- Xato sahifasi ---------- */
 .error-card { text-align: center; }
 .error-code {

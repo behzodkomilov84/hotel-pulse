@@ -60,6 +60,28 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByHotelIdAndOriginAndExternalIdStartingWith(Long hotelId, DataOrigin origin, String prefix);
 
+    /** Qarzdorlik hisoboti: PMS qoldig'i bor, zaselenie qilingan yashashlar. */
+    @Query("""
+            select b from Booking b
+            where b.hotelId = :hotelId and b.arrivalDate <= :today and b.balanceDue > 0
+              and b.status in (behzoddev.hotelpulse.entity.BookingStatus.CHECKED_IN,
+                               behzoddev.hotelpulse.entity.BookingStatus.CHECKED_OUT)
+            """)
+    List<Booking> findPmsDebtors(@Param("hotelId") Long hotelId, @Param("today") LocalDate today);
+
+    /** Qarzdorlik hisoboti: qoldig'i manbadan noma'lum bronlar — [bron, to'langan summa]. */
+    @Query("""
+            select b, coalesce(sum(p.amount), 0) from Booking b
+            left join Payment p on p.bookingId = b.id
+            where b.hotelId = :hotelId and b.arrivalDate <= :today and b.balanceDue is null
+              and b.status in (behzoddev.hotelpulse.entity.BookingStatus.CONFIRMED,
+                               behzoddev.hotelpulse.entity.BookingStatus.CHECKED_IN,
+                               behzoddev.hotelpulse.entity.BookingStatus.CHECKED_OUT)
+            group by b
+            having b.totalAmount > coalesce(sum(p.amount), 0)
+            """)
+    List<Object[]> findPaymentBasedDebtors(@Param("hotelId") Long hotelId, @Param("today") LocalDate today);
+
     /**
      * PMS bergan qoldiq bo'yicha qarzdorlik: faqat haqiqatan zaselenie qilingan (yashayotgan
      * yoki ketgan) mehmonlar, balance_due > 0. Sanasi o'tib, zaselenie qilinmagan (CONFIRMED)

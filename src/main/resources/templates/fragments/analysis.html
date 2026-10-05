@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Qarzdorlik tahlili — qarzdorlik sahifasiga fetch orqali qo'yiladi. -->
+<div class="ai-result" th:fragment="analysis" th:with="a=${analysis}, cur=${hotel.currency}">
+    <p class="ai-warning" th:if="${a.warning != null}" th:text="${a.warning}"></p>
+
+    <h4>Asosiy xulosa</h4>
+    <p th:text="${a.summary}"></p>
+
+    <th:block th:if="${!a.risks.isEmpty()}">
+        <h4>Xavfli nuqtalar</h4>
+        <ul class="ai-points">
+            <li th:each="p : ${a.risks}" th:classappend="'lvl-' + ${#strings.toLowerCase(p.level.name())}">
+                <strong th:text="${p.title}"></strong>
+                <span th:text="${p.text}"></span>
+            </li>
+        </ul>
+    </th:block>
+
+    <th:block th:if="${!a.actions.isEmpty()}">
+        <h4>Tavsiyalar</h4>
+        <ol class="ai-actions">
+            <li th:each="p : ${a.actions}">
+                <span class="ai-who" th:text="${p.title}"></span>
+                <span th:text="${p.text}"></span>
+            </li>
+        </ol>
+    </th:block>
+
+    <th:block th:if="${!a.priorities.isEmpty()}">
+        <h4>Birinchi navbatda tekshirish kerak</h4>
+        <div class="ai-priorities">
+            <div class="ai-prio" th:each="r, st : ${a.priorities}">
+                <span class="ai-rank" th:text="${st.count}"></span>
+                <div class="ai-prio-main">
+                    <div class="ai-prio-top">
+                        <span class="mono" th:text="${r.bookingNumber}"></span>
+                        <strong th:text="${r.guestName} ?: '—'"></strong>
+                        <span class="muted" th:if="${r.source != null}" th:text="'· ' + ${r.source}"></span>
+                    </div>
+                    <div class="muted ai-prio-reason" th:text="${r.reason}"></div>
+                </div>
+                <div class="ai-prio-sum">
+                    <b class="debt-cell" th:text="${@fmt.money(r.debt, cur)}"></b>
+                    <span class="muted" th:text="'to\'langan ' + ${@fmt.moneyShort(r.paid, cur)} + ' / ' + ${@fmt.moneyShort(r.total, cur)}"></span>
+                </div>
+            </div>
+        </div>
+    </th:block>
+</div>
+</body>
+</html>

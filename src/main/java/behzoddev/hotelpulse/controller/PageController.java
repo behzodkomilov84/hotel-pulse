@@ -1,14 +1,21 @@
 package behzoddev.hotelpulse.controller;
 
+import behzoddev.hotelpulse.analysis.DebtAnalyzer;
 import behzoddev.hotelpulse.entity.Hotel;
+import behzoddev.hotelpulse.kpi.DebtReport;
 import behzoddev.hotelpulse.kpi.HotelKpi;
 import behzoddev.hotelpulse.kpi.Period;
 import behzoddev.hotelpulse.kpi.StayMetrics;
 import behzoddev.hotelpulse.security.CustomUserDetails;
+import behzoddev.hotelpulse.service.DebtService;
 import behzoddev.hotelpulse.service.HotelService;
 import behzoddev.hotelpulse.service.KpiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -32,6 +40,8 @@ public class PageController {
 
     private final HotelService hotelService;
     private final KpiService kpiService;
+    private final DebtService debtService;
+    private final DebtAnalyzer debtAnalyzer;
 
     @GetMapping("/login")
     public String login() {
@@ -45,6 +55,82 @@ public class PageController {
         model.addAttribute("hotels", hotels);
         model.addAttribute("summaries", kpiService.monthSummaries(hotels));
         return "dashboard";
+    }
+
+    /** Qarzdorlik bo'yicha batafsil hisobot. */
+    @GetMapping("/hotels/{id}/debts")
+    public String debts(@AuthenticationPrincipal CustomUserDetails user,
+                        @PathVariable Long id,
+                        @RequestParam(required = false) DebtReport.Category category,
+                        @RequestParam(required = false) String q,
+                        @RequestParam(defaultValue = "debt") String sort,
+                        Model model) {
+        Hotel hotel = hotelService.getAccessible(user, id);
+        model.addAttribute("hotel", hotel);
+        model.addAttribute("report", debtService.report(hotel, category, q, sort));
+        model.addAttribute("category", category);
+        model.addAttribute("categories", DebtReport.Category.values());
+        model.addAttribute("q", q);
+        model.addAttribute("sort", sort);
+        model.addAttribute("paymentsComplete", kpiService.paymentsComplete(hotel));
+        return "debts";
+    }
+
+    /**
+     * Qarzdorlik tahlili — faqat "Tahlil qilish" tugmasi bosilganda (sahifa fetch qiladi), HTML parcha qaytaradi.
+     * Har doim to'liq hisobot bo'yicha (sahifadagi filtrdan qat'i nazar).
+     */
+    @GetMapping("/hotels/{id}/debts/analysis")
+    public String debtAnalysis(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long id, Model model) {
+        Hotel hotel = hotelService.getAccessible(user, id);
+        DebtReport report = debtService.report(hotel, null, null, "debt");
+        model.addAttribute("hotel", hotel);
+        model.addAttribute("analysis", debtAnalyzer.analyze(report, hotel.getCurrency(), kpiService.paymentsComplete(hotel)));
+        return "fragments/analysis :: analysis";
+    }
+
+    /** Qarzdorlik — Excel uchun CSV (UTF-8 BOM, ";" ajratuvchi — Excel o'zbekcha/ruscha matnni to'g'ri ochadi). */
+    @GetMapping(value = "/hotels/{id}/debts.csv", produces = "text/csv")
+    public ResponseEntity<byte[]> debtsCsv(@AuthenticationPrincipal CustomUserDetails user,
+                                           @PathVariable Long id,
+                                           @RequestParam(required = false) DebtReport.Category category,
+                                           @RequestParam(required = false) String q,
+                                           @RequestParam(defaultValue = "debt") String sort) {
+        Hotel hotel = hotelService.getAccessible(user, id);
+        DebtReport report = debtService.report(hotel, category, q, sort);
+        StringBuilder sb = new StringBuilder("﻿");
+        sb.append("Bron raqami;Mehmon;Manba;Kelish;Ketish;Kechalar;Holat;Narx;To'langan;Qarz;Kun o'tdi\n");
+        DateTimeFormatter d = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        for (DebtReport.Row r : report.rows()) {
+            sb.append(csv(r.bookingNumber())).append(';')
+                    .append(csv(r.guestName())).append(';')
+                    .append(csv(r.source())).append(';')
+                    .append(r.arrival().format(d)).append(';')
+                    .append(r.departure().format(d)).append(';')
+                    .append(r.nights()).append(';')
+                    .append(csv(r.category().getLabel())).append(';')
+                    .append(r.total().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
+                    .append(r.paid().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
+                    .append(r.debt().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
+                    .append(r.ageDays()).append('\n');
+        }
+        String file = "qarzdorlik-" + kpiService.today() + ".csv";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(file).build().toString())
+                .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))
+                .body(sb.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static String csv(String v) {
+        if (v == null) {
+            return "";
+        }
+        String s = v.replace("\"", "\"\"");
+        // Formula sifatida bajarilib ketmasligi uchun (CSV injection).
+        if (!s.isEmpty() && "=+-@".indexOf(s.charAt(0)) >= 0) {
+            s = "'" + s;
+        }
+        return s.contains(";") || s.contains("\n") || s.contains("\"") ? "\"" + s + "\"" : s;
     }
 
     @GetMapping("/hotels/{id}")
