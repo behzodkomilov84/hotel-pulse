@@ -62,6 +62,7 @@ class ExelyPmsMapperTest {
         assertEquals(BookingStatus.CONFIRMED, rows.get(2).getStatus());
         assertEquals(BookingStatus.CANCELLED, rows.get(3).getStatus());
         assertNotNull(rows.get(3).getCancelledAt());
+        assertEquals(0, BigDecimal.ZERO.compareTo(rows.get(3).getBalanceDue()), "bekor qilinganda qarz yo'q");
     }
 
     @Test

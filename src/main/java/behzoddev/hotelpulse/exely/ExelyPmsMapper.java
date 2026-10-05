@@ -70,6 +70,9 @@ public final class ExelyPmsMapper {
             b.setStatus(status);
             if (status == BookingStatus.CANCELLED) {
                 b.setCancelledAt(modified != null ? modified : b.getBookedAt());
+                // PMS bekor qilingan yashashda ham toPayAmount beradi (real ma'lumotda kuzatildi) —
+                // bu qarz emas.
+                b.setBalanceDue(BigDecimal.ZERO);
             }
             result.add(b);
         }

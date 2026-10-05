@@ -61,14 +61,15 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByHotelIdAndOriginAndExternalIdStartingWith(Long hotelId, DataOrigin origin, String prefix);
 
     /**
-     * PMS bergan qoldiq bo'yicha qarzdorlik: kelgan (yoki yashayotgan) faol bronlar,
-     * balance_due > 0. Natija: [jami qoldiq, bronlar soni].
+     * PMS bergan qoldiq bo'yicha qarzdorlik: faqat haqiqatan zaselenie qilingan (yashayotgan
+     * yoki ketgan) mehmonlar, balance_due > 0. Sanasi o'tib, zaselenie qilinmagan (CONFIRMED)
+     * bronlar qarz emas — PMS haqiqiy holatni bergani uchun ular chiqarib tashlanadi.
+     * Natija: [jami qoldiq, bronlar soni].
      */
     @Query("""
             select coalesce(sum(b.balanceDue), 0), count(b) from Booking b
             where b.hotelId = :hotelId and b.arrivalDate <= :today and b.balanceDue > 0
-              and b.status in (behzoddev.hotelpulse.entity.BookingStatus.CONFIRMED,
-                               behzoddev.hotelpulse.entity.BookingStatus.CHECKED_IN,
+              and b.status in (behzoddev.hotelpulse.entity.BookingStatus.CHECKED_IN,
                                behzoddev.hotelpulse.entity.BookingStatus.CHECKED_OUT)
             """)
     List<Object[]> sumBalanceDue(@Param("hotelId") Long hotelId, @Param("today") LocalDate today);
