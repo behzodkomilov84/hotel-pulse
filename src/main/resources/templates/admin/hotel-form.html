@@ -148,10 +148,12 @@
         <div class="archive" th:if="${archive != null and !archive.isEmpty()}">
             <h4 class="archive-title">Exely'dan olingan ma'lumotlar <span class="muted">— tahlillar uchun bazada saqlanadi</span></h4>
             <div class="archive-grid">
-                <div class="archive-item" th:each="e : ${archive}">
+                <a class="archive-item" th:each="e : ${archive}"
+                   th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${e.key})}"
+                   th:title="'Ochish: ' + (${archiveLabels[e.key]} ?: ${e.key})">
                     <b th:text="${@fmt.number(e.value)}">0</b>
                     <span th:text="${archiveLabels[e.key]} ?: ${e.key}"></span>
-                </div>
+                </a>
             </div>
         </div>
 

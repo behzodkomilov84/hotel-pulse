@@ -73,6 +73,10 @@ class ExelyPmsSyncDbTest {
     @Autowired
     private ExelyVerifyService verifyService;
     @Autowired
+    private org.springframework.web.context.WebApplicationContext webContext;
+    @Autowired
+    private behzoddev.hotelpulse.repository.UserRepository userRepository;
+    @Autowired
     private DemoDataService demoDataService;
     @Autowired
     private KpiService kpiService;
@@ -211,6 +215,45 @@ class ExelyPmsSyncDbTest {
         assertEquals(4, hotelBookings().size(), "takror qator yo'q");
         assertEquals(3, paymentRepository.findAll().stream().filter(p -> p.getHotelId().equals(hotel.getId())).count());
         assertEquals(firstSeen, hotelBookings().stream().filter(b -> b.getExternalId().endsWith("#rs1")).findFirst().orElseThrow().getBookedAt());
+    }
+
+    @Test
+    void archivedDataPagesAndExcelExport() throws Exception {
+        expectPms();
+        assertTrue(syncService.sync(hotel.getId()).ok());
+        var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders.webAppContextSetup(webContext)
+                .apply(org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity()).build();
+        var owner = new behzoddev.hotelpulse.security.CustomUserDetails(userRepository.findAll().stream()
+                .filter(u -> u.getRole() == behzoddev.hotelpulse.entity.Role.OWNER).findFirst().orElseThrow());
+        var asOwner = org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(owner);
+        var get = (java.util.function.Function<String, org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder>)
+                url -> org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get(url).with(asOwner);
+        var ok = org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isOk();
+        var has = (java.util.function.Function<String, org.springframework.test.web.servlet.ResultMatcher>)
+                s -> org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(org.hamcrest.Matchers.containsString(s));
+
+        // Admin sahifasidagi arxiv kartalari — havola.
+        mvc.perform(get.apply("/admin/hotels/" + hotel.getId())).andExpect(ok)
+                .andExpect(has.apply("/exely/data/booking"));
+        // Ro'yxat: ustunlar, yozuv va to'liq JSON tafsiloti.
+        mvc.perform(get.apply("/admin/hotels/" + hotel.getId() + "/exely/data/booking")).andExpect(ok)
+                .andExpect(has.apply("Bron raqami"))
+                .andExpect(has.apply("20261001-508098-1001"))
+                .andExpect(has.apply("raw-json"));
+        // Qidiruv.
+        String found = mvc.perform(get.apply("/admin/hotels/" + hotel.getId() + "/exely/data/service?q=Laundry"))
+                .andExpect(ok).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue(found.contains("1 ta yozuv"), "faqat kir yuvish xizmati");
+        // Excel: BOM, barcha maydonlar (ichma-ich ham), barcha yozuvlar.
+        byte[] csv = mvc.perform(get.apply("/admin/hotels/" + hotel.getId() + "/exely/data/booking.csv")).andExpect(ok)
+                .andReturn().getResponse().getContentAsByteArray();
+        String text = new String(csv, java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue(text.startsWith("﻿Kalit;Bron raqami;Sana;Olingan;"), text.lines().findFirst().orElse(""));
+        assertTrue(text.lines().findFirst().orElseThrow().contains("roomStays[0].totalPrice.amount"), "ichma-ich maydon ustuni");
+        assertEquals(1 + 3, text.lines().count(), "sarlavha + 3 bron");
+        // Noma'lum tur — 404.
+        mvc.perform(get.apply("/admin/hotels/" + hotel.getId() + "/exely/data/nope"))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound());
     }
 
     @Test

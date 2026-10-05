@@ -3,9 +3,14 @@ package behzoddev.hotelpulse.controller.admin;
 import behzoddev.hotelpulse.entity.Hotel;
 import behzoddev.hotelpulse.entity.Role;
 import behzoddev.hotelpulse.entity.User;
+import behzoddev.hotelpulse.security.CustomUserDetails;
+import behzoddev.hotelpulse.security.PrincipalRefresher;
 import behzoddev.hotelpulse.service.HotelService;
 import behzoddev.hotelpulse.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -20,10 +25,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserAdminController {
 
-    private static final List<Role> ASSIGNABLE_ROLES = List.of(Role.HOTEL_OWNER, Role.HOTEL_STAFF);
+    private static final List<Role> ASSIGNABLE_ROLES = List.of(Role.HOTEL_OWNER, Role.MANAGEMENT_COMPANY, Role.HOTEL_STAFF);
 
     private final UserService userService;
     private final HotelService hotelService;
+    private final PrincipalRefresher principalRefresher;
 
     @GetMapping
     public String list(Model model) {
@@ -69,6 +75,9 @@ public class UserAdminController {
 
     @PostMapping("/{id}")
     public String update(@PathVariable Long id,
+                         @AuthenticationPrincipal CustomUserDetails principal,
+                         HttpServletRequest request, HttpServletResponse response,
+                         @RequestParam(required = false) String username,
                          @RequestParam(required = false) String fullName,
                          @RequestParam(required = false) String phone,
                          @RequestParam(required = false) Role role,
@@ -77,7 +86,11 @@ public class UserAdminController {
                          @RequestParam(required = false) String newPassword,
                          RedirectAttributes ra) {
         try {
-            userService.update(id, fullName, phone, role, enabled, hotelIds, newPassword);
+            User saved = userService.update(id, username, fullName, phone, role, enabled, hotelIds, newPassword);
+            if (principal != null && principal.getId().equals(id)) {
+                // O'z loginini o'zgartirgan bo'lsa — sessiya yangi ma'lumot bilan davom etadi.
+                principalRefresher.refresh(saved, request, response);
+            }
             ra.addFlashAttribute("success", "Saqlandi");
             return "redirect:/admin/users";
         } catch (IllegalArgumentException e) {

@@ -401,6 +401,36 @@ details.integration-option:not([open]) { gap: 0; }
 .archive-item:hover { border-color: var(--border-strong); transform: translateY(-1px); }
 .archive-item b { font-size: 17px; font-variant-numeric: tabular-nums; }
 .archive-item span { font-size: 12.5px; color: var(--muted); }
+a.archive-item { color: var(--text); cursor: pointer; }
+a.archive-item:hover { color: var(--text); border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft); }
+
+/* ---------- Exely xom ma'lumotlari ---------- */
+.kind-tabs { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; scrollbar-width: thin; }
+.kind-tab {
+    flex: none; display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 13.5px; font-weight: 600;
+    transition: border-color var(--t-fast), color var(--t-fast), background var(--t-fast);
+}
+.kind-tab b { font-size: 12px; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--text); }
+.kind-tab:hover { color: var(--text); border-color: var(--border-strong); }
+.kind-tab.active { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
+.kind-tab.active b { background: var(--surface); color: var(--primary); }
+.raw-table td { font-size: 13.5px; padding: 9px 10px; white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; }
+.raw-table th { white-space: nowrap; }
+.raw-table th.num, .raw-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.raw-row { cursor: pointer; transition: background var(--t-fast); }
+.raw-row:hover, .raw-row.open { background: var(--surface-2); }
+.raw-row.open td { font-weight: 600; }
+.raw-detail td { white-space: normal; max-width: none; background: var(--surface-2); padding: 0 12px 14px; }
+.raw-meta { font-size: 12.5px; padding: 6px 0; }
+.raw-json {
+    margin: 0; max-height: 420px; overflow: auto; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--surface); font: 12.5px/1.55 ui-monospace, SFMono-Regular, Consolas, monospace; white-space: pre;
+}
+.pager { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 16px 0 8px; }
+.pager .disabled { pointer-events: none; opacity: .45; }
+.pager-info { font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+
 .verify { margin-top: 18px; }
 .verify-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .verify-head .archive-title { margin: 0; }

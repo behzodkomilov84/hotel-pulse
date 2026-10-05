@@ -99,6 +99,65 @@ public class ExelyRawStore {
         return result;
     }
 
+    /** Ko'rish uchun yozuv. */
+    public record Stored(long id, String externalId, String bookingNumber, LocalDate refDate, String json,
+                         LocalDateTime fetchedAt) {
+    }
+
+    private static final String SEARCH = """
+             from exely_raw where hotel_id = ? and kind = ?
+             and (? is null or external_id like ? or booking_number like ? or lower(cast(payload as char)) like ?)
+            """;
+
+    private static Object[] searchArgs(Long hotelId, String kind, String q) {
+        String like = q == null ? null : "%" + q.toLowerCase(java.util.Locale.ROOT) + "%";
+        return new Object[]{hotelId, kind, q, like, like, like};
+    }
+
+    /** Qidiruv (bron raqami, kalit yoki istalgan maydon matni bo'yicha) bilan sahifa: eng yangi sana birinchi. */
+    @Transactional(readOnly = true)
+    public List<Stored> page(Long hotelId, String kind, String q, int offset, int limit) {
+        Object[] base = searchArgs(hotelId, kind, blank(q));
+        Object[] args = java.util.Arrays.copyOf(base, base.length + 2);
+        args[base.length] = limit;
+        args[base.length + 1] = offset;
+        return jdbc.query("select id, external_id, booking_number, ref_date, payload, fetched_at" + SEARCH
+                + " order by ref_date is null, ref_date desc, id desc limit ? offset ?", (rs, i) -> stored(rs), args);
+    }
+
+    @Transactional(readOnly = true)
+    public long count(Long hotelId, String kind, String q) {
+        Long n = jdbc.queryForObject("select count(*)" + SEARCH, Long.class, searchArgs(hotelId, kind, blank(q)));
+        return n == null ? 0 : n;
+    }
+
+    /** Eksport uchun: qidiruvga mos barcha yozuvlar (ketma-ket, xotirani band qilmasdan). */
+    @Transactional(readOnly = true)
+    public void forEach(Long hotelId, String kind, String q, java.util.function.Consumer<Stored> action) {
+        jdbc.query("select id, external_id, booking_number, ref_date, payload, fetched_at" + SEARCH
+                + " order by ref_date is null, ref_date desc, id desc", rs -> {
+            action.accept(stored(rs));
+        }, searchArgs(hotelId, kind, blank(q)));
+    }
+
+    @Transactional(readOnly = true)
+    public Stored find(Long hotelId, long id) {
+        List<Stored> r = jdbc.query("select id, external_id, booking_number, ref_date, payload, fetched_at from exely_raw"
+                + " where hotel_id = ? and id = ?", (rs, i) -> stored(rs), hotelId, id);
+        return r.isEmpty() ? null : r.get(0);
+    }
+
+    private static Stored stored(java.sql.ResultSet rs) throws java.sql.SQLException {
+        Date d = rs.getDate("ref_date");
+        Timestamp t = rs.getTimestamp("fetched_at");
+        return new Stored(rs.getLong("id"), rs.getString("external_id"), rs.getString("booking_number"),
+                d == null ? null : d.toLocalDate(), rs.getString("payload"), t == null ? null : t.toLocalDateTime());
+    }
+
+    private static String blank(String q) {
+        return q == null || q.isBlank() ? null : q.trim();
+    }
+
     /** Shu turdagi yozuvlarning kalitlari (masalan, saqlangan barcha bron raqamlari). */
     @Transactional(readOnly = true)
     public java.util.Set<String> externalIds(Long hotelId, String kind) {

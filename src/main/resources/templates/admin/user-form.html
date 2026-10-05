@@ -14,10 +14,10 @@
     <form class="card form reveal" method="post"
           th:action="${user == null} ? @{/admin/users} : @{/admin/users/{id}(id=${user.id})}">
         <div class="form-grid">
-            <div class="field" th:if="${user == null}">
+            <div class="field">
                 <label for="username">Login *</label>
                 <input type="text" id="username" name="username" required maxlength="64"
-                       pattern="[A-Za-z0-9_.\-]{3,64}" autocomplete="off">
+                       pattern="[A-Za-z0-9_.\-]{3,64}" autocomplete="off" th:value="${user?.username}">
                 <span class="hint">Lotin harflari, raqamlar, _ . - (3–64 belgi)</span>
             </div>
             <div class="field" th:if="${user == null}">

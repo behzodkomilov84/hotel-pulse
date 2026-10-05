@@ -63,7 +63,24 @@ public class UserService {
     @Transactional
     public void update(Long id, String fullName, String phone, Role role, boolean enabled,
                        List<Long> hotelIds, String newPassword) {
+        update(id, null, fullName, phone, role, enabled, hotelIds, newPassword);
+    }
+
+    /** @param username yangi login (null — o'zgarmaydi) */
+    @Transactional
+    public User update(Long id, String username, String fullName, String phone, Role role, boolean enabled,
+                       List<Long> hotelIds, String newPassword) {
         User user = getById(id);
+        if (username != null && !username.trim().equals(user.getUsername())) {
+            String login = username.trim();
+            if (!login.matches("[A-Za-z0-9_.\\-]{3,64}")) {
+                throw new IllegalArgumentException("Login 3–64 belgidan iborat bo'lsin (lotin harflari, raqamlar, _ . -)");
+            }
+            if (userRepository.existsByUsername(login)) {
+                throw new IllegalArgumentException("Bu login band");
+            }
+            user.setUsername(login);
+        }
         user.setFullName(blankToNull(fullName));
         user.setPhone(blankToNull(phone));
         if (user.getRole() != Role.OWNER) {
@@ -78,6 +95,7 @@ public class UserService {
             validatePassword(newPassword);
             user.setPassword(passwordEncoder.encode(newPassword));
         }
+        return user;
     }
 
     /** Profil sahifasidan: foydalanuvchi o'z ismi va telefonini o'zgartiradi (login/rol/mehmonxonalar — yo'q). */

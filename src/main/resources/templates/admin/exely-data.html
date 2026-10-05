@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${kind.title} + ' — ' + ${hotel.name})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-hotels')}"></header>
+<main class="container">
+    <div class="page-head reveal">
+        <div>
+            <a class="back-link" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">← <span th:text="${hotel.name}">Mehmonxona</span></a>
+            <h1 th:text="${kind.title}">Ma'lumotlar</h1>
+            <p class="subtitle">
+                <span th:text="${@fmt.number(total)} + ' ta yozuv'"></span>
+                <span th:if="${q != null and !q.isBlank()}" th:text="'· «' + ${q} + '» bo\'yicha'"></span>
+                <span>· Exely'dan o'zgarishsiz saqlangan</span>
+            </p>
+        </div>
+        <a class="btn btn-secondary" th:href="@{/admin/hotels/{id}/exely/data/{k}.csv(id=${hotel.id}, k=${kind.key}, q=${q})}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+            Excel'ga yuklash
+        </a>
+    </div>
+
+    <!-- Turlar orasida o'tish -->
+    <nav class="kind-tabs reveal" aria-label="Ma'lumot turlari">
+        <a th:each="k : ${kinds}" class="kind-tab" th:classappend="${k.key == kind.key} ? 'active'"
+           th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${k.key})}">
+            <span th:text="${k.title}"></span>
+            <b th:text="${@fmt.number(counts[k.key] ?: 0)}">0</b>
+        </a>
+    </nav>
+
+    <form class="debt-filter reveal" method="get" th:action="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${kind.key})}">
+        <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" name="q" th:value="${q}" placeholder="Bron raqami, ism, xizmat nomi yoki istalgan qiymat" aria-label="Qidiruv">
+        </div>
+        <button type="submit" class="btn btn-primary">Qidirish</button>
+        <a class="btn btn-secondary" th:if="${q != null and !q.isBlank()}"
+           th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${kind.key})}">Tozalash</a>
+    </form>
+
+    <div class="card table-wrap reveal" th:if="${!rows.isEmpty()}">
+        <p class="table-caption">Qatorni bosing — Exely'dan kelgan to'liq ma'lumot ochiladi.</p>
+        <table class="raw-table">
+            <thead>
+            <tr>
+                <th th:each="c : ${kind.columns}" th:text="${c.label}"
+                    th:classappend="${c.type.name() == 'MONEY' or c.type.name() == 'COUNT'} ? 'num'"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <th:block th:each="r : ${rows}">
+                <tr class="raw-row" tabindex="0" th:attr="aria-controls='raw-' + ${r.id}" aria-expanded="false">
+                    <td th:each="v, st : ${r.cells}" th:text="${v}"
+                        th:classappend="${kind.columns[st.index].type.name() == 'MONEY' or kind.columns[st.index].type.name() == 'COUNT'} ? 'num'"></td>
+                </tr>
+                <tr class="raw-detail" th:id="'raw-' + ${r.id}" hidden>
+                    <td th:attr="colspan=${kind.columns.size()}">
+                        <div class="raw-meta muted" th:text="'Olingan: ' + ${r.fetchedAt}"></div>
+                        <pre class="raw-json" th:text="${r.json}"></pre>
+                    </td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card empty reveal" th:if="${rows.isEmpty()}">
+        <p><strong>Yozuv topilmadi</strong></p>
+    </div>
+
+    <nav class="pager reveal" th:if="${pages > 1}" aria-label="Sahifalar">
+        <a class="btn btn-secondary" th:classappend="${page <= 1} ? 'disabled'" th:attr="aria-disabled=${page <= 1}"
+           th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${kind.key}, q=${q}, page=${page - 1})}">← Oldingi</a>
+        <span class="pager-info" th:text="${page} + ' / ' + ${pages}"></span>
+        <a class="btn btn-secondary" th:classappend="${page >= pages} ? 'disabled'" th:attr="aria-disabled=${page >= pages}"
+           th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${kind.key}, q=${q}, page=${page + 1})}">Keyingi →</a>
+    </nav>
+</main>
+<script>
+    document.querySelectorAll('.raw-row').forEach(function (row) {
+        function toggle() {
+            var detail = document.getElementById(row.getAttribute('aria-controls'));
+            var open = detail.hidden;
+            detail.hidden = !open;
+            row.setAttribute('aria-expanded', String(open));
+            row.classList.toggle('open', open);
+        }
+        row.addEventListener('click', toggle);
+        row.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+        });
+    });
+</script>
+</body>
+</html>

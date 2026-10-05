@@ -2,18 +2,14 @@ package behzoddev.hotelpulse.controller;
 
 import behzoddev.hotelpulse.entity.User;
 import behzoddev.hotelpulse.security.CustomUserDetails;
+import behzoddev.hotelpulse.security.PrincipalRefresher;
 import behzoddev.hotelpulse.service.UserService;
 import behzoddev.hotelpulse.telegram.TelegramGateway;
 import behzoddev.hotelpulse.telegram.TelegramLinkService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,7 +27,7 @@ public class ProfileController {
     private final UserService userService;
     private final TelegramLinkService linkService;
     private final TelegramGateway telegram;
-    private final HttpSessionSecurityContextRepository contextRepository = new HttpSessionSecurityContextRepository();
+    private final PrincipalRefresher principalRefresher;
 
     @GetMapping
     public String profile(@AuthenticationPrincipal CustomUserDetails principal, Model model) {
@@ -50,7 +46,7 @@ public class ProfileController {
                          RedirectAttributes ra) {
         try {
             User user = userService.updateOwnProfile(principal.getId(), fullName, phone);
-            refreshPrincipal(user, request, response);
+            principalRefresher.refresh(user, request, response);
             ra.addFlashAttribute("success", "Profil saqlandi");
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
@@ -79,15 +75,6 @@ public class ProfileController {
      * Sarlavhadagi ism sessiyadagi principal'dan olinadi — saqlangach yangilanmasa,
      * qayta kirguncha eski ism ko'rinib turardi.
      */
-    private void refreshPrincipal(User user, HttpServletRequest request, HttpServletResponse response) {
-        Authentication current = SecurityContextHolder.getContext().getAuthentication();
-        CustomUserDetails fresh = new CustomUserDetails(user);
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(UsernamePasswordAuthenticationToken.authenticated(
-                fresh, current == null ? null : current.getCredentials(), fresh.getAuthorities()));
-        SecurityContextHolder.setContext(context);
-        contextRepository.saveContext(context, request, response);
-    }
 
     /** Bir martalik havola yaratib, Telegram'ni ochadi (t.me/<bot>?start=<token>). */
     @PostMapping("/telegram/link")

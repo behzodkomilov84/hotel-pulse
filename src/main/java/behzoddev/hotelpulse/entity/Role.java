@@ -5,6 +5,8 @@ public enum Role {
     OWNER("Platforma egasi"),
     /** Mehmonxona egasi — faqat o'ziga biriktirilgan mehmonxonalarni ko'radi. */
     HOTEL_OWNER("Mehmonxona egasi"),
+    /** Boshqaruv kompaniyasi — bir nechta mehmonxonani boshqaradi, biriktirilganlarini ko'radi. */
+    MANAGEMENT_COMPANY("Boshqaruv kompaniyasi"),
     /** Mehmonxona xodimi (boshqaruvchi, buxgalter) — faqat ko'rish. */
     HOTEL_STAFF("Mehmonxona xodimi");
 
