@@ -94,6 +94,7 @@ final class ExelyRawRows {
             reservations.add(new Row(id, text(r, "bookingNumber"), date(text(r, "checkInDateTime")), r.toString()));
         }
         List<Row> services = new ArrayList<>();
+        Map<String, Integer> occurrences = new HashMap<>();
         for (JsonNode s : data.path("services")) {
             String id = text(s, "id");
             String day = text(s, "date");
@@ -101,7 +102,10 @@ final class ExelyRawRows {
                 continue;
             }
             String reservation = text(s, "reservationId");
-            String key = id + ":" + reservation + ":" + day;
+            // Exely bir kunda bitta yashashga bir xil id'li xizmatni bir necha marta berishi mumkin — hammasi saqlanadi.
+            String base = id + ":" + reservation + ":" + day;
+            int n = occurrences.merge(base, 1, Integer::sum);
+            String key = n == 1 ? base : base + "#" + n;
             services.add(new Row(key, bookingByReservation.get(reservation), date(day), s.toString()));
         }
         return new Services(services, reservations, plain(data.path("customers")), plain(data.path("agents")),

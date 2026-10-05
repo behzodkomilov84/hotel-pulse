@@ -115,7 +115,10 @@ class ExelyPmsMapperTest {
                 new ExelyPmsApi.Service("uz", 0, "Проживание", new BigDecimal("500000"), "20261002", 13L, false),
                 // kurs berilmagan USD — Markaziy bank kursi (money) bilan
                 new ExelyPmsApi.Service("norate", 0, "Accommodation", new BigDecimal("10"), "20261002", 14L, false),
-                new ExelyPmsApi.Service("bad", 0, "x", new BigDecimal("1"), null, 13L, false)),
+                new ExelyPmsApi.Service("bad", 0, "x", new BigDecimal("1"), null, 13L, false),
+                // bir kunda bitta yashashga ikki marta bir xil id (masalan, erta kirish ikki qismda) — ikkalasi ham hisobga olinadi
+                new ExelyPmsApi.Service("early", 3, "Early check-in", new BigDecimal("750000"), "20261002", 13L, false),
+                new ExelyPmsApi.Service("early", 3, "Early check-in", new BigDecimal("750000"), "20261002", 13L, false)),
                 List.of(new ExelyPmsApi.ServiceReservation(11L, "US-1", new BigDecimal("69.61"), "USD", new BigDecimal("11808.76")),
                         new ExelyPmsApi.ServiceReservation(12L, "US-1", new BigDecimal("69.61"), "USD", new BigDecimal("11808.76")),
                         new ExelyPmsApi.ServiceReservation(13L, "UZ-1", new BigDecimal("500000"), "UZS", BigDecimal.ONE),
@@ -125,8 +128,8 @@ class ExelyPmsMapperTest {
 
         var rows = ExelyPmsMapper.toServices(data, 5L, "UZS", cbu);
 
-        assertEquals(6, rows.size(), "sanasiz qator tashlanadi");
-        assertEquals(6, rows.stream().map(ServiceRevenue::getExternalId).distinct().count(),
+        assertEquals(8, rows.size(), "sanasiz qator tashlanadi, takroriy erta kirish saqlanadi");
+        assertEquals(7, rows.stream().map(ServiceRevenue::getExternalId).distinct().count(),
                 "takroriy nonushta id'si turli yashashlarda — alohida qatorlar");
         assertEquals(0, new BigDecimal("538597.54").compareTo(rows.get(0).getAmount()), "45.61 × 11808.76 (Exely kursi)");
         assertEquals(0, new BigDecimal("283410.24").compareTo(rows.get(1).getAmount()), "24 × 11808.76");

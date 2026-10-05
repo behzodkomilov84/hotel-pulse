@@ -121,10 +121,8 @@ public class ExelyBookingWriter {
     public int replacePmsServices(Long hotelId, String hotelCurrency, LocalDate from, LocalDate to,
                                   ExelyPmsApi.ServicesData src, MoneyConverter money) {
         serviceRevenueRepository.deleteInWindow(hotelId, from, to);
-        Set<String> seen = new HashSet<>();
         List<ServiceRevenue> rows = ExelyPmsMapper.toServices(src, hotelId, hotelCurrency, money).stream()
                 .filter(s -> !s.getServiceDate().isBefore(from) && !s.getServiceDate().isAfter(to))
-                .filter(s -> seen.add(s.getExternalId()))
                 .toList();
         serviceRevenueRepository.saveAll(rows);
         hotelRepository.findById(hotelId).ifPresent(h -> {

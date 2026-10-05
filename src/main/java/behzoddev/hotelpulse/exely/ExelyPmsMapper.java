@@ -193,7 +193,10 @@ public final class ExelyPmsMapper {
         return result;
     }
 
-    /** Xizmat id bronlar orasida takrorlanadi (masalan, nonushta) — yagona kalit: id + yashash + kun. */
+    /**
+     * Xizmat id bronlar orasida takrorlanadi (masalan, nonushta) — kalit: id + yashash + kun. Bir kunda bitta
+     * yashashga bir xil id'li xizmat bir necha marta kelishi ham mumkin — ular ham alohida qator (jadvalda yagonalik talab qilinmaydi).
+     */
     public static String serviceKey(ExelyPmsApi.Service s) {
         return trim(s.id() + ":" + s.reservationId() + ":" + s.date(), 160);
     }

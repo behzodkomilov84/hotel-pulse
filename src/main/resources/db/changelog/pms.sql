@@ -94,3 +94,13 @@ SET pms_bookings_synced_until = NULL,
     pms_services_until        = NULL
 WHERE exely_pms_key IS NOT NULL;
 DELETE FROM service_revenue;
+
+--changeset behzod:17
+-- Bir kunda bitta yashashga bir xil id'li xizmat bir necha marta kelishi mumkin — avval faqat bittasi
+-- saqlanardi. Faqat xizmatlar qayta olinadi (bronlar va to'lovlar emas).
+UPDATE hotels
+SET pms_services_from  = NULL,
+    pms_services_until = NULL
+WHERE exely_pms_key IS NOT NULL;
+DELETE FROM service_revenue;
+DELETE FROM exely_raw WHERE kind IN ('service', 'service_cancelled');
