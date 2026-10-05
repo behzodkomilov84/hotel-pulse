@@ -73,6 +73,33 @@ class DebtAnalyzerTest {
     }
 
     @Test
+    void multiRoomBookingIsOneEntryAndPlaceholderNamesAreHidden() {
+        List<Row> rows = new ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            rows.add(new Row("BIG", "--- ---", "Direct", TODAY.minusDays(520), TODAY.minusDays(518), 2,
+                    Category.NOT_CHECKED_OUT, BigDecimal.valueOf(4_000_000), BigDecimal.ZERO,
+                    BigDecimal.valueOf(4_000_000), 518));
+        }
+        rows.add(row("NEW", "Direct", Category.CHECKED_OUT, 9_000_000, 0, 20, -20));
+        DebtAnalysis a = analyzer.analyze(report(rows), "UZS", true);
+
+        assertThat(a.priorities()).extracting(DebtAnalysis.Priority::bookingNumber).containsExactly("BIG", "NEW");
+        DebtAnalysis.Priority big = a.priorities().get(0);
+        assertThat(big.debt()).isEqualByComparingTo("16000000");
+        assertThat(big.reason()).startsWith("4 ta xona");
+        assertThat(big.guestName()).isNull();
+    }
+
+    @Test
+    void veryOldDebtDoesNotOutweighLargerRecentOne() {
+        List<Row> rows = List.of(
+                row("OLD", "Direct", Category.CHECKED_OUT, 2_000_000, 0, 500, -500),
+                row("BIGGER", "Direct", Category.CHECKED_OUT, 6_000_000, 0, 30, -30));
+        DebtAnalysis a = analyzer.analyze(report(rows), "UZS", true);
+        assertThat(a.priorities().get(0).bookingNumber()).isEqualTo("BIGGER");
+    }
+
+    @Test
     void mostlyInHouseIsNormalAndOtaIsFlagged() {
         List<Row> rows = new ArrayList<>();
         for (int i = 0; i < 6; i++) {

@@ -3,7 +3,10 @@
 <head th:replace="~{fragments/layout :: head('Qarzdorlik — ' + ${hotel.name})}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('dashboard')}"></header>
-<main class="container" th:with="cur=${hotel.currency}, s=${report.summary}">
+<main class="container" th:with="cur=${hotel.currency}, s=${report.summary},
+        cats=${@fmt.moneyShortParts(s.total, {s.inHouse, s.checkedOut, s.notCheckedOut}, cur)},
+        agingMoney=${@fmt.moneyShortParts(s.total, report.aging.![amount], cur)},
+        agingPct=${@fmt.pctParts(report.aging.![share])}">
     <div class="page-head reveal">
         <div>
             <a class="back-link" th:href="@{/hotels/{id}(id=${hotel.id})}">← <span th:text="${hotel.name}">Mehmonxona</span></a>
@@ -40,7 +43,7 @@
                 <span class="stat-label">Hozir yashayapti</span>
                 <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9"/></svg></span>
             </div>
-            <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.inHouse, cur)}">0</div>
+            <div class="stat-value" data-count th:text="${cats[0]}">0</div>
             <div class="stat-sub" th:text="${s.inHouseCount} + ' ta yashash'"></div>
         </a>
         <a class="card stat stat-link" th:href="@{/hotels/{id}/debts(id=${hotel.id}, category='CHECKED_OUT')}"
@@ -49,7 +52,7 @@
                 <span class="stat-label">Ketgan</span>
                 <span class="stat-icon i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span>
             </div>
-            <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.checkedOut, cur)}">0</div>
+            <div class="stat-value" data-count th:text="${cats[1]}">0</div>
             <div class="stat-sub" th:text="${s.checkedOutCount} + ' ta yashash'"></div>
         </a>
         <a class="card stat stat-link stat-warn" th:href="@{/hotels/{id}/debts(id=${hotel.id}, category='NOT_CHECKED_OUT')}"
@@ -58,7 +61,7 @@
                 <span class="stat-label">Vyselenie qilinmagan</span>
                 <span class="stat-icon i-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
             </div>
-            <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.notCheckedOut, cur)}">0</div>
+            <div class="stat-value" data-count th:text="${cats[2]}">0</div>
             <div class="stat-sub" th:text="${s.notCheckedOutCount} + ' ta — ketish sanasi o\'tgan, PMS\'da hamon yashayapti'"></div>
         </a>
     </div>
@@ -70,12 +73,12 @@
             <div class="aging-item" th:each="a, st : ${report.aging}">
                 <div class="aging-top">
                     <span class="aging-label" th:text="${a.label}"></span>
-                    <span class="aging-pct" th:text="${@fmt.pct(a.share)}"></span>
+                    <span class="aging-pct" th:text="${agingPct[st.index]}"></span>
                 </div>
                 <div class="meter"><div class="meter-fill" th:classappend="${st.index >= 2} ? 'weak'"
                                         th:attr="data-fill=${a.share}"></div></div>
                 <div class="aging-sum">
-                    <b th:text="${@fmt.moneyShort(a.amount, cur)}"></b>
+                    <b th:text="${agingMoney[st.index]}"></b>
                     <span class="muted" th:text="' · ' + ${a.count} + ' ta'"></span>
                 </div>
             </div>

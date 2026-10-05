@@ -49,6 +49,9 @@ public class DebtAnalyzer {
                     List.of(), List.of(), List.of());
         }
         Stats st = new Stats(report.rows(), s);
+        // Kartalardagi bilan bir xil yaxlitlash — qismlar yig'indisi jamiga teng.
+        st.catMoney = fmt.moneyShortParts(s.total(), List.of(s.inHouse(), s.checkedOut(), s.notCheckedOut()), currency);
+        st.catPct = fmt.pctParts(List.of(st.inHouseShare, st.checkedOutShare, st.notCheckedOutShare));
         return new DebtAnalysis(warning, summary(st, currency), risks(st, currency), actions(st, currency),
                 priorities(report.rows(), LocalDate.now(clock)));
     }
@@ -62,9 +65,9 @@ public class DebtAnalyzer {
                 .append(" ta yashash bo'yicha, o'rtacha ").append(money(st.average, cur)).append(". ");
 
         List<String> parts = new ArrayList<>();
-        if (s.inHouseCount() > 0) parts.add(pct(st.inHouseShare) + " hozir yashayotganlarda");
-        if (s.checkedOutCount() > 0) parts.add(pct(st.checkedOutShare) + " ketgan mehmonlarda");
-        if (s.notCheckedOutCount() > 0) parts.add(pct(st.notCheckedOutShare) + " vyselenie qilinmagan yashashlarda");
+        if (s.inHouseCount() > 0) parts.add(st.catPct.get(0) + " hozir yashayotganlarda");
+        if (s.checkedOutCount() > 0) parts.add(st.catPct.get(1) + " ketgan mehmonlarda");
+        if (s.notCheckedOutCount() > 0) parts.add(st.catPct.get(2) + " vyselenie qilinmagan yashashlarda");
         sb.append("Qarzning ").append(String.join(", ", parts)).append(". ");
 
         if (st.notCheckedOutShare >= MAJOR_SHARE) {
@@ -87,20 +90,21 @@ public class DebtAnalyzer {
         DebtReport.Summary s = st.s;
         List<Point> risks = new ArrayList<>();
         if (s.notCheckedOutCount() > 0) {
-            risks.add(new Point(level(st.notCheckedOutShare), "Vyselenie qilinmagan: " + money(s.notCheckedOut(), cur)
+            risks.add(new Point(level(st.notCheckedOutShare), "Vyselenie qilinmagan: " + st.catMoney.get(2)
                     + " (" + s.notCheckedOutCount() + " ta)",
                     "Ketish sanasi o'tgan, lekin PMS'da hamon \"yashayapti\". Ko'pincha bu haqiqiy qarz emas — "
                             + "resepshn vyselenie qilishni unutgan; lekin to'lanmay ketgan mehmonlar ham bo'lishi mumkin."));
         }
         if (s.checkedOutCount() > 0) {
-            risks.add(new Point(level(st.checkedOutShare), "Ketgan mehmonlar qarzi: " + money(s.checkedOut(), cur)
+            risks.add(new Point(level(st.checkedOutShare), "Ketgan mehmonlar qarzi: " + st.catMoney.get(1)
                     + " (" + s.checkedOutCount() + " ta)",
                     "Mehmon ketib bo'lgan — vaqt o'tgan sari undirish qiyinlashadi."));
         }
         if (st.old60.signum() > 0) {
             String text = "Ketish sanasidan 60 kundan ko'p o'tgan qarzlar — jamining " + pct(st.oldShare) + ".";
             if (st.old90.signum() > 0) {
-                text += " Shundan " + money(st.old90, cur) + " — 90 kundan eski, undirish ehtimoli past.";
+                text += " Shundan " + money(st.old90, cur) + " — 90 kundan eski: undirish ehtimoli past yoki o'sha "
+                        + "davrdagi to'lovlar PMS'da qayd etilmagan — Exely'dagi \"Финансовый учет\" bilan solishtiring.";
             }
             risks.add(new Point(st.oldShare >= MAJOR_SHARE ? Level.HIGH : Level.MEDIUM,
                     "Eski qarz: " + money(st.old60, cur), text));
@@ -134,7 +138,7 @@ public class DebtAnalyzer {
         if (s.notCheckedOutCount() > 0) {
             actions.add(new Point(level(st.notCheckedOutShare), "Resepshn",
                     "PMS'da " + s.notCheckedOutCount() + " ta yashashni tekshirib, vyselenie qiling — qarz ko'rsatkichi "
-                            + money(s.notCheckedOut(), cur) + " gacha aniqlashadi. Haqiqatan to'lamay ketganlarni alohida belgilang."));
+                            + st.catMoney.get(2) + " gacha aniqlashadi. Haqiqatan to'lamay ketganlarni alohida belgilang."));
         }
         if (s.checkedOutCount() > 0) {
             actions.add(new Point(level(st.checkedOutShare), "Buxgalteriya",
@@ -152,7 +156,7 @@ public class DebtAnalyzer {
         }
         if (s.inHouseCount() > 0) {
             actions.add(new Point(Level.LOW, "Resepshn",
-                    "Hozir yashayotgan " + s.inHouseCount() + " ta mehmondan (" + money(s.inHouse(), cur)
+                    "Hozir yashayotgan " + s.inHouseCount() + " ta mehmondan (" + st.catMoney.get(0)
                             + ") check-out paytida to'liq to'lovni nazorat qiling; uzoq yashaydiganlardan oraliq to'lov oling."));
         }
         if (st.unpaidCount * 4 >= st.rows.size() && st.unpaidCount > 0) {
@@ -165,27 +169,58 @@ public class DebtAnalyzer {
 
     // ---------------------------------------------------------------- Birinchi navbat
 
-    /** Ball: qarz × (1 + yosh/30) × toifa vazni. Ketganlar — eng yuqori, uzoq yashaydiganlar — past. */
+    /**
+     * Ball: qarz × (1 + yosh/30) × toifa vazni. Ketganlar — eng yuqori, uzoq yashaydiganlar — past.
+     * Ko'p xonali bron (bir nechta yashash) — bitta qator bo'lib, qarzlari qo'shiladi.
+     */
     private List<Priority> priorities(List<Row> rows, LocalDate today) {
-        return rows.stream()
-                .sorted(Comparator.comparingDouble((Row r) -> -score(r, today)))
+        Map<String, List<Row>> byBooking = new LinkedHashMap<>();
+        for (Row r : rows) {
+            byBooking.computeIfAbsent(r.bookingNumber(), k -> new ArrayList<>()).add(r);
+        }
+        record Group(Row main, List<Row> rows, BigDecimal debt, BigDecimal paid, BigDecimal total, double score) {
+        }
+        return byBooking.values().stream()
+                .map(g -> {
+                    Row main = g.stream().max(Comparator.comparingDouble(r -> score(r, today))).orElseThrow();
+                    return new Group(main, g,
+                            g.stream().map(Row::debt).reduce(BigDecimal.ZERO, BigDecimal::add),
+                            g.stream().map(Row::paid).reduce(BigDecimal.ZERO, BigDecimal::add),
+                            g.stream().map(Row::total).reduce(BigDecimal.ZERO, BigDecimal::add),
+                            g.stream().mapToDouble(r -> score(r, today)).sum());
+                })
+                .sorted(Comparator.comparingDouble((Group g) -> -g.score()))
                 .limit(PRIORITY_COUNT)
-                .map(r -> new Priority(r.bookingNumber(), r.guestName(), r.source(), r.debt(), r.paid(), r.total(),
-                        reason(r, today)))
+                .map(g -> {
+                    String reason = reason(g.main(), g.paid(), today);
+                    if (g.rows().size() > 1) {
+                        reason = g.rows().size() + " ta xona · " + reason;
+                    }
+                    return new Priority(g.main().bookingNumber(), guestName(g.rows()), g.main().source(),
+                            g.debt(), g.paid(), g.total(), reason);
+                })
                 .toList();
     }
 
+    /** Juda eski qarz ballni cheksiz oshirmasin — 90 kundan keyin yosh ta'siri o'smaydi. */
     static double score(Row r, LocalDate today) {
         double weight = switch (r.category()) {
             case CHECKED_OUT -> 1.5;
             case NOT_CHECKED_OUT -> 1.2;
             case IN_HOUSE -> r.departure().isAfter(today.plusDays(1)) ? 0.3 : 1.0;
         };
-        return r.debt().doubleValue() * (1 + r.ageDays() / 30.0) * weight;
+        return r.debt().doubleValue() * (1 + Math.min(r.ageDays(), 90) / 30.0) * weight;
     }
 
-    private static String reason(Row r, LocalDate today) {
-        String paid = r.paid().signum() == 0 ? "umuman to'lanmagan" : "qisman to'langan";
+    /** PMS'dagi "--- ---" kabi to'ldiruvchi ismlar — ism yo'q deb hisoblanadi. */
+    private static String guestName(List<Row> rows) {
+        return rows.stream().map(Row::guestName)
+                .filter(n -> n != null && n.chars().anyMatch(Character::isLetter))
+                .findFirst().orElse(null);
+    }
+
+    private static String reason(Row r, BigDecimal paidTotal, LocalDate today) {
+        String paid = paidTotal.signum() == 0 ? "umuman to'lanmagan" : "qisman to'langan";
         return switch (r.category()) {
             case CHECKED_OUT -> (r.ageDays() == 0 ? "Bugun ketgan, " : "Ketgan, " + r.ageDays() + " kun o'tdi, ") + paid + " — undirish kerak";
             case NOT_CHECKED_OUT -> "Ketish sanasidan " + r.ageDays() + " kun o'tgan, PMS'da hamon yashayapti — tekshiring";
@@ -229,6 +264,7 @@ public class DebtAnalyzer {
         String topSource;
         double topSourceShare;
         boolean topSourceIsOta;
+        List<String> catMoney, catPct;
 
         Stats(List<Row> rows, DebtReport.Summary s) {
             this.rows = rows;

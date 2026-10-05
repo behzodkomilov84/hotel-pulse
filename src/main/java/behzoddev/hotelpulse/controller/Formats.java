@@ -3,9 +3,14 @@ package behzoddev.hotelpulse.controller;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -90,6 +95,76 @@ public class Formats {
             return "so'm";
         }
         return currency;
+    }
+
+    /**
+     * Jamining qismlari qisqa ko'rinishda ("753,3 mln so'm") — yaxlitlangandan keyin ham yig'indisi
+     * {@link #moneyShort} ko'rsatgan jamiga aniq teng bo'ladi ("eng katta qoldiq" usuli).
+     */
+    public List<String> moneyShortParts(BigDecimal total, List<BigDecimal> parts, String currency) {
+        BigDecimal abs = total == null ? BigDecimal.ZERO : total.abs();
+        BigDecimal unit;
+        String suffix;
+        if (abs.compareTo(BigDecimal.valueOf(1_000_000_000)) >= 0) {
+            unit = BigDecimal.valueOf(1_000_000_000);
+            suffix = " mlrd ";
+        } else if (abs.compareTo(BigDecimal.valueOf(1_000_000)) >= 0) {
+            unit = BigDecimal.valueOf(1_000_000);
+            suffix = " mln ";
+        } else {
+            return parts.stream().map(p -> money(p, currency)).toList();
+        }
+        long target = total.divide(unit, 1, RoundingMode.HALF_UP).movePointRight(1).longValueExact();
+        double[] exact = parts.stream().mapToDouble(p -> p.divide(unit, MathContext.DECIMAL64).doubleValue() * 10).toArray();
+        long[] tenths = allocate(exact, target);
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < tenths.length; i++) {
+            result.add(tenths[i] == 0 && parts.get(i).signum() == 0
+                    ? money(BigDecimal.ZERO, currency)
+                    : decimal(BigDecimal.valueOf(tenths[i], 1)) + suffix + currencyLabel(currency));
+        }
+        return result;
+    }
+
+    /** Ulushlar foizda ("53,1%") — yig'indisi aniq 100,0% bo'ladi (agar ulushlar yig'indisi 1 bo'lsa). */
+    public List<String> pctParts(List<Double> shares) {
+        double sum = shares.stream().mapToDouble(Double::doubleValue).sum();
+        long[] tenths = allocate(shares.stream().mapToDouble(s -> s * 1000).toArray(), Math.round(sum * 1000));
+        List<String> result = new ArrayList<>();
+        for (long t : tenths) {
+            result.add(new DecimalFormat("0.0", SYMBOLS).format(t / 10.0) + "%");
+        }
+        return result;
+    }
+
+    /** Aniq qiymatlarni butun songa yaxlitlaydi, yig'indisi target bo'lsin: avval pastga, qolganini eng katta kasr qismlarga. */
+    static long[] allocate(double[] exact, long target) {
+        int n = exact.length;
+        long[] result = new long[n];
+        long sum = 0;
+        for (int i = 0; i < n; i++) {
+            result[i] = (long) Math.floor(exact[i]);
+            sum += result[i];
+        }
+        if (n == 0) {
+            return result;
+        }
+        Integer[] byFraction = new Integer[n];
+        for (int i = 0; i < n; i++) {
+            byFraction[i] = i;
+        }
+        Arrays.sort(byFraction, Comparator.comparingDouble(i -> -(exact[i] - Math.floor(exact[i]))));
+        for (int k = 0; sum < target; k = (k + 1) % n) {
+            result[byFraction[k]]++;
+            sum++;
+        }
+        for (int k = n - 1; sum > target; k = (k - 1 + n) % n) {
+            if (result[byFraction[k]] > 0) {
+                result[byFraction[k]]--;
+                sum--;
+            }
+        }
+        return result;
     }
 
     private static String decimal(BigDecimal v) {
