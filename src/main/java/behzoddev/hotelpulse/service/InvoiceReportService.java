@@ -24,10 +24,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Xizmatlar → Hisob-fakturalar: qarzdor yashashlar bo'yicha Exely'da hisob-faktura yozilganmi.
- * Qarz — Exely PMS qoldig'i (Qarzdorlik hisoboti bilan bir xil); hisob-fakturalar — Exely'dan olingan
- * "/bookings/{raqam}/invoices" (xom arxiv). Hisob-faktura yashashga (roomStayId) bog'lanadi; yashashi
- * ko'rsatilmagan hisob-faktura butun bron uchun hisoblanadi.
+ * Xizmatlar → Hisob-fakturalar: qarzdor yashashlar (Exely PMS qoldig'i) va ularning Exely hisoblari.
+ *
+ * Diqqat: Exely "/bookings/{raqam}/invoices" — rasmiy (soliq) hisob-faktura EMAS, Exely har bir bron uchun
+ * avtomatik ochadigan hisob (счёт, folio): raqami bron raqamidan ("1264938911-01"), to'lovchi va qatorlar.
+ * Shuning uchun bu yerda "hisob-faktura yozilganmi" aniqlanmaydi — rasmiy hisob-faktura manbasi
+ * (qo'lda belgilash yoki Didox/Faktura.uz) tanlangach qo'shiladi.
+ * Hisob yashashga roomStayId bo'yicha bog'lanadi; yashashi ko'rsatilmagan hisob butun bron uchun hisoblanadi.
  */
 @Service
 @RequiredArgsConstructor
@@ -39,55 +42,36 @@ public class InvoiceReportService {
     private final ExelyRawStore raw;
     private final Clock clock;
 
-    public enum Status {
-        YES("Yozilgan"), NO("Yozilmagan");
-
-        private final String label;
-
-        Status(String label) {
-            this.label = label;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-    }
-
+    /** @param accountNumbers Exely hisoblari (folio) raqamlari; accountTotal — ulardagi qatorlar summasi */
     public record Row(Long hotelId, String hotelName, String currency, String bookingNumber, String guestName,
                       String source, LocalDate arrival, LocalDate departure, Category category,
                       BigDecimal total, BigDecimal debt, long ageDays,
-                      boolean invoiced, int invoiceCount, String invoiceNumbers, String payer, BigDecimal invoiceTotal) {
-
-        public Status status() {
-            return invoiced ? Status.YES : Status.NO;
-        }
+                      int accountCount, String accountNumbers, String payer, BigDecimal accountTotal) {
     }
 
-    public record Summary(long count, BigDecimal debt, long invoicedCount, BigDecimal invoicedDebt,
-                          long missingCount, BigDecimal missingDebt) {
+    public record Summary(long count, BigDecimal debt) {
     }
 
     public record Result(List<Row> rows, Summary summary, long total, int page, int pages) {
     }
 
-    /** Filtr va saralash qo'llangan barcha qatorlar (eksport uchun) + umumiy ko'rsatkichlar (status filtrisiz). */
+    /** Qidiruv va saralash qo'llangan barcha qatorlar (eksport uchun) + umumiy ko'rsatkichlar. */
     @Transactional(readOnly = true)
-    public Result report(List<Hotel> hotels, Status status, String query, String sort, boolean desc, int page) {
+    public Result report(List<Hotel> hotels, String query, String sort, boolean desc, int page) {
         LocalDate today = LocalDate.now(clock);
         List<Row> all = new ArrayList<>();
         for (Hotel h : hotels) {
             all.addAll(rows(h, today));
         }
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
-        List<Row> searched = all.stream().filter(r -> q.isEmpty() || matches(r, q)).toList();
-        Summary summary = summary(searched);
-        List<Row> filtered = searched.stream()
-                .filter(r -> status == null || r.status() == status)
+        List<Row> filtered = all.stream()
+                .filter(r -> q.isEmpty() || matches(r, q))
                 .sorted(comparator(sort, desc))
                 .toList();
+        BigDecimal debt = filtered.stream().map(Row::debt).reduce(BigDecimal.ZERO, BigDecimal::add);
         int pages = Math.max(1, (filtered.size() + PAGE_SIZE - 1) / PAGE_SIZE);
         int current = Math.min(Math.max(page, 1), pages);
-        return new Result(filtered, summary, filtered.size(), current, pages);
+        return new Result(filtered, new Summary(filtered.size(), debt), filtered.size(), current, pages);
     }
 
     /** Joriy sahifadagi qatorlar. */
@@ -101,25 +85,24 @@ public class InvoiceReportService {
         if (debtors.isEmpty()) {
             return List.of();
         }
-        Map<String, String> invoices = raw.payloads(hotel.getId(), ExelyRawStore.INVOICES);
+        Map<String, String> accounts = raw.payloads(hotel.getId(), ExelyRawStore.INVOICES);
         List<Row> rows = new ArrayList<>();
         for (Booking b : debtors) {
             String number = DebtService.bookingNumber(b);
-            String stayId = stayId(b);
-            Matched m = match(invoices.get(number), stayId);
+            Matched m = match(accounts.get(number), stayId(b));
             Category category = DebtService.pmsCategory(b, today);
             long age = category == Category.IN_HOUSE ? 0 : Math.max(0, ChronoUnit.DAYS.between(b.getDepartureDate(), today));
             rows.add(new Row(hotel.getId(), hotel.getName(), hotel.getCurrency(), number, b.getGuestName(), b.getSource(),
                     b.getArrivalDate(), b.getDepartureDate(), category, b.getTotalAmount(), b.getBalanceDue(), age,
-                    m.count > 0, m.count, String.join(", ", m.numbers), String.join(", ", m.payers), m.total));
+                    m.count, String.join(", ", m.numbers), String.join(", ", m.payers), m.total));
         }
         return rows;
     }
 
-    private record Matched(int count, Set<String> numbers, Set<String> payers, BigDecimal total) {
+    record Matched(int count, Set<String> numbers, Set<String> payers, BigDecimal total) {
     }
 
-    /** Yashashga tegishli hisob-fakturalar (roomStayId mos yoki yashash ko'rsatilmagan). */
+    /** Yashashga tegishli Exely hisoblari (roomStayId mos yoki yashash ko'rsatilmagan). */
     static Matched match(String json, String stayId) {
         int count = 0;
         Set<String> numbers = new LinkedHashSet<>();
@@ -167,35 +150,16 @@ public class InvoiceReportService {
 
     private static boolean matches(Row r, String q) {
         return contains(r.bookingNumber(), q) || contains(r.guestName(), q) || contains(r.payer(), q)
-                || contains(r.invoiceNumbers(), q) || contains(r.hotelName(), q) || contains(r.source(), q);
+                || contains(r.accountNumbers(), q) || contains(r.hotelName(), q) || contains(r.source(), q);
     }
 
     private static boolean contains(String s, String q) {
         return s != null && s.toLowerCase(Locale.ROOT).contains(q);
     }
 
-    private static Summary summary(List<Row> rows) {
-        long yes = 0;
-        long no = 0;
-        BigDecimal debt = BigDecimal.ZERO;
-        BigDecimal yesDebt = BigDecimal.ZERO;
-        BigDecimal noDebt = BigDecimal.ZERO;
-        for (Row r : rows) {
-            debt = debt.add(r.debt());
-            if (r.invoiced()) {
-                yes++;
-                yesDebt = yesDebt.add(r.debt());
-            } else {
-                no++;
-                noDebt = noDebt.add(r.debt());
-            }
-        }
-        return new Summary(rows.size(), debt, yes, yesDebt, no, noDebt);
-    }
-
-    /** Saralash ustunlari: hotel, booking, guest, arrival, departure, category, debt, invoice, invoiceTotal, age. */
+    /** Saralash ustunlari. */
     public static final List<String> SORTS = List.of("hotel", "booking", "guest", "payer", "arrival", "departure",
-            "category", "debt", "invoice", "invoiceTotal", "age");
+            "category", "debt", "accountTotal", "age");
 
     static Comparator<Row> comparator(String sort, boolean desc) {
         Comparator<Row> c = switch (sort == null ? "" : sort) {
@@ -206,8 +170,7 @@ public class InvoiceReportService {
             case "arrival" -> Comparator.comparing(Row::arrival);
             case "departure" -> Comparator.comparing(Row::departure);
             case "category" -> Comparator.comparing(Row::category);
-            case "invoice" -> Comparator.comparing(Row::invoiced);
-            case "invoiceTotal" -> Comparator.comparing(Row::invoiceTotal);
+            case "accountTotal" -> Comparator.comparing(Row::accountTotal);
             case "age" -> Comparator.comparingLong(Row::ageDays);
             default -> Comparator.comparing(Row::debt);
         };

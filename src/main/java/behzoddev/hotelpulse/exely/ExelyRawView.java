@@ -66,8 +66,8 @@ public final class ExelyRawView {
                 text("Valyuta", "currency"), text("Turi (actionKind)", "actionKind"), text("Usul", "paymentMethod"),
                 text("Tizim", "paymentSystem"), text("Folio", "folioNumber"), text("Xodim", "username"),
                 date("Bekor qilingan", "cancellationDateTime"), text("Izoh", "comment")));
-        add(ExelyRawStore.INVOICES, "Hisob-fakturalar", List.of(
-                text("Bron", "@booking"), new Column("Hisob-fakturalar", "", Type.COUNT),
+        add(ExelyRawStore.INVOICES, "Exely hisoblari (folio, bronlar bo'yicha)", List.of(
+                text("Bron", "@booking"), new Column("Hisoblar soni", "", Type.COUNT),
                 text("Raqam (1-si)", "[0].number"), text("To'lovchi (1-si)", "[0].payer.name"),
                 text("Qatorlar (1-si)", "[0].items")));
         add(ExelyRawStore.GUEST, "Mehmonlar", List.of(

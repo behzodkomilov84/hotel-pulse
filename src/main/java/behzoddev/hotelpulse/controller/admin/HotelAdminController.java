@@ -140,7 +140,7 @@ public class HotelAdminController {
             java.util.Map.entry(ExelyRawStore.SERVICE, "Xizmatlar (kunlik)"),
             java.util.Map.entry(ExelyRawStore.SERVICE_CANCELLED, "Bekor qilingan xizmatlar"),
             java.util.Map.entry(ExelyRawStore.PAYMENT, "To'lovlar"),
-            java.util.Map.entry(ExelyRawStore.INVOICES, "Hisob-fakturalar"),
+            java.util.Map.entry(ExelyRawStore.INVOICES, "Exely hisoblari (bronlar bo'yicha)"),
             java.util.Map.entry(ExelyRawStore.GUEST, "Mehmonlar"),
             java.util.Map.entry(ExelyRawStore.CUSTOMER, "To'lovchilar"),
             java.util.Map.entry(ExelyRawStore.AGENT, "Agentlar"),

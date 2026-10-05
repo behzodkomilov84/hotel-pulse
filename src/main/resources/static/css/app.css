@@ -326,8 +326,6 @@ td.wrap { white-space: normal; }
 @keyframes live { 70% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
 
 .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 28px; }
-.stats-grid.stats-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (max-width: 760px) { .stats-grid.stats-grid-3 { grid-template-columns: 1fr; } }
 
 /* Saralanadigan jadval sarlavhalari */
 .sort-link { display: inline-flex; align-items: center; gap: 4px; color: inherit; white-space: nowrap; }

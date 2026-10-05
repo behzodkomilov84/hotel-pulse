@@ -5,7 +5,6 @@ import behzoddev.hotelpulse.security.CustomUserDetails;
 import behzoddev.hotelpulse.service.HotelService;
 import behzoddev.hotelpulse.service.InvoiceReportService;
 import behzoddev.hotelpulse.service.InvoiceReportService.Row;
-import behzoddev.hotelpulse.service.InvoiceReportService.Status;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -25,7 +24,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-/** "Xizmatlar" menyusi: hisob-fakturalar (qarzdor yashashlar bo'yicha yozilganmi). */
+/** "Xizmatlar" menyusi: hisob-fakturalar — qarzdor yashashlar va ularning Exely hisoblari (folio). */
 @Controller
 @RequestMapping("/services")
 @RequiredArgsConstructor
@@ -40,7 +39,6 @@ public class ServicesController {
     @GetMapping("/invoices")
     public String invoices(@AuthenticationPrincipal CustomUserDetails user,
                            @RequestParam(required = false) Long hotel,
-                           @RequestParam(required = false) Status status,
                            @RequestParam(required = false) String q,
                            @RequestParam(defaultValue = "debt") String sort,
                            @RequestParam(defaultValue = "desc") String dir,
@@ -49,11 +47,9 @@ public class ServicesController {
         List<Hotel> accessible = hotelService.accessibleHotels(user);
         String s = InvoiceReportService.SORTS.contains(sort) ? sort : "debt";
         boolean desc = !"asc".equals(dir);
-        InvoiceReportService.Result result = invoices.report(selected(accessible, hotel), status, q, s, desc, page);
+        InvoiceReportService.Result result = invoices.report(selected(accessible, hotel), q, s, desc, page);
         model.addAttribute("hotels", accessible);
         model.addAttribute("hotel", hotel);
-        model.addAttribute("status", status);
-        model.addAttribute("statuses", Status.values());
         model.addAttribute("q", q);
         model.addAttribute("sort", s);
         model.addAttribute("dir", desc ? "desc" : "asc");
@@ -67,16 +63,15 @@ public class ServicesController {
     @GetMapping(value = "/invoices.csv", produces = "text/csv")
     public ResponseEntity<byte[]> invoicesCsv(@AuthenticationPrincipal CustomUserDetails user,
                                               @RequestParam(required = false) Long hotel,
-                                              @RequestParam(required = false) Status status,
                                               @RequestParam(required = false) String q,
                                               @RequestParam(defaultValue = "debt") String sort,
                                               @RequestParam(defaultValue = "desc") String dir) {
         List<Hotel> accessible = hotelService.accessibleHotels(user);
         String s = InvoiceReportService.SORTS.contains(sort) ? sort : "debt";
-        InvoiceReportService.Result result = invoices.report(selected(accessible, hotel), status, q, s, !"asc".equals(dir), 1);
+        InvoiceReportService.Result result = invoices.report(selected(accessible, hotel), q, s, !"asc".equals(dir), 1);
         StringBuilder sb = new StringBuilder("﻿");
         sb.append("Mehmonxona;Bron raqami;Mehmon;Manba;Kelish;Ketish;Holat;Yashash narxi;Qarz;Qarz yoshi (kun);"
-                + "Hisob-faktura;Hisob-fakturalar soni;Hisob-faktura raqamlari;To'lovchi;Hisob-faktura summasi;Valyuta\n");
+                + "Exely hisoblari soni;Exely hisob raqamlari;To'lovchi;Exely hisob summasi;Valyuta\n");
         for (Row r : result.rows()) {
             sb.append(csv(r.hotelName())).append(';')
                     .append(csv(r.bookingNumber())).append(';')
@@ -88,11 +83,10 @@ public class ServicesController {
                     .append(r.total().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
                     .append(r.debt().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
                     .append(r.ageDays()).append(';')
-                    .append(r.status().getLabel()).append(';')
-                    .append(r.invoiceCount()).append(';')
-                    .append(csv(r.invoiceNumbers())).append(';')
+                    .append(r.accountCount()).append(';')
+                    .append(csv(r.accountNumbers())).append(';')
                     .append(csv(r.payer())).append(';')
-                    .append(r.invoiceTotal().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
+                    .append(r.accountTotal().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
                     .append(csv(r.currency())).append('\n');
         }
         String file = "hisob-fakturalar-" + LocalDate.now(clock) + ".csv";

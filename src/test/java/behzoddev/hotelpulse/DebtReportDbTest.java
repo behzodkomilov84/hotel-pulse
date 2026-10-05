@@ -199,14 +199,16 @@ class DebtReportDbTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertTrue(html.contains("INV-1") && html.contains("Tour LLC"));
-        assertFalse(html.contains("INV-X"), "boshqa yashashning hisob-fakturasi hisobga olinmaydi");
+        assertFalse(html.contains("INV-X"), "boshqa yashashning hisobi hisobga olinmaydi");
         assertTrue(html.contains("3 ta yashash"));
+        assertTrue(html.contains("rasmiy hisob-faktura emas"), "Exely hisobi nima ekani ochiq aytiladi");
+        assertFalse(html.contains("Yozilmagan"), "noto'g'ri yozilgan/yozilmagan belgisi yo'q");
 
-        // Faqat yozilmaganlar.
-        String no = mvc.perform(get("/services/invoices").param("hotel", hotel.getId().toString())
-                        .param("status", "NO").with(user(owner)))
+        // Qidiruv — to'lovchi bo'yicha.
+        String byPayer = mvc.perform(get("/services/invoices").param("hotel", hotel.getId().toString())
+                        .param("q", "tour").with(user(owner)))
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-        assertTrue(no.contains("Valiyev") && no.contains("Smith") && !no.contains("Karimov"));
+        assertTrue(byPayer.contains("Karimov") && !byPayer.contains("Valiyev"));
 
         // Saralash: mehmon bo'yicha o'sish — Karimov birinchi.
         String sorted = mvc.perform(get("/services/invoices").param("hotel", hotel.getId().toString())
@@ -220,7 +222,8 @@ class DebtReportDbTest {
                 .andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
         assertTrue(csv.startsWith("﻿Mehmonxona;Bron raqami"));
         assertEquals(1 + 3, csv.lines().count());
-        assertTrue(csv.contains("pms-num-1;Karimov;") && csv.contains(";Yozilgan;1;INV-1;Tour LLC;1000000;"));
+        assertTrue(csv.lines().findFirst().orElseThrow().contains("Exely hisob raqamlari"));
+        assertTrue(csv.contains("pms-num-1;Karimov;") && csv.contains(";1;INV-1;Tour LLC;1000000;"));
 
         // Boshqa mehmonxona egasi bu mehmonxonani ko'rmaydi (hotel parametri bilan ham).
         CustomUserDetails stranger = new CustomUserDetails(saveUser("stranger-inv", Role.HOTEL_OWNER, Set.of(other)));

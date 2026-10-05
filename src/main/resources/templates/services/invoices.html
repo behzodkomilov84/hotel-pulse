@@ -8,44 +8,24 @@
         <div>
             <h1>Hisob-fakturalar</h1>
             <p class="subtitle">
-                <span>Qarzdor yashashlar bo'yicha Exely'da hisob-faktura yozilganmi</span>
+                <span th:text="${@fmt.number(sm.count)} + ' ta qarzdor yashash · qarz ' + ${@fmt.moneyShort(sm.debt, 'UZS')}"></span>
                 <span>·</span>
                 <span th:text="'holat: ' + ${#temporals.format(#temporals.createNow(), 'dd.MM.yyyy HH:mm')}"></span>
             </p>
         </div>
         <a class="btn btn-secondary"
-           th:href="@{/services/invoices.csv(hotel=${hotel}, status=${status}, q=${q}, sort=${sort}, dir=${dir})}">
+           th:href="@{/services/invoices.csv(hotel=${hotel}, q=${q}, sort=${sort}, dir=${dir})}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
             Excel'ga yuklash
         </a>
     </div>
 
-    <!-- ===== Umumiy (bosilsa — filtr) ===== -->
-    <div class="stats-grid stats-grid-3 stagger">
-        <a class="card stat stat-link" th:classappend="${status == null} ? 'selected'"
-           th:href="@{/services/invoices(hotel=${hotel}, q=${q}, sort=${sort}, dir=${dir})}">
-            <div class="stat-top"><span class="stat-label">Qarzdor yashashlar<span th:replace="~{fragments/layout :: tip(#{tip.invoices.all})}"></span></span></div>
-            <div class="stat-value" data-count th:text="${@fmt.number(sm.count)}">0</div>
-            <div class="stat-sub" th:text="'qarz: ' + ${@fmt.moneyShort(sm.debt, 'UZS')}"></div>
-        </a>
-        <a class="card stat stat-link" th:classappend="${status != null and status.name() == 'YES'} ? 'selected'"
-           th:href="@{/services/invoices(hotel=${hotel}, status='YES', q=${q}, sort=${sort}, dir=${dir})}">
-            <div class="stat-top">
-                <span class="stat-label">Hisob-faktura yozilgan<span th:replace="~{fragments/layout :: tip(#{tip.invoices.yes})}"></span></span>
-                <span class="stat-icon i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
-            </div>
-            <div class="stat-value" data-count th:text="${@fmt.number(sm.invoicedCount)}">0</div>
-            <div class="stat-sub" th:text="'qarz: ' + ${@fmt.moneyShort(sm.invoicedDebt, 'UZS')}"></div>
-        </a>
-        <a class="card stat stat-link stat-warn" th:classappend="${status != null and status.name() == 'NO'} ? 'selected'"
-           th:href="@{/services/invoices(hotel=${hotel}, status='NO', q=${q}, sort=${sort}, dir=${dir})}">
-            <div class="stat-top">
-                <span class="stat-label">Yozilmagan<span th:replace="~{fragments/layout :: tip(#{tip.invoices.no})}"></span></span>
-                <span class="stat-icon i-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
-            </div>
-            <div class="stat-value" data-count th:text="${@fmt.number(sm.missingCount)}">0</div>
-            <div class="stat-sub" th:text="'qarz: ' + ${@fmt.moneyShort(sm.missingDebt, 'UZS')}"></div>
-        </a>
+    <div class="alert alert-info reveal">
+        <span>
+            Bu yerda <b>qarzdor yashashlar</b> va ularning <b>Exely hisoblari</b> (folio) ko'rsatilgan. Exely hisobi —
+            rasmiy hisob-faktura emas: Exely uni har bir bron uchun avtomatik ochadi. Rasmiy hisob-faktura yozilgan-yozilmaganligi
+            manbasi (saytda qo'lda belgilash yoki Didox/Faktura.uz) tanlangach shu jadvalga qo'shiladi.
+        </span>
     </div>
 
     <!-- ===== Filtr ===== -->
@@ -54,18 +34,14 @@
             <option value="">Barcha mehmonxonalar</option>
             <option th:each="h : ${hotels}" th:value="${h.id}" th:text="${h.name}" th:selected="${hotel == h.id}"></option>
         </select>
-        <select name="status" aria-label="Hisob-faktura" onchange="this.form.submit()">
-            <option value="">Hisob-faktura: hammasi</option>
-            <option th:each="st : ${statuses}" th:value="${st}" th:text="${st.label}" th:selected="${status == st}"></option>
-        </select>
         <div class="search-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="search" name="q" th:value="${q}" placeholder="Bron, mehmon, to'lovchi yoki hisob-faktura raqami" aria-label="Qidiruv">
+            <input type="search" name="q" th:value="${q}" placeholder="Bron, mehmon, to'lovchi yoki hisob raqami" aria-label="Qidiruv">
         </div>
         <input type="hidden" name="sort" th:value="${sort}">
         <input type="hidden" name="dir" th:value="${dir}">
         <button type="submit" class="btn btn-primary">Qidirish</button>
-        <a class="btn btn-secondary" th:if="${(q != null and !q.isBlank()) or status != null or hotel != null}"
+        <a class="btn btn-secondary" th:if="${(q != null and !q.isBlank()) or hotel != null}"
            th:href="@{/services/invoices}">Tozalash</a>
     </form>
 
@@ -73,7 +49,6 @@
     <div class="card table-wrap reveal" th:if="${!rows.isEmpty()}">
         <p class="table-caption">
             <b th:text="${@fmt.number(result.total)} + ' ta yashash'"></b>
-            <span th:if="${status != null}" th:text="' · ' + ${status.label}"></span>
             <span th:if="${q != null and !q.isBlank()}" th:text="' · «' + ${q} + '»'"></span>
             <span class="muted">· ustun nomini bosing — saralash</span>
         </p>
@@ -87,9 +62,9 @@
                 <th th:replace="~{:: sortable('category', 'Holat', '')}"></th>
                 <th th:replace="~{:: sortable('debt', 'Qarz', 'num')}"></th>
                 <th th:replace="~{:: sortable('age', 'O\'tdi', 'num col-paid')}"></th>
-                <th th:replace="~{:: sortable('invoice', 'Hisob-faktura', '')}"></th>
+                <th>Exely hisobi</th>
                 <th th:replace="~{:: sortable('payer', 'To\'lovchi', 'col-total')}"></th>
-                <th th:replace="~{:: sortable('invoiceTotal', 'H/f summasi', 'num col-total')}"></th>
+                <th th:replace="~{:: sortable('accountTotal', 'Hisob summasi', 'num col-total')}"></th>
             </tr>
             </thead>
             <tbody>
@@ -105,13 +80,9 @@
                 <td class="num debt-cell" th:text="${@fmt.money(r.debt, r.currency)}"></td>
                 <td class="num col-paid" th:text="${r.ageDays > 0} ? ${r.ageDays} + ' kun' : '—'"
                     th:classappend="${r.ageDays > 90} ? 'text-danger'"></td>
-                <td>
-                    <span class="badge badge-ok" th:if="${r.invoiced}" th:text="'Yozilgan' + (${r.invoiceCount > 1} ? ' · ' + ${r.invoiceCount} : '')"></span>
-                    <span class="badge badge-warn" th:unless="${r.invoiced}">Yozilmagan</span>
-                    <div class="inv-numbers muted" th:if="${r.invoiced}" th:text="${r.invoiceNumbers}"></div>
-                </td>
+                <td class="inv-numbers mono" th:text="${r.accountNumbers.isEmpty()} ? '—' : ${r.accountNumbers}"></td>
                 <td class="wrap col-total" th:text="${r.payer.isEmpty()} ? '—' : ${r.payer}"></td>
-                <td class="num col-total" th:text="${r.invoiced} ? ${@fmt.money(r.invoiceTotal, r.currency)} : '—'"></td>
+                <td class="num col-total" th:text="${r.accountCount > 0} ? ${@fmt.money(r.accountTotal, r.currency)} : '—'"></td>
             </tr>
             </tbody>
         </table>
@@ -121,15 +92,15 @@
         <div class="empty-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
         </div>
-        <p><strong th:text="${sm.count == 0} ? 'Qarzdor yashash yo\'q' : 'Bu filtr bo\'yicha yozuv topilmadi'"></strong></p>
+        <p><strong th:text="${q == null or q.isBlank()} ? 'Qarzdor yashash yo\'q' : 'Bu qidiruv bo\'yicha yozuv topilmadi'"></strong></p>
     </div>
 
     <nav class="pager reveal" th:if="${result.pages > 1}" aria-label="Sahifalar">
         <a class="btn btn-secondary" th:classappend="${result.page <= 1} ? 'disabled'" th:attr="aria-disabled=${result.page <= 1}"
-           th:href="@{/services/invoices(hotel=${hotel}, status=${status}, q=${q}, sort=${sort}, dir=${dir}, page=${result.page - 1})}">← Oldingi</a>
+           th:href="@{/services/invoices(hotel=${hotel}, q=${q}, sort=${sort}, dir=${dir}, page=${result.page - 1})}">← Oldingi</a>
         <span class="pager-info" th:text="${result.page} + ' / ' + ${result.pages}"></span>
         <a class="btn btn-secondary" th:classappend="${result.page >= result.pages} ? 'disabled'" th:attr="aria-disabled=${result.page >= result.pages}"
-           th:href="@{/services/invoices(hotel=${hotel}, status=${status}, q=${q}, sort=${sort}, dir=${dir}, page=${result.page + 1})}">Keyingi →</a>
+           th:href="@{/services/invoices(hotel=${hotel}, q=${q}, sort=${sort}, dir=${dir}, page=${result.page + 1})}">Keyingi →</a>
     </nav>
 </main>
 
@@ -139,7 +110,7 @@
 <th th:fragment="sortable(key, label, cls)" th:class="${cls}"
     th:attr="aria-sort=${sort == key} ? (${dir == 'asc'} ? 'ascending' : 'descending') : 'none'">
     <a class="sort-link" th:classappend="${sort == key} ? 'active'"
-       th:href="@{/services/invoices(hotel=${hotel}, status=${status}, q=${q}, sort=${key},
+       th:href="@{/services/invoices(hotel=${hotel}, q=${q}, sort=${key},
                  dir=${sort == key and dir == 'desc'} ? 'asc' : 'desc')}">
         <span th:text="${label}"></span>
         <span class="sort-arrow" aria-hidden="true" th:text="${sort == key} ? (${dir == 'asc'} ? '↑' : '↓') : '↕'"></span>
