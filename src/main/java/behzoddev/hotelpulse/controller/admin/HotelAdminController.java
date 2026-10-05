@@ -47,6 +47,7 @@ public class HotelAdminController {
                        @RequestParam String name,
                        @RequestParam(required = false) String city,
                        @RequestParam(defaultValue = "0") int roomsCount,
+                       @RequestParam(defaultValue = "false") boolean roomsCountManual,
                        @RequestParam(defaultValue = "UZS") String currency,
                        @RequestParam(required = false) String exelyPropertyId,
                        @RequestParam(required = false) String exelyClientId,
@@ -55,7 +56,7 @@ public class HotelAdminController {
                        @RequestParam(defaultValue = "false") boolean active,
                        RedirectAttributes ra) {
         try {
-            Hotel saved = hotelService.save(id, name, city, roomsCount, currency,
+            Hotel saved = hotelService.save(id, name, city, roomsCount, roomsCountManual, currency,
                     exelyPropertyId, exelyClientId, exelyClientSecret, exelyPmsKey, active);
             ra.addFlashAttribute("success", "Mehmonxona saqlandi");
             return "redirect:/admin/hotels/" + saved.getId();

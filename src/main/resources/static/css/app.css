@@ -212,6 +212,9 @@ h1, h2, h3 { letter-spacing: -.02em; }
 .field input:focus, .field select:focus { outline: none; border-color: var(--primary); background: var(--surface); box-shadow: var(--ring); }
 .check { display: inline-flex; align-items: center; gap: 10px; font-weight: 500; cursor: pointer; }
 .check input, .check-list input { width: 18px; height: 18px; accent-color: var(--primary); }
+.check.check-sm { margin-top: 8px; gap: 8px; font-size: 13.5px; color: var(--muted); align-items: flex-start; }
+.check.check-sm input { width: 16px; height: 16px; margin-top: 2px; flex: none; }
+.check.check-sm:has(input:checked) { color: var(--text); }
 .check-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
 .check-list label {
     border: 1px solid var(--border); border-radius: 11px; padding: 11px 14px;

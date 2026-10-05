@@ -51,6 +51,15 @@ public class HotelService {
     public Hotel save(Long id, String name, String city, int roomsCount, String currency,
                       String exelyPropertyId, String exelyClientId, String exelyClientSecret,
                       String exelyPmsKey, boolean active) {
+        return save(id, name, city, roomsCount, null, currency,
+                exelyPropertyId, exelyClientId, exelyClientSecret, exelyPmsKey, active);
+    }
+
+    /** @param roomsCountManual true — Exely sinxronlashi xonalar sonini o'zgartirmaydi; null — avvalgidek qoladi */
+    @Transactional
+    public Hotel save(Long id, String name, String city, int roomsCount, Boolean roomsCountManual, String currency,
+                      String exelyPropertyId, String exelyClientId, String exelyClientSecret,
+                      String exelyPmsKey, boolean active) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Mehmonxona nomi bo'sh bo'lmasligi kerak");
         }
@@ -61,6 +70,9 @@ public class HotelService {
         hotel.setName(name.trim());
         hotel.setCity(blankToNull(city));
         hotel.setRoomsCount(roomsCount);
+        if (roomsCountManual != null) {
+            hotel.setRoomsCountManual(roomsCountManual);
+        }
         if (currency == null || !SUPPORTED_CURRENCIES.contains(currency)) {
             throw new IllegalArgumentException("Valyutani tanlang");
         }

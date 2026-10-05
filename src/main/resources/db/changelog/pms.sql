@@ -25,3 +25,9 @@ UPDATE hotels
 SET pms_bookings_synced_until = NULL,
     pms_payments_synced_until = NULL
 WHERE exely_pms_key IS NOT NULL;
+
+--changeset behzod:14
+-- Xonalar soni odatda Exely /rooms ro'yxatidan olinadi; ro'yxatda sotilmaydigan xonalar ham
+-- bo'lishi mumkin — shunda admin sonni qo'lda belgilaydi va sinxronlash uni o'zgartirmaydi.
+ALTER TABLE hotels
+    ADD COLUMN rooms_count_manual BOOLEAN NOT NULL DEFAULT FALSE AFTER rooms_count;

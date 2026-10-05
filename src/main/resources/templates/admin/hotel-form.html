@@ -28,6 +28,11 @@
                        th:value="${hotel != null} ? ${hotel.roomsCount} : 0">
                 <span class="hint">Bandlik foizi va RevPAR shu son asosida hisoblanadi. Exely PMS ulangan bo'lsa —
                     har sinxronlashda Exely'dagi xonalar ro'yxatidan avtomatik yangilanadi.</span>
+                <label class="check check-sm">
+                    <input type="checkbox" name="roomsCountManual" value="true"
+                           th:checked="${hotel != null and hotel.roomsCountManual}">
+                    Qo'lda — Exely'dan yangilanmasin (ro'yxatda sotilmaydigan xonalar bo'lsa)
+                </label>
             </div>
             <div class="field">
                 <label for="currency">Valyuta</label>

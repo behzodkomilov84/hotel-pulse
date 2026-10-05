@@ -28,6 +28,10 @@ public class Hotel {
     @Column(name = "rooms_count", nullable = false)
     private int roomsCount;
 
+    /** true — xonalar soni qo'lda kiritilgan, Exely sinxronlashi uni o'zgartirmaydi. */
+    @Column(name = "rooms_count_manual", nullable = false)
+    private boolean roomsCountManual;
+
     @Column(nullable = false, length = 3)
     private String currency = "UZS";
 

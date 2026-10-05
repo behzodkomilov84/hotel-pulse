@@ -159,6 +159,21 @@ class ExelyPmsSyncDbTest {
     }
 
     @Test
+    void manualRoomsCountIsNotOverwritten() {
+        expectPms();
+        Hotel h = hotelRepository.findById(hotel.getId()).orElseThrow();
+        h.setRoomsCount(98);
+        h.setRoomsCountManual(true);
+        hotelRepository.save(h);
+
+        ExelySyncService.SyncResult r = syncService.sync(hotel.getId());
+
+        assertTrue(r.ok(), r.message());
+        assertEquals(98, hotelRepository.findById(hotel.getId()).orElseThrow().getRoomsCount(), "qo'lda kiritilgan son saqlanadi");
+        assertFalse(r.message().contains("xonalar soni"), r.message());
+    }
+
+    @Test
     void wrongKeyIsRecordedAsFailure() {
         MockPms.SERVER.expect(ExpectedCount.manyTimes(), requestTo(startsWith(API + "/")))
                 .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators

@@ -41,6 +41,12 @@ public class ExelySyncService {
     private final CurrencyRates rates;
 
     /** Hozir sinxronlanayotgan mehmonxonalar — bir vaqtda ikki marta ishga tushmasligi uchun. */
+    /**
+     * Bronlar ro'yxati so'raladigan oraliq (API 365 kungacha ruxsat beradi, lekin katta mehmonxonada
+     * uzun oraliq javobi 60 soniyadan oshib ketishi kuzatildi — kichikroq bo'laklar ishonchliroq).
+     */
+    static final int BOOKING_WINDOW_DAYS = 90;
+
     private final Set<Long> running = ConcurrentHashMap.newKeySet();
 
     public boolean isRunning(Long hotelId) {
@@ -146,7 +152,7 @@ public class ExelySyncService {
     /**
      * Exely PMS Universal API orqali sinxronlash.
      * Bronlar: oxirgi kursordan (birinchi marta — initial-days kun oldindan) hozirgacha o'zgarganlar,
-     * ≤ 365 kunlik oynalarda (API cheklovi); har oynadan keyin kursor saqlanadi.
+     * BOOKING_WINDOW_DAYS kunlik oynalarda (API cheklovi ≤ 365); har oynadan keyin kursor saqlanadi.
      * To'lovlar: ≤ 30 kunlik oynalarda; har safar oxirgi 30 kun qayta olinadi — keyin bekor
      * qilingan to'lovlar ham to'g'rilanadi.
      */
@@ -161,18 +167,8 @@ public class ExelySyncService {
         String hotelCurrency = hotel.getCurrency();
         MoneyConverter money = (amount, currency, date) -> rates.convert(amount, currency, hotelCurrency, date);
 
-        // --- Xonalar soni: Exely'dagi xonalar ro'yxatidan ---
-        try {
-            int rooms = pmsClient.rooms(key).size();
-            if (rooms > 0 && rooms != hotel.getRoomsCount()) {
-                writer.saveRoomsCount(hotelId, rooms);
-                note.append(", xonalar soni: ").append(hotel.getRoomsCount()).append(" → ").append(rooms);
-            }
-        } catch (ExelyException e) {
-            if (e.isRateLimited()) {
-                throw e;
-            }
-            log.warn("Exely PMS: xonalar ro'yxatini olib bo'lmadi (mehmonxona {}): {}", hotelId, e.getMessage());
+        if (!hotel.isRoomsCountManual()) {
+            syncRoomsCount(hotel, key, note);
         }
 
         int purged = writer.purgeNonPmsData(hotelId);
@@ -187,7 +183,7 @@ public class ExelySyncService {
         int bookings = 0;
         int failed = 0;
         while (from.isBefore(now)) {
-            LocalDateTime to = from.plusDays(365).isBefore(now) ? from.plusDays(365) : now;
+            LocalDateTime to = from.plusDays(BOOKING_WINDOW_DAYS).isBefore(now) ? from.plusDays(BOOKING_WINDOW_DAYS) : now;
             Set<String> numbers = new LinkedHashSet<>();
             numbers.addAll(pmsClient.modifiedBookings(key, "Active", from, to));
             numbers.addAll(pmsClient.modifiedBookings(key, "Cancelled", from, to));
@@ -227,6 +223,22 @@ public class ExelySyncService {
         writer.saveStatus(hotelId, true, message);
         log.info("Exely PMS sinxronlash (mehmonxona {}): {}", hotelId, message);
         return new SyncResult(true, bookings, message);
+    }
+
+    /** Xonalar soni Exely'dagi xonalar ro'yxatidan (admin qo'lda belgilamagan bo'lsa). */
+    private void syncRoomsCount(Hotel hotel, String key, StringBuilder note) {
+        try {
+            int rooms = pmsClient.rooms(key).size();
+            if (rooms > 0 && rooms != hotel.getRoomsCount()) {
+                writer.saveRoomsCount(hotel.getId(), rooms);
+                note.append(", xonalar soni: ").append(hotel.getRoomsCount()).append(" → ").append(rooms);
+            }
+        } catch (ExelyException e) {
+            if (e.isRateLimited()) {
+                throw e;
+            }
+            log.warn("Exely PMS: xonalar ro'yxatini olib bo'lmadi (mehmonxona {}): {}", hotel.getId(), e.getMessage());
+        }
     }
 
     /** PMS kalitini tekshiradi (faqat o'qiydigan so'rov). */

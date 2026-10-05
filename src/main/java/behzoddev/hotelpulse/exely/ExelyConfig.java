@@ -21,7 +21,7 @@ public class ExelyConfig {
     public RestClient.Builder exelyRestClientBuilder() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(10));
-        factory.setReadTimeout(Duration.ofSeconds(60));
+        factory.setReadTimeout(Duration.ofSeconds(120));
         return RestClient.builder().requestFactory(factory);
     }
 
