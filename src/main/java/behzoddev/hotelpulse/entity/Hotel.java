@@ -8,6 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "hotels")
@@ -93,6 +94,16 @@ public class Hotel {
 
     @Column(nullable = false)
     private boolean active = true;
+
+    /** Kunlik Telegram hisobot vaqti (mehmonxona vaqti). */
+    @Column(name = "daily_report_time", nullable = false)
+    private LocalTime dailyReportTime = DEFAULT_DAILY_REPORT_TIME;
+
+    /** Kunlik hisobot shu kun uchun yuborilgan (kuniga bir marta). */
+    @Column(name = "daily_report_sent_on")
+    private LocalDate dailyReportSentOn;
+
+    public static final LocalTime DEFAULT_DAILY_REPORT_TIME = LocalTime.of(5, 0);
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

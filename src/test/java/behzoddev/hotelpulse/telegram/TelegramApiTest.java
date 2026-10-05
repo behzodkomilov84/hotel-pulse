@@ -106,13 +106,6 @@ class TelegramApiTest {
     }
 
     @Test
-    void dailyReportTimeComesFromCron() {
-        assertEquals("05:00", new TelegramProperties("t", null, null).dailyReportTime(), "standart — 05:00");
-        assertEquals("07:30", new TelegramProperties("t", null, null, "0 30 7 * * *").dailyReportTime());
-        assertEquals("ertalab", new TelegramProperties("t", null, null, "0 0 */2 * * *").dailyReportTime());
-    }
-
-    @Test
     void commandParsing() {
         assertEquals("/bugun", TelegramBotService.commandOf("/bugun@HotelPulseBot"));
         assertEquals("/start", TelegramBotService.commandOf("/start abc"));

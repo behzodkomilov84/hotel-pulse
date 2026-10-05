@@ -54,7 +54,7 @@ Mehmonxona Exely extranet'da: **Property settings → API connections → Create
 Bitta token bilan faqat bitta server ishlay oladi — lokal va production uchun **alohida bot** yarating.
 
 Buyruqlar: `/bugun`, `/hafta`, `/oy`, `/qarzlar`, `/hisobot` (kunlik hisobotni yoqish/o'chirish), `/uzish`, `/yordam`.
-Har kuni 05:00 da (APP_ZONE; `TELEGRAM_DAILY_REPORT_CRON` bilan o'zgartiriladi) kechagi kun hisoboti yuboriladi. Ruxsatlar saytdagi bilan bir xil.
+Kechagi kun hisoboti har bir mehmonxona uchun admin sahifasida belgilangan vaqtda (standart 05:00, APP_ZONE) yuboriladi. Ruxsatlar saytdagi bilan bir xil.
 
 ## Muhit o'zgaruvchilari
 
@@ -71,7 +71,6 @@ Har kuni 05:00 da (APP_ZONE; `TELEGRAM_DAILY_REPORT_CRON` bilan o'zgartiriladi) 
 | `EXELY_REQUEST_DELAY` | So'rovlar orasidagi pauza (standart: 120ms) |
 | `TELEGRAM_BOT_TOKEN` | @BotFather tokeni (bo'sh — bot o'chirilgan) |
 | `APP_SITE_URL` | Saytning ommaviy manzili — botdagi "Saytda batafsil" tugmasi uchun |
-| `TELEGRAM_DAILY_REPORT_CRON` | Kunlik hisobot vaqti (standart: `0 0 5 * * *` — 05:00) |
 
 Kalit yaratish: `openssl rand -base64 32`
 

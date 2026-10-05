@@ -45,8 +45,6 @@ app:
     bot-token: ${TELEGRAM_BOT_TOKEN:}
     # Botdagi "Saytda batafsil" tugmasi uchun ommaviy manzil (localhost bo'lsa tugma chiqmaydi).
     site-url: ${APP_SITE_URL:http://localhost:8081}
-    # Kunlik hisobot vaqti (mehmonxona vaqti, APP_ZONE). Matnlardagi soat shundan olinadi.
-    daily-report-cron: ${TELEGRAM_DAILY_REPORT_CRON:0 0 5 * * *}
   exely:
     base-url: ${EXELY_BASE_URL:https://connect.hopenapi.com}
     # Exely PMS Universal API (mehmonxona extranet'idagi "Ключ интеграции" bilan).

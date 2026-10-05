@@ -132,3 +132,10 @@ SET pms_bookings_synced_until = NULL,
     pms_services_from         = NULL,
     pms_services_until        = NULL
 WHERE exely_pms_key IS NOT NULL;
+
+--changeset behzod:21
+-- Kunlik Telegram hisobot vaqti — har bir mehmonxona uchun alohida (mehmonxona vaqti, APP_ZONE).
+-- daily_report_sent_on — shu kun uchun yuborilgan (kuniga bir martadan ortiq yuborilmasligi uchun).
+ALTER TABLE hotels
+    ADD COLUMN daily_report_time    TIME NOT NULL DEFAULT '05:00:00',
+    ADD COLUMN daily_report_sent_on DATE NULL;

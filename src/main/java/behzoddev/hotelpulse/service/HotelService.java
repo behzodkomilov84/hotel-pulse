@@ -8,6 +8,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
 
@@ -55,11 +56,22 @@ public class HotelService {
                 exelyPropertyId, exelyClientId, exelyClientSecret, exelyPmsKey, active);
     }
 
-    /** @param roomsCountManual true — Exely sinxronlashi xonalar sonini o'zgartirmaydi; null — avvalgidek qoladi */
     @Transactional
     public Hotel save(Long id, String name, String city, int roomsCount, Boolean roomsCountManual, String currency,
                       String exelyPropertyId, String exelyClientId, String exelyClientSecret,
                       String exelyPmsKey, boolean active) {
+        return save(id, name, city, roomsCount, roomsCountManual, currency,
+                exelyPropertyId, exelyClientId, exelyClientSecret, exelyPmsKey, active, null);
+    }
+
+    /**
+     * @param roomsCountManual true — Exely sinxronlashi xonalar sonini o'zgartirmaydi; null — avvalgidek qoladi
+     * @param dailyReportTime  kunlik Telegram hisobot vaqti (mehmonxona vaqti); null — avvalgidek qoladi
+     */
+    @Transactional
+    public Hotel save(Long id, String name, String city, int roomsCount, Boolean roomsCountManual, String currency,
+                      String exelyPropertyId, String exelyClientId, String exelyClientSecret,
+                      String exelyPmsKey, boolean active, LocalTime dailyReportTime) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Mehmonxona nomi bo'sh bo'lmasligi kerak");
         }
@@ -107,6 +119,9 @@ public class HotelService {
             hotel.setExelyPmsKey(key);
         }
         hotel.setActive(active);
+        if (dailyReportTime != null) {
+            hotel.setDailyReportTime(dailyReportTime.withSecond(0).withNano(0));
+        }
         return hotelRepository.save(hotel);
     }
 

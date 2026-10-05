@@ -7,10 +7,13 @@ import behzoddev.hotelpulse.exely.ExelySyncService;
 import behzoddev.hotelpulse.exely.ExelyVerifyService;
 import behzoddev.hotelpulse.service.HotelService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.time.LocalTime;
 
 @Controller
 @RequestMapping("/admin/hotels")
@@ -58,10 +61,11 @@ public class HotelAdminController {
                        @RequestParam(required = false) String exelyClientSecret,
                        @RequestParam(required = false) String exelyPmsKey,
                        @RequestParam(defaultValue = "false") boolean active,
+                       @RequestParam(required = false) @DateTimeFormat(pattern = "HH:mm") LocalTime dailyReportTime,
                        RedirectAttributes ra) {
         try {
             Hotel saved = hotelService.save(id, name, city, roomsCount, roomsCountManual, currency,
-                    exelyPropertyId, exelyClientId, exelyClientSecret, exelyPmsKey, active);
+                    exelyPropertyId, exelyClientId, exelyClientSecret, exelyPmsKey, active, dailyReportTime);
             ra.addFlashAttribute("success", "Mehmonxona saqlandi");
             return "redirect:/admin/hotels/" + saved.getId();
         } catch (IllegalArgumentException e) {

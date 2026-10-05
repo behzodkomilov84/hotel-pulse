@@ -111,7 +111,7 @@ public class TelegramBotService {
                 return;
             }
             send(chatId, "✅ <b>Ulandi!</b> Xush kelibsiz, " + TelegramReportService.esc(displayName(user.get())) + ".\n\n"
-                    + "Endi mehmonxona ko'rsatkichlarini shu yerda ko'rasiz. Har kuni soat " + props.dailyReportTime() + " da kechagi kun hisoboti keladi "
+                    + "Endi mehmonxona ko'rsatkichlarini shu yerda ko'rasiz. Kechagi kun hisoboti " + dailyReportWhen(user.get()) + " keladi "
                     + "(/hisobot bilan o'chirish mumkin).", mainKeyboard());
             return;
         }
@@ -153,7 +153,7 @@ public class TelegramBotService {
 
     private void sendDailyToggle(long chatId, User user) {
         boolean on = user.isTelegramDailyReport();
-        String text = "🕘 Kunlik hisobot (har kuni " + props.dailyReportTime() + ", kechagi kun): <b>" + (on ? "yoqilgan" : "o'chirilgan") + "</b>";
+        String text = "🕘 Kunlik hisobot — kechagi kun, " + dailyReportWhen(user) + ": <b>" + (on ? "yoqilgan" : "o'chirilgan") + "</b>";
         Map<String, Object> markup = Map.of("inline_keyboard", List.of(List.of(
                 on ? button("🔕 O'chirish", "d:off") : button("🔔 Yoqish", "d:on"))));
         send(chatId, text, markup);
@@ -204,6 +204,31 @@ public class TelegramBotService {
 
     List<Hotel> hotels(User user) {
         return hotelService.accessibleHotels(new CustomUserDetails(user));
+    }
+
+    /**
+     * Kunlik hisobot qachon kelishi (matnda): hamma mehmonxonada vaqt bir xil bo'lsa — "har kuni soat 05:00 da",
+     * aks holda — "har kuni (Karvon — 05:00, ARDA TURAN — 06:30)".
+     */
+    String dailyReportWhen(User user) {
+        return TelegramReportService.esc(dailyReportWhen(hotels(user).stream().filter(Hotel::isActive).toList()));
+    }
+
+    /** Oddiy matn (escape qilinmagan) — Telegram'da esc() bilan, saytda Thymeleaf o'zi escape qiladi. */
+    public static String dailyReportWhen(List<Hotel> hotels) {
+        if (hotels.isEmpty()) {
+            return "har kuni ertalab";
+        }
+        List<java.time.LocalTime> times = hotels.stream().map(Hotel::getDailyReportTime).distinct().toList();
+        if (times.size() == 1) {
+            return "har kuni soat " + time(times.get(0)) + " da";
+        }
+        return "har kuni (" + String.join(", ", hotels.stream()
+                .map(h -> h.getName() + " — " + time(h.getDailyReportTime())).toList()) + ")";
+    }
+
+    static String time(java.time.LocalTime t) {
+        return String.format("%02d:%02d", t.getHour(), t.getMinute());
     }
 
     static Map<String, Object> mainKeyboard() {

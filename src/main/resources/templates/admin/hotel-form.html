@@ -44,6 +44,22 @@
             </div>
         </div>
 
+        <div class="form-section">Telegram hisoboti</div>
+        <div class="form-grid">
+            <div class="field">
+                <label for="dailyReportTime">Kunlik hisobot vaqti</label>
+                <input type="time" id="dailyReportTime" name="dailyReportTime" step="60" required
+                       th:value="${hotel != null} ? ${#temporals.format(hotel.dailyReportTime, 'HH:mm')} : '05:00'">
+                <span class="hint">Har kuni shu vaqtda (Toshkent vaqti) kechagi kun hisoboti Telegram'ga yuboriladi —
+                    mehmonxonani ko'ra oladigan va Telegram'ni ulagan foydalanuvchilarga. Kuniga bir marta.</span>
+            </div>
+            <div class="field" th:if="${hotel != null and hotel.dailyReportSentOn != null}">
+                <label>Oxirgi yuborilgan</label>
+                <div class="readonly-value" th:text="${#temporals.format(hotel.dailyReportSentOn, 'dd.MM.yyyy')}"></div>
+                <span class="hint">Bugun yuborilgan bo'lsa, vaqt o'zgartirilganda bugun qayta yuborilmaydi — ertadan yangi vaqtda.</span>
+            </div>
+        </div>
+
         <div class="form-section">Exely integratsiyasi</div>
 
         <!-- 1-usul (tavsiya): Exely PMS Universal API kaliti -->

@@ -199,7 +199,7 @@ h1, h2, h3 { letter-spacing: -.02em; }
 .field { display: flex; flex-direction: column; gap: 7px; }
 .field label { font-weight: 600; font-size: 14px; }
 .field .hint { color: var(--muted); font-size: 12.5px; }
-.field input[type=text], .field input[type=password], .field input[type=number], .field select {
+.field input[type=text], .field input[type=password], .field input[type=number], .field input[type=time], .field select {
     font: inherit;
     padding: 11px 14px;
     border: 1px solid var(--border);
@@ -209,6 +209,7 @@ h1, h2, h3 { letter-spacing: -.02em; }
     transition: border-color var(--t-fast), box-shadow var(--t-fast), background var(--t-fast);
 }
 .field input:hover, .field select:hover { border-color: var(--border-strong); }
+.readonly-value { padding: 11px 14px; border-radius: 11px; background: var(--surface-2); border: 1px dashed var(--border); font-weight: 600; }
 .field input:focus, .field select:focus { outline: none; border-color: var(--primary); background: var(--surface); box-shadow: var(--ring); }
 .check { display: inline-flex; align-items: center; gap: 10px; font-weight: 500; cursor: pointer; }
 .check input, .check-list input { width: 18px; height: 18px; accent-color: var(--primary); }

@@ -194,11 +194,41 @@ class TelegramBotDbTest {
         m.setTelegramDailyReport(false);
         userRepository.save(m);
 
-        assertTrue(dailyReportJob.sendTo(userRepository.findById(single.getId()).orElseThrow()));
-        assertTrue(gateway.sent.stream().anyMatch(s -> s.chatId() == 1001 && s.html().contains("Kecha")));
+        java.time.LocalDate today = java.time.LocalDate.of(2026, 10, 6);
+        int sent = dailyReportJob.send(hotelA, today);
+
+        assertEquals(1, sent, "faqat kunlik hisobot yoqilgan va mehmonxonani ko'ra oladigan foydalanuvchi");
+        assertTrue(gateway.sent.stream().anyMatch(s -> s.chatId() == 1001 && s.html().contains("Xayrli tong")
+                && s.html().contains("Kecha")));
+        assertTrue(gateway.sent.stream().noneMatch(s -> s.chatId() == 2002), "hisoboti o'chirilgan");
+        assertEquals(today, hotelRepository.findById(hotelA.getId()).orElseThrow().getDailyReportSentOn(),
+                "kuniga bir marta — yuborilgani belgilandi");
         assertEquals(List.of(single.getId()),
                 userRepository.findAllByTelegramChatIdIsNotNullAndTelegramDailyReportTrueAndEnabledTrue()
                         .stream().map(User::getId).toList());
+    }
+
+    @Test
+    void reportIsDueOncePerDayWithinCatchUpWindow() {
+        Hotel h = new Hotel();
+        h.setDailyReportTime(java.time.LocalTime.of(5, 0));
+        java.time.LocalDate day = java.time.LocalDate.of(2026, 10, 6);
+        assertFalse(DailyReportJob.isDue(h, day.atTime(4, 59)), "vaqti kelmagan");
+        assertTrue(DailyReportJob.isDue(h, day.atTime(5, 0)), "aynan vaqtida");
+        assertTrue(DailyReportJob.isDue(h, day.atTime(7, 30)), "server o'chiq bo'lgan — 3 soat ichida yetkaziladi");
+        assertFalse(DailyReportJob.isDue(h, day.atTime(8, 1)), "kech — ertaga");
+        h.setDailyReportSentOn(day);
+        assertFalse(DailyReportJob.isDue(h, day.atTime(5, 1)), "bugun yuborilgan");
+        assertTrue(DailyReportJob.isDue(h, day.plusDays(1).atTime(5, 0)), "ertasi kuni — yana");
+
+        // Bir nechta mehmonxona — har biri o'z vaqtida.
+        Hotel other = new Hotel();
+        other.setName("ARDA");
+        other.setDailyReportTime(java.time.LocalTime.of(6, 30));
+        h.setName("Karvon");
+        assertEquals("har kuni (Karvon — 05:00, ARDA — 06:30)", TelegramBotService.dailyReportWhen(List.of(h, other)));
+        other.setDailyReportTime(java.time.LocalTime.of(5, 0));
+        assertEquals("har kuni soat 05:00 da", TelegramBotService.dailyReportWhen(List.of(h, other)));
     }
 
     @Autowired

@@ -136,6 +136,25 @@ class PageRenderingDbTest {
     }
 
     @Test
+    void dailyReportTimeIsEditablePerHotel() throws Exception {
+        mvc.perform(get("/admin/hotels/{id}", hotelA.getId()).with(user(owner)))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("name=\"dailyReportTime\"")))
+                .andExpect(content().string(containsString("value=\"05:00\"")));
+
+        mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/admin/hotels/{id}", hotelA.getId())
+                        .with(user(owner))
+                        .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("name", "Test Hotel A").param("roomsCount", "10").param("currency", "UZS")
+                        .param("active", "true").param("dailyReportTime", "06:30"))
+                .andExpect(status().is3xxRedirection());
+
+        assertEquals(java.time.LocalTime.of(6, 30), hotelRepository.findById(hotelA.getId()).orElseThrow().getDailyReportTime());
+        assertEquals(java.time.LocalTime.of(5, 0), hotelRepository.findById(hotelB.getId()).orElseThrow().getDailyReportTime(),
+                "boshqa mehmonxona o'zgarmaydi");
+    }
+
+    @Test
     void devLoginDoesNotExistWithoutLocalProfile() throws Exception {
         mvc.perform(get("/dev-login").param("user", "owner-t"))
                 .andExpect(status().isNotFound());
