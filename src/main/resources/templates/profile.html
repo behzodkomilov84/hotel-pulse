@@ -66,7 +66,7 @@
             <th:block th:if="${botUsername != null and user.telegramChatId == null}">
                 <ul class="feature-list">
                     <li>📊 Bugungi, haftalik va oylik ko'rsatkichlar bir tugmada</li>
-                    <li>☀️ Har kuni 09:00 da kechagi kun hisoboti</li>
+                    <li th:text="'☀️ Har kuni ' + ${dailyReportTime} + ' da kechagi kun hisoboti'">☀️ Har kuni ertalab kechagi kun hisoboti</li>
                     <li>⚠️ Qarzdorlik haqida tezkor ma'lumot</li>
                 </ul>
                 <form method="post" th:action="@{/profile/telegram/link}" target="_blank" data-wait-link>
@@ -84,7 +84,7 @@
                 <form method="post" th:action="@{/profile/telegram/daily-report}" class="switch-row">
                     <div>
                         <div class="switch-title">Kunlik hisobot</div>
-                        <div class="note">Har kuni 09:00 da kechagi kun natijalari</div>
+                        <div class="note" th:text="'Har kuni ' + ${dailyReportTime} + ' da kechagi kun natijalari'">Har kuni ertalab kechagi kun natijalari</div>
                     </div>
                     <label class="switch">
                         <input type="checkbox" name="enabled" value="true" th:checked="${user.telegramDailyReport}"

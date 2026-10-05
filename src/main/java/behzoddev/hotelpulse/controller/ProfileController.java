@@ -6,6 +6,7 @@ import behzoddev.hotelpulse.security.PrincipalRefresher;
 import behzoddev.hotelpulse.service.UserService;
 import behzoddev.hotelpulse.telegram.TelegramGateway;
 import behzoddev.hotelpulse.telegram.TelegramLinkService;
+import behzoddev.hotelpulse.telegram.TelegramProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class ProfileController {
     private final UserService userService;
     private final TelegramLinkService linkService;
     private final TelegramGateway telegram;
+    private final TelegramProperties telegramProps;
     private final PrincipalRefresher principalRefresher;
 
     @GetMapping
@@ -35,6 +37,7 @@ public class ProfileController {
         User user = userService.getById(principal.getId());
         model.addAttribute("user", user);
         model.addAttribute("botUsername", telegram.botUsername());
+        model.addAttribute("dailyReportTime", telegramProps.dailyReportTime());
         return "profile";
     }
 

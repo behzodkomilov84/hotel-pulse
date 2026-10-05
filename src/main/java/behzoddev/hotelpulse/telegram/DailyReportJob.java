@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Har kuni ertalab (standart 09:00, mehmonxona vaqti) kechagi kun hisoboti.
+ * Har kuni ertalab (standart 05:00, mehmonxona vaqti — app.telegram.daily-report-cron) kechagi kun hisoboti.
  * 3 tagacha mehmonxona — har biri bo'yicha to'liq hisobot, ko'p bo'lsa — bitta jadval.
  */
 @Slf4j
@@ -27,7 +27,7 @@ public class DailyReportJob {
     private final TelegramGateway gateway;
     private final TelegramProperties props;
 
-    @Scheduled(cron = "${app.telegram.daily-report-cron:0 0 9 * * *}", zone = "${app.zone:Asia/Tashkent}")
+    @Scheduled(cron = "${app.telegram.daily-report-cron:0 0 5 * * *}", zone = "${app.zone:Asia/Tashkent}")
     public void run() {
         if (!props.enabled()) {
             return;

@@ -111,7 +111,7 @@ public class TelegramBotService {
                 return;
             }
             send(chatId, "✅ <b>Ulandi!</b> Xush kelibsiz, " + TelegramReportService.esc(displayName(user.get())) + ".\n\n"
-                    + "Endi mehmonxona ko'rsatkichlarini shu yerda ko'rasiz. Har kuni soat 09:00 da kechagi kun hisoboti keladi "
+                    + "Endi mehmonxona ko'rsatkichlarini shu yerda ko'rasiz. Har kuni soat " + props.dailyReportTime() + " da kechagi kun hisoboti keladi "
                     + "(/hisobot bilan o'chirish mumkin).", mainKeyboard());
             return;
         }
@@ -153,7 +153,7 @@ public class TelegramBotService {
 
     private void sendDailyToggle(long chatId, User user) {
         boolean on = user.isTelegramDailyReport();
-        String text = "🕘 Kunlik hisobot (har kuni 09:00, kechagi kun): <b>" + (on ? "yoqilgan" : "o'chirilgan") + "</b>";
+        String text = "🕘 Kunlik hisobot (har kuni " + props.dailyReportTime() + ", kechagi kun): <b>" + (on ? "yoqilgan" : "o'chirilgan") + "</b>";
         Map<String, Object> markup = Map.of("inline_keyboard", List.of(List.of(
                 on ? button("🔕 O'chirish", "d:off") : button("🔔 Yoqish", "d:on"))));
         send(chatId, text, markup);
