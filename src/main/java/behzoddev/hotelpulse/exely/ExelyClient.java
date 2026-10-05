@@ -36,7 +36,8 @@ public class ExelyClient {
     public ExelyClient(ExelyProperties props,
                        @Qualifier("exelyRestClientBuilder") RestClient.Builder builder,
                        Clock clock) {
-        this.rest = builder.baseUrl(props.baseUrl()).build();
+        // clone — bean umumiy (ExelyPmsClient ham ishlatadi), baseUrl bir-birini bosmasin.
+        this.rest = builder.clone().baseUrl(props.baseUrl()).build();
         this.clock = clock;
     }
 

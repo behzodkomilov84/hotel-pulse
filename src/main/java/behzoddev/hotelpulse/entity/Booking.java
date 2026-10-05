@@ -58,6 +58,10 @@ public class Booking {
     @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalAmount;
 
+    /** PMS bergan to'lanmagan qoldiq; null — manba bermaydi (qarz to'lovlardan hisoblanadi). */
+    @Column(name = "balance_due", precision = 15, scale = 2)
+    private BigDecimal balanceDue;
+
     @Column(name = "booked_at", nullable = false)
     private LocalDateTime bookedAt;
 

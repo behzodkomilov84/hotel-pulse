@@ -366,6 +366,18 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .howto b { color: var(--text); font-weight: 600; }
 .howto p { margin: 6px 0 0; }
 
+/* Integratsiya usullari (admin forma) */
+.integration-option { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; display: grid; gap: 12px; background: var(--surface-2); }
+.integration-option.recommended { border-color: color-mix(in srgb, var(--success) 45%, var(--border)); background: linear-gradient(180deg, var(--success-soft), var(--surface) 60%); }
+.integration-option > .hint { margin: 0; }
+.option-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.option-title { font-weight: 700; }
+details.integration-option > summary { list-style: none; cursor: pointer; }
+details.integration-option > summary::-webkit-details-marker { display: none; }
+details.integration-option > summary .option-title::before { content: "›"; display: inline-block; margin-right: 8px; transition: transform var(--t) var(--ease); }
+details.integration-option[open] > summary .option-title::before { transform: rotate(90deg); }
+details.integration-option:not([open]) { gap: 0; }
+
 .sync-card { margin-top: 18px; }
 .sync-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
 .sync-head .card-title { margin-bottom: 0; }

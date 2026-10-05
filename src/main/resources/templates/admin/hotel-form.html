@@ -39,35 +39,68 @@
         </div>
 
         <div class="form-section">Exely integratsiyasi</div>
-        <details class="howto">
-            <summary>Mehmonxona bu ma'lumotlarni qayerdan oladi?</summary>
-            <ol>
-                <li>Exely extranet'da <b>Property settings → API connections</b> bo'limiga kirib, <b>Create a connection</b> tugmasini bosadi.</li>
-                <li>Ulanishga nom beradi (masalan, "HotelPulse").</li>
-                <li><b>Public APIs</b> yorlig'ida <b>Read Reservation API</b>'ni belgilaydi.</li>
-                <li><b>Save</b> → <b>Save and enable access</b> tugmalarini bosadi.</li>
-                <li>Ochilgan sahifadagi <b>client_id</b> va <b>client_secret</b>'ni sizga yuboradi.</li>
-            </ol>
-            <p>Mehmonxona ID — Exely'dagi raqamli identifikator (bron raqamining o'rtasidagi son ham shu: 20210325-<b>500360</b>-6987835).</p>
-        </details>
-        <div class="form-grid">
-            <div class="field">
-                <label for="exelyPropertyId">Mehmonxona ID (property ID)</label>
-                <input type="text" id="exelyPropertyId" name="exelyPropertyId" maxlength="64" inputmode="numeric"
-                       placeholder="masalan, 500360" th:value="${hotel?.exelyPropertyId}">
+
+        <!-- 1-usul (tavsiya): Exely PMS Universal API kaliti -->
+        <div class="integration-option recommended">
+            <div class="option-head">
+                <span class="option-title">Exely PMS kaliti</span>
+                <span class="badge badge-ok">Tavsiya etiladi</span>
             </div>
+            <p class="hint">Bronlar, haqiqiy holat (zaselenie/vyselenie), <b>to'lovlar va qarzdorlik</b> keladi. Mehmonxonada Exely PMS (STANDART yoki yuqori obuna) bo'lishi kerak.</p>
+            <details class="howto">
+                <summary>Kalit qayerda?</summary>
+                <ol>
+                    <li>Exely extranet'da chap menyuda <b>Управление отелем → Настройки</b>.</li>
+                    <li>Yuqoridagi <b>Интеграции</b> yorlig'i.</li>
+                    <li><b>Доступ к Универсальному API Exely PMS</b> bo'limidagi <b>Ключ интеграции</b>ni nusxalab, shu yerga joylashtiring.</li>
+                </ol>
+                <p>⚠️ Bu kalit bilan bron va to'lovlarni o'zgartirish ham mumkin — uni faqat shu formaga kiriting, boshqa joyga yubormang.</p>
+            </details>
             <div class="field">
-                <label for="exelyClientId">Client ID</label>
-                <input type="text" id="exelyClientId" name="exelyClientId" maxlength="128" autocomplete="off"
-                       th:value="${hotel?.exelyClientId}">
-            </div>
-            <div class="field field-wide">
-                <label for="exelyClientSecret">Client Secret</label>
-                <input type="password" id="exelyClientSecret" name="exelyClientSecret" autocomplete="new-password"
-                       th:placeholder="${hotel != null and hotel.hasExelySecret()} ? 'Saqlangan — almashtirish uchun yangisini kiriting' : 'Mehmonxona bergan client_secret (bo\'lmasa bo\'sh qoldiring)'">
+                <label for="exelyPmsKey">Ключ интеграции</label>
+                <input type="password" id="exelyPmsKey" name="exelyPmsKey" maxlength="128" autocomplete="off"
+                       th:placeholder="${hotel != null and hotel.hasPmsKey()} ? 'Saqlangan — almashtirish uchun yangisini kiriting' : 'masalan: 6ac19413-0a62-…'">
                 <span class="hint">Bazada shifrlangan holda saqlanadi va sahifada hech qachon ko'rsatilmaydi.</span>
             </div>
         </div>
+
+        <!-- 2-usul: Exely Connect (Read Reservation API) — PMS bo'lmasa -->
+        <details class="integration-option" th:open="${hotel != null and hotel.usesConnectApi() and !hotel.hasPmsKey()}">
+            <summary class="option-head">
+                <span class="option-title">Exely PMS yo'qmi? Exely Connect orqali ulash</span>
+                <span class="badge badge-off">faqat bronlar</span>
+            </summary>
+            <p class="hint">Faqat bronlar va oldindan to'lovlar keladi — qarzdorlik ko'rinmaydi. PMS kaliti kiritilsa, u ustun turadi.</p>
+            <details class="howto">
+                <summary>Mehmonxona bu ma'lumotlarni qayerdan oladi?</summary>
+                <ol>
+                    <li>Exely extranet'da <b>Property settings → API connections</b> bo'limiga kirib, <b>Create a connection</b> tugmasini bosadi.</li>
+                    <li>Ulanishga nom beradi (masalan, "HotelPulse").</li>
+                    <li><b>Public APIs</b> yorlig'ida <b>Read Reservation API</b>'ni belgilaydi.</li>
+                    <li><b>Save</b> → <b>Save and enable access</b> tugmalarini bosadi.</li>
+                    <li>Ochilgan sahifadagi <b>client_id</b> va <b>client_secret</b>'ni sizga yuboradi.</li>
+                </ol>
+                <p>Mehmonxona ID — Exely'dagi raqamli identifikator (bron raqamining o'rtasidagi son ham shu: 20210325-<b>500360</b>-6987835).</p>
+            </details>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="exelyPropertyId">Mehmonxona ID (property ID)</label>
+                    <input type="text" id="exelyPropertyId" name="exelyPropertyId" maxlength="64" inputmode="numeric"
+                           placeholder="masalan, 500360" th:value="${hotel?.exelyPropertyId}">
+                </div>
+                <div class="field">
+                    <label for="exelyClientId">Client ID</label>
+                    <input type="text" id="exelyClientId" name="exelyClientId" maxlength="128" autocomplete="off"
+                           th:value="${hotel?.exelyClientId}">
+                </div>
+                <div class="field field-wide">
+                    <label for="exelyClientSecret">Client Secret</label>
+                    <input type="password" id="exelyClientSecret" name="exelyClientSecret" autocomplete="new-password"
+                           th:placeholder="${hotel != null and hotel.hasExelySecret()} ? 'Saqlangan — almashtirish uchun yangisini kiriting' : 'Mehmonxona bergan client_secret (bo\'lmasa bo\'sh qoldiring)'">
+                    <span class="hint">Bazada shifrlangan holda saqlanadi va sahifada hech qachon ko'rsatilmaydi.</span>
+                </div>
+            </div>
+        </details>
 
         <label class="check">
             <input type="checkbox" name="active" value="true" th:checked="${hotel == null or hotel.active}"> Faol
@@ -84,8 +117,9 @@
         <div class="sync-head">
             <div>
                 <h3 class="card-title">Exely sinxronizatsiyasi</h3>
-                <p class="subtitle" th:unless="${hotel.exelyConnected}">Ulanish uchun yuqoridagi uchala maydonni to'ldirib saqlang.</p>
-                <p class="subtitle" th:if="${hotel.exelyConnected}">Avtomatik ravishda har 30 daqiqada yangilanadi.</p>
+                <p class="subtitle" th:unless="${hotel.exelyConnected}">Ulanish uchun yuqorida Exely PMS kalitini kiritib saqlang.</p>
+                <p class="subtitle" th:if="${hotel.exelyConnected}"
+                   th:text="(${hotel.hasPmsKey()} ? 'Exely PMS orqali' : 'Exely Connect orqali') + ' — avtomatik ravishda har 30 daqiqada yangilanadi.'">Avtomatik ravishda har 30 daqiqada yangilanadi.</p>
             </div>
             <span th:if="${syncRunning}" class="badge badge-role"><span class="spinner"></span>Sinxronlanmoqda…</span>
             <span th:if="${!syncRunning and hotel.exelyLastSyncOk == true}" class="badge badge-ok">Ishlayapti</span>

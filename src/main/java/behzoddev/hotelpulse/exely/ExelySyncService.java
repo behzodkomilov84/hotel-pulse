@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,6 +32,7 @@ import java.util.concurrent.ExecutorService;
 public class ExelySyncService {
 
     private final ExelyClient client;
+    private final ExelyPmsClient pmsClient;
     private final ExelyBookingWriter writer;
     private final HotelRepository hotelRepository;
     private final ExelyProperties props;
@@ -76,6 +79,10 @@ public class ExelySyncService {
             Hotel hotel = writer.load(hotelId);
             if (hotel == null || !hotel.isExelyConnected()) {
                 return new SyncResult(false, 0, "Exely ulanmagan");
+            }
+            if (hotel.hasPmsKey()) {
+                // Tavsiya etilgan yo'l: PMS Universal API (to'lovlar va qarzdorlik bilan).
+                return syncPms(hotel);
             }
             ExelyClient.Credentials creds = new ExelyClient.Credentials(
                     hotel.getExelyPropertyId().trim(), hotel.getExelyClientId().trim(), hotel.getExelyClientSecret());
@@ -133,6 +140,79 @@ public class ExelySyncService {
         } finally {
             running.remove(hotelId);
         }
+    }
+
+    /**
+     * Exely PMS Universal API orqali sinxronlash.
+     * Bronlar: oxirgi kursordan (birinchi marta — initial-days kun oldindan) hozirgacha o'zgarganlar,
+     * ≤ 365 kunlik oynalarda (API cheklovi); har oynadan keyin kursor saqlanadi.
+     * To'lovlar: ≤ 30 kunlik oynalarda; har safar oxirgi 30 kun qayta olinadi — keyin bekor
+     * qilingan to'lovlar ham to'g'rilanadi.
+     */
+    private SyncResult syncPms(Hotel hotel) {
+        Long hotelId = hotel.getId();
+        String key = hotel.getExelyPmsKey().trim();
+        LocalDateTime now = LocalDateTime.now(clock).withSecond(0).withNano(0);
+        LocalDateTime initial = now.minusDays(props.initialDays());
+        StringBuilder note = new StringBuilder();
+
+        int purged = writer.purgeNonPmsData(hotelId);
+        if (purged > 0) {
+            note.append(", ").append(purged).append(" ta eski (demo/Read Reservation) bron o'chirildi");
+        }
+
+        // --- Bronlar ---
+        LocalDateTime from = hotel.getPmsBookingsSyncedUntil() != null
+                ? hotel.getPmsBookingsSyncedUntil().minusMinutes(10)   // chegaradagi o'zgarishlar tushib qolmasin
+                : initial;
+        int bookings = 0;
+        int failed = 0;
+        while (from.isBefore(now)) {
+            LocalDateTime to = from.plusDays(365).isBefore(now) ? from.plusDays(365) : now;
+            Set<String> numbers = new LinkedHashSet<>();
+            numbers.addAll(pmsClient.modifiedBookings(key, "Active", from, to));
+            numbers.addAll(pmsClient.modifiedBookings(key, "Cancelled", from, to));
+            for (String number : numbers) {
+                pause();
+                try {
+                    writer.upsertPms(hotelId, pmsClient.booking(key, number));
+                    bookings++;
+                } catch (ExelyException e) {
+                    if (e.isRateLimited()) {
+                        throw e;
+                    }
+                    failed++;
+                    log.warn("Exely PMS: {} broni o'tkazib yuborildi (mehmonxona {}): {}", number, hotelId, e.getMessage());
+                }
+            }
+            writer.savePmsCursors(hotelId, to, null);
+            from = to;
+        }
+
+        // --- To'lovlar ---
+        LocalDateTime payFrom = hotel.getPmsPaymentsSyncedUntil() == null ? initial
+                : (hotel.getPmsPaymentsSyncedUntil().isBefore(now.minusDays(30)) ? hotel.getPmsPaymentsSyncedUntil() : now.minusDays(30));
+        int payments = 0;
+        while (payFrom.isBefore(now)) {
+            LocalDateTime to = payFrom.plusDays(30).isBefore(now) ? payFrom.plusDays(30) : now;
+            pause();
+            payments += writer.replacePmsPayments(hotelId, payFrom, to, pmsClient.payments(key, payFrom, to));
+            writer.savePmsCursors(hotelId, null, to);
+            payFrom = to;
+        }
+
+        String message = (bookings == 0 && payments == 0 && failed == 0 && purged == 0)
+                ? "Yangi o'zgarish yo'q (Exely PMS)"
+                : "Exely PMS: " + bookings + " ta bron, " + payments + " ta to'lov yangilandi"
+                  + (failed > 0 ? ", " + failed + " tasi o'tkazib yuborildi" : "") + note;
+        writer.saveStatus(hotelId, true, message);
+        log.info("Exely PMS sinxronlash (mehmonxona {}): {}", hotelId, message);
+        return new SyncResult(true, bookings, message);
+    }
+
+    /** PMS kalitini tekshiradi (faqat o'qiydigan so'rov). */
+    public void testPmsKey(String key) {
+        pmsClient.testKey(key.trim());
     }
 
     /** Kirish ma'lumotlarini tekshiradi (saqlamasdan oldin ham chaqirish mumkin). */

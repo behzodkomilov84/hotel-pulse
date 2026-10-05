@@ -66,14 +66,20 @@ public class KpiService {
             }
         }
 
+        // 1) Qoldiq manbadan ma'lum bo'lmagan bronlar (demo, Read Reservation): narx − to'lovlar.
         BigDecimal debt = BigDecimal.ZERO;
         List<Object[]> unpaid = bookingRepository.findUnpaidStays(hotel.getId(), today);
         for (Object[] row : unpaid) {
             debt = debt.add(((BigDecimal) row[0]).subtract((BigDecimal) row[1]));
         }
+        long debtors = unpaid.size();
+        // 2) Exely PMS bergan haqiqiy qoldiq (balance_due).
+        Object[] pms = bookingRepository.sumBalanceDue(hotel.getId(), today).get(0);
+        debt = debt.add((BigDecimal) pms[0]);
+        debtors += ((Number) pms[1]).longValue();
 
         double occupancy = hotel.getRoomsCount() == 0 ? 0 : (double) inHouse / hotel.getRoomsCount();
-        return new TodaySnapshot(arrivals, departures, inHouse, occupancy, debt, unpaid.size());
+        return new TodaySnapshot(arrivals, departures, inHouse, occupancy, debt, debtors);
     }
 
     /** Bosh sahifadagi kartochkalar uchun: har bir mehmonxonaning shu oydagi qisqa ko'rsatkichlari. */

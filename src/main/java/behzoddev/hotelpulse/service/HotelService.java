@@ -49,7 +49,8 @@ public class HotelService {
 
     @Transactional
     public Hotel save(Long id, String name, String city, int roomsCount, String currency,
-                      String exelyPropertyId, String exelyClientId, String exelyClientSecret, boolean active) {
+                      String exelyPropertyId, String exelyClientId, String exelyClientSecret,
+                      String exelyPmsKey, boolean active) {
         if (name == null || name.isBlank()) {
             throw new IllegalArgumentException("Mehmonxona nomi bo'sh bo'lmasligi kerak");
         }
@@ -78,6 +79,19 @@ public class HotelService {
         if (exelyClientSecret != null && !exelyClientSecret.isBlank()) {
             hotel.setExelyClientSecret(exelyClientSecret.trim());
         }
+        // PMS kaliti ham xuddi shunday: bo'sh — eskisi qoladi; yangisi (boshqa mehmonxona
+        // bo'lishi mumkin) kiritilsa — PMS sinxronlash boshidan boshlanadi.
+        if (exelyPmsKey != null && !exelyPmsKey.isBlank()) {
+            String key = exelyPmsKey.trim();
+            if (!key.matches("[A-Za-z0-9-]{16,128}")) {
+                throw new IllegalArgumentException("Exely PMS kaliti formati noto'g'ri (masalan: 6ac19413-0a62-...)");
+            }
+            if (!key.equals(hotel.getExelyPmsKey())) {
+                hotel.setPmsBookingsSyncedUntil(null);
+                hotel.setPmsPaymentsSyncedUntil(null);
+            }
+            hotel.setExelyPmsKey(key);
+        }
         hotel.setActive(active);
         return hotelRepository.save(hotel);
     }
@@ -89,12 +103,18 @@ public class HotelService {
         hotel.setExelyClientId(null);
         hotel.setExelyClientSecret(null);
         hotel.setExelyContinueToken(null);
+        hotel.setExelyPmsKey(null);
+        hotel.setPmsBookingsSyncedUntil(null);
+        hotel.setPmsPaymentsSyncedUntil(null);
     }
 
     /** Keyingi sinxronlash boshidan (oxirgi initial-days kun) qayta yuklaydi. */
     @Transactional
     public void resetExelySync(Long id) {
-        getById(id).setExelyContinueToken(null);
+        Hotel hotel = getById(id);
+        hotel.setExelyContinueToken(null);
+        hotel.setPmsBookingsSyncedUntil(null);
+        hotel.setPmsPaymentsSyncedUntil(null);
     }
 
     private static String blankToNull(String s) {

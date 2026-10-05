@@ -43,6 +43,19 @@ public class Hotel {
     @Column(name = "exely_client_secret", length = 1024)
     private String exelyClientSecret;
 
+    /** Exely PMS Universal API kaliti ("Ключ интеграции") — shifrlangan, sahifalarga chiqarilmaydi. */
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "exely_pms_key", length = 1024)
+    private String exelyPmsKey;
+
+    /** PMS bronlari shu paytgacha (mehmonxona vaqti) o'zgarganlari olingan. */
+    @Column(name = "pms_bookings_synced_until")
+    private LocalDateTime pmsBookingsSyncedUntil;
+
+    /** PMS to'lovlari shu paytgacha olingan. */
+    @Column(name = "pms_payments_synced_until")
+    private LocalDateTime pmsPaymentsSyncedUntil;
+
     /** Read Reservation API'ning keyingi so'rov tokeni (inkremental sinxronlash). */
     @Column(name = "exely_continue_token", length = 1024)
     private String exelyContinueToken;
@@ -62,8 +75,18 @@ public class Hotel {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    /** Sinxronlash uchun uchala qiymat ham kerak. */
+    /** Exely bilan qaysidir usulda ulanganmi (PMS kaliti yoki Connect). */
     public boolean isExelyConnected() {
+        return hasPmsKey() || usesConnectApi();
+    }
+
+    /** Exely PMS Universal API (tavsiya etiladi — to'lovlar va qarzdorlik ham keladi). */
+    public boolean hasPmsKey() {
+        return notBlank(exelyPmsKey);
+    }
+
+    /** Exely Connect (Read Reservation API) — uchala qiymat ham kerak. */
+    public boolean usesConnectApi() {
         return notBlank(exelyPropertyId) && notBlank(exelyClientId) && notBlank(exelyClientSecret);
     }
 

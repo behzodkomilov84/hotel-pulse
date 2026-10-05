@@ -32,7 +32,7 @@ class ExelyClientTest {
     void setUp() {
         RestClient.Builder builder = RestClient.builder();
         server = MockRestServiceServer.bindTo(builder).build();
-        ExelyProperties props = new ExelyProperties(BASE, 400, 1000, Duration.ZERO, false);
+        ExelyProperties props = new ExelyProperties(BASE, null, 400, 1000, Duration.ZERO, false);
         client = new ExelyClient(props, builder, Clock.fixed(Instant.parse("2026-10-04T05:00:00Z"), ZoneId.of("Asia/Tashkent")));
     }
 

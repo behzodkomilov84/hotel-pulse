@@ -45,7 +45,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("""
             select b.totalAmount, coalesce(sum(p.amount), 0) from Booking b
             left join Payment p on p.bookingId = b.id
-            where b.hotelId = :hotelId and b.arrivalDate <= :today
+            where b.hotelId = :hotelId and b.arrivalDate <= :today and b.balanceDue is null
               and b.status in (behzoddev.hotelpulse.entity.BookingStatus.CONFIRMED,
                                behzoddev.hotelpulse.entity.BookingStatus.CHECKED_IN,
                                behzoddev.hotelpulse.entity.BookingStatus.CHECKED_OUT)
@@ -57,6 +57,21 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     boolean existsByHotelId(Long hotelId);
 
     boolean existsByHotelIdAndOrigin(Long hotelId, DataOrigin origin);
+
+    List<Booking> findByHotelIdAndOriginAndExternalIdStartingWith(Long hotelId, DataOrigin origin, String prefix);
+
+    /**
+     * PMS bergan qoldiq bo'yicha qarzdorlik: kelgan (yoki yashayotgan) faol bronlar,
+     * balance_due > 0. Natija: [jami qoldiq, bronlar soni].
+     */
+    @Query("""
+            select coalesce(sum(b.balanceDue), 0), count(b) from Booking b
+            where b.hotelId = :hotelId and b.arrivalDate <= :today and b.balanceDue > 0
+              and b.status in (behzoddev.hotelpulse.entity.BookingStatus.CONFIRMED,
+                               behzoddev.hotelpulse.entity.BookingStatus.CHECKED_IN,
+                               behzoddev.hotelpulse.entity.BookingStatus.CHECKED_OUT)
+            """)
+    List<Object[]> sumBalanceDue(@Param("hotelId") Long hotelId, @Param("today") LocalDate today);
 
     /** Exely bronining barcha xona-yashash qatorlari ("{raqam}#0", "{raqam}#1", ...). */
     @Modifying

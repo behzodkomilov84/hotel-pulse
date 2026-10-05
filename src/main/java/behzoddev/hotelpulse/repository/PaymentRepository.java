@@ -25,6 +25,12 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     int deleteByExternalPrefix(@Param("hotelId") Long hotelId, @Param("origin") DataOrigin origin,
                                @Param("prefix") String prefix);
 
+    /** [from, to) oralig'idagi shu manba to'lovlari — qayta olinadigan oyna uchun. */
+    @Modifying
+    @Query("delete from Payment p where p.hotelId = :hotelId and p.origin = :origin and p.paidAt >= :from and p.paidAt < :to")
+    int deleteInWindow(@Param("hotelId") Long hotelId, @Param("origin") DataOrigin origin,
+                       @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
     @Modifying
     @Query("delete from Payment p where p.hotelId = :hotelId and p.origin = :origin")
     int deleteByHotelIdAndOrigin(@Param("hotelId") Long hotelId, @Param("origin") DataOrigin origin);

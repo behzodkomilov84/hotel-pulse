@@ -16,7 +16,12 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Har bir Exely bronini alohida (qisqa) tranzaksiyada yozadi — uzun
@@ -57,6 +62,63 @@ public class ExelyBookingWriter {
             p.setPaidAt(first.getBookedAt());
             paymentRepository.save(p);
         }
+    }
+
+    /** PMS broni: eski qatorlarini o'chirib, yangisini yozadi; birinchi ko'rilgan vaqt (bookedAt) saqlanadi. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void upsertPms(Long hotelId, ExelyPmsApi.Booking src) {
+        String prefix = ExelyPmsMapper.externalPrefix(src.number());
+        Map<String, LocalDateTime> known = new HashMap<>();
+        for (Booking old : bookingRepository.findByHotelIdAndOriginAndExternalIdStartingWith(hotelId, DataOrigin.EXELY_PMS, prefix)) {
+            known.put(old.getExternalId(), old.getBookedAt());
+        }
+        bookingRepository.deleteByExternalPrefix(hotelId, DataOrigin.EXELY_PMS, prefix);
+        List<Booking> rows = ExelyPmsMapper.toBookings(src, hotelId, clock.getZone(), known);
+        if (!rows.isEmpty()) {
+            bookingRepository.saveAll(rows);
+        }
+    }
+
+    /** [from, to) oynasidagi PMS to'lovlarini to'liq almashtiradi (keyin bekor qilinganlari ham to'g'rilanadi). */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public int replacePmsPayments(Long hotelId, LocalDateTime from, LocalDateTime to, List<ExelyPmsApi.Payment> src) {
+        paymentRepository.deleteInWindow(hotelId, DataOrigin.EXELY_PMS, from, to);
+        List<Payment> rows = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+        for (ExelyPmsApi.Payment p : src) {
+            Payment pay = ExelyPmsMapper.toPayment(p, hotelId);
+            if (pay != null && !pay.getPaidAt().isBefore(from) && pay.getPaidAt().isBefore(to) && seen.add(pay.getExternalId())) {
+                rows.add(pay);
+            }
+        }
+        paymentRepository.saveAll(rows);
+        return rows.size();
+    }
+
+    /**
+     * Mehmonxona PMS'ga o'tganda boshqa manbalarning (demo, Read Reservation) yozuvlari
+     * o'chiriladi — aks holda bronlar ikki marta sanalardi. @return o'chirilgan bronlar soni.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public int purgeNonPmsData(Long hotelId) {
+        int removed = 0;
+        for (DataOrigin o : List.of(DataOrigin.DEMO, DataOrigin.EXELY)) {
+            paymentRepository.deleteByHotelIdAndOrigin(hotelId, o);
+            removed += bookingRepository.deleteByHotelIdAndOrigin(hotelId, o);
+        }
+        return removed;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void savePmsCursors(Long hotelId, LocalDateTime bookingsUntil, LocalDateTime paymentsUntil) {
+        hotelRepository.findById(hotelId).ifPresent(h -> {
+            if (bookingsUntil != null) {
+                h.setPmsBookingsSyncedUntil(bookingsUntil);
+            }
+            if (paymentsUntil != null) {
+                h.setPmsPaymentsSyncedUntil(paymentsUntil);
+            }
+        });
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

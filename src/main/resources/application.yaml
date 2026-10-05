@@ -48,6 +48,8 @@ app:
     daily-report-cron: ${TELEGRAM_DAILY_REPORT_CRON:0 0 9 * * *}
   exely:
     base-url: ${EXELY_BASE_URL:https://connect.hopenapi.com}
+    # Exely PMS Universal API (mehmonxona extranet'idagi "Ключ интеграции" bilan).
+    pms-base-url: ${EXELY_PMS_BASE_URL:https://partner.tlintegration.com/api/webpms/v1}
     # Birinchi sinxronlashda shuncha kun oldingacha o'zgargan bronlar olinadi.
     initial-days: ${EXELY_INITIAL_DAYS:400}
     page-size: 1000

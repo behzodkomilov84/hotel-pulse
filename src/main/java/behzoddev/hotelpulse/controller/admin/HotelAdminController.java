@@ -51,11 +51,12 @@ public class HotelAdminController {
                        @RequestParam(required = false) String exelyPropertyId,
                        @RequestParam(required = false) String exelyClientId,
                        @RequestParam(required = false) String exelyClientSecret,
+                       @RequestParam(required = false) String exelyPmsKey,
                        @RequestParam(defaultValue = "false") boolean active,
                        RedirectAttributes ra) {
         try {
             Hotel saved = hotelService.save(id, name, city, roomsCount, currency,
-                    exelyPropertyId, exelyClientId, exelyClientSecret, active);
+                    exelyPropertyId, exelyClientId, exelyClientSecret, exelyPmsKey, active);
             ra.addFlashAttribute("success", "Mehmonxona saqlandi");
             return "redirect:/admin/hotels/" + saved.getId();
         } catch (IllegalArgumentException e) {
@@ -69,12 +70,17 @@ public class HotelAdminController {
     public String testExely(@PathVariable Long id, RedirectAttributes ra) {
         Hotel hotel = hotelService.getById(id);
         if (!hotel.isExelyConnected()) {
-            ra.addFlashAttribute("error", "Avval mehmonxona ID, Client ID va Client Secret'ni kiriting va saqlang");
+            ra.addFlashAttribute("error", "Avval Exely PMS kalitini (yoki Connect ma'lumotlarini) kiriting va saqlang");
             return "redirect:/admin/hotels/" + id;
         }
         try {
-            exelySyncService.testConnection(hotel.getExelyPropertyId(), hotel.getExelyClientId(), hotel.getExelyClientSecret());
-            ra.addFlashAttribute("success", "Exely bilan ulanish muvaffaqiyatli ✓");
+            if (hotel.hasPmsKey()) {
+                exelySyncService.testPmsKey(hotel.getExelyPmsKey());
+                ra.addFlashAttribute("success", "Exely PMS bilan ulanish muvaffaqiyatli ✓");
+            } else {
+                exelySyncService.testConnection(hotel.getExelyPropertyId(), hotel.getExelyClientId(), hotel.getExelyClientSecret());
+                ra.addFlashAttribute("success", "Exely bilan ulanish muvaffaqiyatli ✓");
+            }
         } catch (ExelyException e) {
             ra.addFlashAttribute("error", e.getMessage());
         }

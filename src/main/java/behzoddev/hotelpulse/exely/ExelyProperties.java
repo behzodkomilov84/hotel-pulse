@@ -7,7 +7,8 @@ import java.time.Duration;
 /**
  * Exely Connect sozlamalari (application.yaml → app.exely.*).
  *
- * @param baseUrl         API va avtorizatsiya serveri manzili
+ * @param baseUrl         Exely Connect API va avtorizatsiya serveri manzili
+ * @param pmsBaseUrl      Exely PMS Universal API (WebPMS) manzili
  * @param initialDays     birinchi sinxronlashda necha kun oldingacha o'zgargan bronlar olinadi
  * @param pageSize        bitta so'rovdagi bronlar soni (API maksimumi — 1000)
  * @param requestDelay    ketma-ket so'rovlar orasidagi pauza (API limitlarini hurmat qilish uchun)
@@ -16,6 +17,7 @@ import java.time.Duration;
 @ConfigurationProperties(prefix = "app.exely")
 public record ExelyProperties(
         String baseUrl,
+        String pmsBaseUrl,
         int initialDays,
         int pageSize,
         Duration requestDelay,
@@ -24,6 +26,9 @@ public record ExelyProperties(
     public ExelyProperties {
         if (baseUrl == null || baseUrl.isBlank()) {
             baseUrl = "https://connect.hopenapi.com";
+        }
+        if (pmsBaseUrl == null || pmsBaseUrl.isBlank()) {
+            pmsBaseUrl = "https://partner.tlintegration.com/api/webpms/v1";
         }
         if (initialDays <= 0) {
             initialDays = 400;
