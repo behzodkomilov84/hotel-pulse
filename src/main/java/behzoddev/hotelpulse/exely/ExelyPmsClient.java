@@ -7,6 +7,7 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -23,6 +24,8 @@ public class ExelyPmsClient {
     static final DateTimeFormatter BOOKING_QUERY = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
     /** Analitika (to'lovlar) sanalari formati. */
     static final DateTimeFormatter ANALYTICS = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+    /** Xizmatlar hisoboti sanalari formati. */
+    static final DateTimeFormatter SERVICE_DAY = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     private final RestClient rest;
 
@@ -68,6 +71,24 @@ public class ExelyPmsClient {
             throw new ExelyException("Exely PMS: " + number + " bron tafsilotlari bo'sh qaytdi");
         }
         return b;
+    }
+
+    /** [from, to] kunlaridagi xizmatlar, yashash kuni bo'yicha (oraliq ≤ 31 kun). */
+    public ExelyPmsApi.ServicesData services(String key, LocalDate from, LocalDate to) {
+        ExelyPmsApi.ServicesResponse r = call(() -> rest.get()
+                .uri(b -> b.path("/analytics/services")
+                        .queryParam("startDate", from.format(SERVICE_DAY))
+                        .queryParam("endDate", to.format(SERVICE_DAY))
+                        .queryParam("dateKind", 1)
+                        .build())
+                .header("X-API-KEY", key).accept(MediaType.APPLICATION_JSON)
+                .retrieve().body(ExelyPmsApi.ServicesResponse.class));
+        if (r == null || r.data() == null) {
+            return new ExelyPmsApi.ServicesData(List.of(), List.of());
+        }
+        return new ExelyPmsApi.ServicesData(
+                r.data().services() == null ? List.of() : r.data().services(),
+                r.data().reservations() == null ? List.of() : r.data().reservations());
     }
 
     /** [from, to) oralig'idagi to'lovlar (oraliq ≤ 31 kun, kelajak sanalar mumkin emas). */

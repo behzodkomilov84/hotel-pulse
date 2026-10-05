@@ -6,6 +6,7 @@ import behzoddev.hotelpulse.entity.Hotel;
 import behzoddev.hotelpulse.kpi.*;
 import behzoddev.hotelpulse.repository.BookingRepository;
 import behzoddev.hotelpulse.repository.PaymentRepository;
+import behzoddev.hotelpulse.repository.ServiceRevenueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,7 @@ public class KpiService {
 
     private final BookingRepository bookingRepository;
     private final PaymentRepository paymentRepository;
+    private final ServiceRevenueRepository serviceRevenueRepository;
     private final Clock clock;
 
     public LocalDate today() {
@@ -110,6 +113,18 @@ public class KpiService {
 
     private StayMetrics stays(Hotel hotel, Period period) {
         List<Booking> bookings = bookingRepository.findStaysOverlapping(hotel.getId(), period.from(), period.toExclusive());
-        return KpiCalculator.calculate(bookings, hotel.getRoomsCount(), period);
+        return KpiCalculator.calculate(bookings, hotel.getRoomsCount(), period, serviceDays(hotel, period));
+    }
+
+    /** Exely PMS xizmatlar hisoboti (bo'lsa) — davrga tushgan kunlar bo'yicha [yashash, xizmatlar]. */
+    private KpiCalculator.ServiceDays serviceDays(Hotel hotel, Period period) {
+        if (hotel.getPmsServicesFrom() == null || hotel.getPmsServicesUntil() == null) {
+            return null;
+        }
+        Map<LocalDate, BigDecimal[]> byDate = new HashMap<>();
+        for (Object[] r : serviceRevenueRepository.dailyTotals(hotel.getId(), period.from(), period.to())) {
+            byDate.put((LocalDate) r[0], new BigDecimal[]{(BigDecimal) r[1], (BigDecimal) r[2]});
+        }
+        return new KpiCalculator.ServiceDays(hotel.getPmsServicesFrom(), hotel.getPmsServicesUntil(), byDate);
     }
 }

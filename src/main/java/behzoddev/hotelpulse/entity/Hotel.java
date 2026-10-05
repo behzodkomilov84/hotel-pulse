@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -59,6 +60,13 @@ public class Hotel {
     /** PMS to'lovlari shu paytgacha olingan. */
     @Column(name = "pms_payments_synced_until")
     private LocalDateTime pmsPaymentsSyncedUntil;
+
+    /** PMS xizmatlar hisoboti (kunlik daromad) qamrab olgan sanalar; null — hali olinmagan. */
+    @Column(name = "pms_services_from")
+    private LocalDate pmsServicesFrom;
+
+    @Column(name = "pms_services_until")
+    private LocalDate pmsServicesUntil;
 
     /** Read Reservation API'ning keyingi so'rov tokeni (inkremental sinxronlash). */
     @Column(name = "exely_continue_token", length = 1024)

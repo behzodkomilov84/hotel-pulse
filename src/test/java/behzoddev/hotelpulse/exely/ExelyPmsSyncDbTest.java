@@ -67,6 +67,8 @@ class ExelyPmsSyncDbTest {
     @Autowired
     private PaymentRepository paymentRepository;
     @Autowired
+    private behzoddev.hotelpulse.repository.ServiceRevenueRepository serviceRevenueRepository;
+    @Autowired
     private DemoDataService demoDataService;
     @Autowired
     private KpiService kpiService;
@@ -106,6 +108,9 @@ class ExelyPmsSyncDbTest {
         // Har bir 30 kunlik oynaga bir xil javob — to'lovlar faqat o'z sanasi tushgan oynada yoziladi.
         s.expect(ExpectedCount.manyTimes(), requestTo(startsWith(API + "/analytics/payments?")))
                 .andRespond(withSuccess(ExelyPmsSamples.PAYMENTS, MediaType.APPLICATION_JSON));
+        s.expect(ExpectedCount.manyTimes(), requestTo(startsWith(API + "/analytics/services?")))
+                .andExpect(header("X-API-KEY", KEY))
+                .andRespond(withSuccess(ExelyPmsSamples.SERVICES, MediaType.APPLICATION_JSON));
     }
 
     private List<Booking> hotelBookings() {
@@ -142,6 +147,16 @@ class ExelyPmsSyncDbTest {
         assertNotNull(h.getPmsPaymentsSyncedUntil());
         assertEquals(Boolean.TRUE, h.getExelyLastSyncOk());
         assertEquals(3, h.getRoomsCount(), "xonalar soni Exely /rooms dan");
+
+        // Xizmatlar: 01.10 — yashash 600 000 + nonushta 90 000; 02.10 — yashash 600 000.
+        var svc = serviceRevenueRepository.findAll().stream().filter(x -> x.getHotelId().equals(hotel.getId())).toList();
+        assertEquals(3, svc.size(), "har qator faqat o'z oynasida yoziladi");
+        assertNotNull(h.getPmsServicesFrom());
+        assertTrue(h.getPmsServicesUntil().isAfter(java.time.LocalDate.now()), "kelajak ham qamraladi");
+        var day = kpiService.report(h, new behzoddev.hotelpulse.kpi.Period("custom",
+                java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2026, 10, 1))).stays();
+        assertEquals(0, new BigDecimal("600000").compareTo(day.roomRevenue()), "yashash — xizmatlar hisobotidan");
+        assertEquals(0, new BigDecimal("90000").compareTo(day.extrasRevenue()));
         assertTrue(r.message().contains("xonalar soni: 20 → 3"), r.message());
     }
 

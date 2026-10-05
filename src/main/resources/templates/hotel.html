@@ -146,14 +146,19 @@
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Xona daromadi</span>
+                    <span class="stat-label" th:text="${s.extrasRevenue.signum() > 0} ? 'Yashash daromadi' : 'Xona daromadi'">Xona daromadi</span>
                     <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20M16 15h2"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.roomRevenue, cur)}">0</div>
                 <div class="delta" th:if="${@fmt.change(s.roomRevenue, ps.roomRevenue)}"
                      th:classappend="${@fmt.trend(s.roomRevenue, ps.roomRevenue)}"
                      th:text="${@fmt.change(s.roomRevenue, ps.roomRevenue)}"></div>
-                <div class="stat-sub" th:text="${@fmt.money(s.roomRevenue, cur)}"></div>
+                <div class="stat-sub" th:if="${s.extrasRevenue.signum() == 0}" th:text="${@fmt.money(s.roomRevenue, cur)}"></div>
+                <div class="stat-sub" th:if="${s.extrasRevenue.signum() != 0}"
+                     th:title="'Yashash: ' + ${@fmt.money(s.roomRevenue, cur)} + ' · Nonushta va xizmatlar: ' + ${@fmt.money(s.extrasRevenue, cur)}">
+                    + nonushta va xizmatlar <b th:text="${@fmt.moneyShort(s.extrasRevenue, cur)}"></b>
+                    <span class="muted">· jami</span> <b th:text="${@fmt.moneyShort(s.totalRevenue(), cur)}"></b>
+                </div>
             </div>
             <div class="card stat">
                 <div class="stat-top">

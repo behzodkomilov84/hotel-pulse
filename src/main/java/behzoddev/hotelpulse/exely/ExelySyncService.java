@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -46,6 +47,8 @@ public class ExelySyncService {
      * uzun oraliq javobi 60 soniyadan oshib ketishi kuzatildi — kichikroq bo'laklar ishonchliroq).
      */
     static final int BOOKING_WINDOW_DAYS = 90;
+    /** Xizmatlar (kunlik daromad) shuncha kun oldinga ham olinadi — kelgusi davr hisobotlari uchun. */
+    static final int SERVICES_AHEAD_DAYS = 180;
 
     private final Set<Long> running = ConcurrentHashMap.newKeySet();
 
@@ -214,6 +217,25 @@ public class ExelySyncService {
             payments += writer.replacePmsPayments(hotelId, payFrom, to, pmsClient.payments(key, payFrom, to), money);
             writer.savePmsCursors(hotelId, null, to);
             payFrom = to;
+        }
+
+        // --- Xizmatlar (kunlik daromad: yashash, nonushta va h.k.) ---
+        // Birinchi marta — initial-days kun oldindan; keyin oxirgi 31 kun qayta olinadi (tuzatishlar uchun),
+        // oldinga — SERVICES_AHEAD_DAYS kun (kelajakdagi bronlar daromadi).
+        LocalDate today = now.toLocalDate();
+        LocalDate svcFrom = hotel.getPmsServicesUntil() == null ? initial.toLocalDate()
+                : (hotel.getPmsServicesUntil().isBefore(today) ? hotel.getPmsServicesUntil() : today).minusDays(31);
+        LocalDate svcTo = today.plusDays(SERVICES_AHEAD_DAYS);
+        int services = 0;
+        while (!svcFrom.isAfter(svcTo)) {
+            LocalDate end = svcFrom.plusDays(30).isBefore(svcTo) ? svcFrom.plusDays(30) : svcTo;
+            pause();
+            services += writer.replacePmsServices(hotelId, hotel.getCurrency(), svcFrom, end,
+                    pmsClient.services(key, svcFrom, end), money);
+            svcFrom = end.plusDays(1);
+        }
+        if (services > 0) {
+            note.append(", ").append(services).append(" ta xizmat qatori");
         }
 
         String message = (bookings == 0 && payments == 0 && failed == 0 && purged == 0)

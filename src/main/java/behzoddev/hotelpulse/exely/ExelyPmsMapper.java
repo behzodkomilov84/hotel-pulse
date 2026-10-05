@@ -4,14 +4,17 @@ import behzoddev.hotelpulse.entity.Booking;
 import behzoddev.hotelpulse.entity.BookingStatus;
 import behzoddev.hotelpulse.entity.DataOrigin;
 import behzoddev.hotelpulse.entity.Payment;
+import behzoddev.hotelpulse.entity.ServiceRevenue;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +33,13 @@ public final class ExelyPmsMapper {
 
     public static String externalPrefix(String number) {
         return "pms:" + number + "#";
+    }
+
+    /** "pms:{raqam}#{roomStayId}" → raqam. */
+    public static String bookingNumber(String externalId) {
+        String id = externalId.startsWith("pms:") ? externalId.substring(4) : externalId;
+        int hash = id.lastIndexOf('#');
+        return hash > 0 ? id.substring(0, hash) : id;
     }
 
     public static List<Booking> toBookings(ExelyPmsApi.Booking src, Long hotelId, ZoneId zone,
@@ -72,6 +82,7 @@ public final class ExelyPmsMapper {
             ExelyPmsApi.TotalPrice price = rs.totalPrice();
             BigDecimal total = price != null && price.amount() != null ? price.amount() : BigDecimal.ZERO;
             BigDecimal due = price != null && price.toPayAmount() != null ? price.toPayAmount().max(BigDecimal.ZERO) : BigDecimal.ZERO;
+            b.setCurrency(currencyCode(src.currencyId()));
             b.setTotalAmount(money.convert(total, src.currencyId(), arrival));
             b.setBalanceDue(money.convert(due, src.currencyId(), arrival));
 
@@ -137,6 +148,84 @@ public final class ExelyPmsMapper {
         pay.setMethod(method(p));
         pay.setPaidAt(paidAt);
         return pay;
+    }
+
+    /** Bron haqida xizmatlar summasining valyutasini aniqlash uchun kerak bo'lgan ma'lumot. */
+    public record BookingMoney(String currency, BigDecimal totalInHotelCurrency) {
+    }
+
+    /**
+     * Xizmatlar hisobotini qatorlarga o'giradi. Hisobot summalari qaysi valyutada kelishi hujjatda
+     * aytilmagan, shuning uchun har bir bron uchun tekshiriladi: bron boshqa valyutada (masalan, USD) bo'lsa
+     * va hisobotdagi yashash narxi (reservation.total) bizdagi so'mdagi summadan ko'p marta kichik bo'lsa —
+     * summalar bron valyutasida, ular xizmat kunidagi kurs bo'yicha o'giriladi.
+     *
+     * @param bookings bron raqami → valyuta va mehmonxona valyutasidagi jami narx
+     */
+    public static List<ServiceRevenue> toServices(ExelyPmsApi.ServicesData data, Long hotelId,
+                                                  Map<String, BookingMoney> bookings, MoneyConverter money) {
+        Map<Long, ExelyPmsApi.ServiceReservation> byId = new HashMap<>();
+        Map<String, BigDecimal> reportedTotals = new HashMap<>();
+        for (ExelyPmsApi.ServiceReservation r : data.reservations()) {
+            if (r.id() != null) {
+                byId.put(r.id(), r);
+            }
+            if (r.bookingNumber() != null && r.total() != null) {
+                reportedTotals.merge(r.bookingNumber(), r.total(), BigDecimal::add);
+            }
+        }
+        List<ServiceRevenue> result = new ArrayList<>();
+        for (ExelyPmsApi.Service s : data.services()) {
+            LocalDate date = serviceDate(s.date());
+            if (s.id() == null || s.amount() == null || date == null) {
+                continue;
+            }
+            ExelyPmsApi.ServiceReservation r = s.reservationId() == null ? null : byId.get(s.reservationId());
+            String number = r == null ? null : r.bookingNumber();
+            BigDecimal amount = s.amount();
+            BookingMoney bm = number == null ? null : bookings.get(number);
+            if (bm != null && bm.currency() != null
+                    && inBookingCurrency(reportedTotals.get(number), bm.totalInHotelCurrency())) {
+                amount = money.convert(amount, bm.currency(), date);
+            }
+            ServiceRevenue row = new ServiceRevenue();
+            row.setHotelId(hotelId);
+            row.setExternalId(trim(s.id(), 64));
+            row.setServiceDate(date);
+            row.setKind(s.kind() == null ? ServiceRevenue.ACCOMMODATION : s.kind());
+            row.setName(s.name() == null ? null : trim(s.name(), 128));
+            row.setAmount(amount);
+            row.setBookingNumber(number == null ? null : trim(number, 64));
+            result.add(row);
+        }
+        return result;
+    }
+
+    /** Hisobotdagi summa bizdagi (o'girilgan) summadan 20 martadan ko'p kichik — demak, asl valyutada. */
+    static boolean inBookingCurrency(BigDecimal reported, BigDecimal ours) {
+        if (reported == null || ours == null || reported.signum() <= 0 || ours.signum() <= 0) {
+            return false;
+        }
+        return ours.compareTo(reported.multiply(BigDecimal.valueOf(20))) > 0;
+    }
+
+    private static LocalDate serviceDate(String yyyyMMdd) {
+        if (yyyyMMdd == null || yyyyMMdd.length() < 8) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(yyyyMMdd.substring(0, 8), DateTimeFormatter.BASIC_ISO_DATE);
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    static String currencyCode(String currencyId) {
+        if (currencyId == null || currencyId.isBlank()) {
+            return null;
+        }
+        String c = currencyId.trim().toUpperCase(java.util.Locale.ROOT);
+        return c.length() > 3 ? c.substring(0, 3) : c;
     }
 
     static String sourceName(ExelyPmsApi.Booking src) {

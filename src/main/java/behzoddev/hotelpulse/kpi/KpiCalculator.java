@@ -15,23 +15,42 @@ import java.util.*;
  *
  * Qoidalar (sanoat standarti):
  * - Bron narxi kechalar bo'yicha teng taqsimlanadi; davrga tushgan kechalargina hisobga olinadi.
+ * - Exely PMS xizmatlar hisoboti qamragan kunlarda daromad o'shandan olinadi (Exely ta'rifi):
+ *   yashash (kind 0) — xona daromadi, qolganlari (nonushta va h.k.) — xizmatlar daromadi.
  * - Faqat faol bronlar (CONFIRMED, CHECKED_IN, CHECKED_OUT) xona band qiladi va daromad beradi.
  * - Bandlik = sotilgan xona-kechalar / (xonalar soni × kunlar).
- * - ADR = daromad / sotilgan xona-kechalar; RevPAR = daromad / mavjud xona-kechalar.
+ * - ADR = yashash daromadi / sotilgan xona-kechalar; RevPAR = yashash daromadi / mavjud xona-kechalar.
  */
 public final class KpiCalculator {
 
     private KpiCalculator() {
     }
 
+    /**
+     * Exely xizmatlar hisoboti: kunlik [yashash, xizmatlar] summalari va u qamragan sanalar [from, until].
+     * Qamrovdagi, lekin byDate'da yo'q kun — daromad 0 (o'sha kuni xizmat bo'lmagan).
+     */
+    public record ServiceDays(LocalDate from, LocalDate until, Map<LocalDate, BigDecimal[]> byDate) {
+
+        boolean covers(LocalDate d) {
+            return !d.isBefore(from) && !d.isAfter(until);
+        }
+    }
+
     public static StayMetrics calculate(Collection<Booking> bookings, int roomsCount, Period period) {
+        return calculate(bookings, roomsCount, period, null);
+    }
+
+    public static StayMetrics calculate(Collection<Booking> bookings, int roomsCount, Period period, ServiceDays services) {
         int days = period.days();
         LocalDate from = period.from();
         LocalDate to = period.to();
 
         int[] roomsSold = new int[days];
         BigDecimal[] revenue = new BigDecimal[days];
+        BigDecimal[] extras = new BigDecimal[days];
         Arrays.fill(revenue, BigDecimal.ZERO);
+        Arrays.fill(extras, BigDecimal.ZERO);
 
         Map<String, long[]> sourceNights = new HashMap<>();
         Map<String, BigDecimal> sourceRevenue = new HashMap<>();
@@ -63,27 +82,48 @@ public final class KpiCalculator {
             for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
                 int i = (int) ChronoUnit.DAYS.between(from, d);
                 roomsSold[i] += b.getRooms();
-                revenue[i] = revenue[i].add(nightly);
+                if (services == null || !services.covers(d)) {
+                    revenue[i] = revenue[i].add(nightly);
+                }
                 sourceNights.computeIfAbsent(b.getSource(), k -> new long[1])[0] += b.getRooms();
                 sourceRevenue.merge(b.getSource(), nightly, BigDecimal::add);
             }
         }
 
+        if (services != null) {
+            for (int i = 0; i < days; i++) {
+                LocalDate d = from.plusDays(i);
+                if (services.covers(d)) {
+                    BigDecimal[] v = services.byDate().get(d);
+                    revenue[i] = v == null ? BigDecimal.ZERO : v[0];
+                    extras[i] = v == null ? BigDecimal.ZERO : v[1];
+                }
+            }
+        }
+
         long sold = 0;
         BigDecimal totalRevenue = BigDecimal.ZERO;
+        BigDecimal totalExtras = BigDecimal.ZERO;
         List<StayMetrics.DailyPoint> daily = new ArrayList<>(days);
         for (int i = 0; i < days; i++) {
             sold += roomsSold[i];
             totalRevenue = totalRevenue.add(revenue[i]);
+            totalExtras = totalExtras.add(extras[i]);
             daily.add(new StayMetrics.DailyPoint(from.plusDays(i), roomsSold[i],
-                    ratio(roomsSold[i], roomsCount), revenue[i]));
+                    ratio(roomsSold[i], roomsCount), revenue[i].add(extras[i])));
         }
         long available = (long) roomsCount * days;
 
+        // Manbalar ulushi bronlardan; summasi yashash daromadiga moslab ko'rsatiladi.
+        BigDecimal bookingTotal = sourceRevenue.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal revenueTotal = totalRevenue;
         List<StayMetrics.SourceShare> sources = sourceRevenue.entrySet().stream()
-                .map(e -> new StayMetrics.SourceShare(e.getKey(), sourceNights.get(e.getKey())[0], e.getValue(),
-                        revenueTotal.signum() == 0 ? 0 : e.getValue().doubleValue() / revenueTotal.doubleValue()))
+                .map(e -> {
+                    double share = bookingTotal.signum() == 0 ? 0 : e.getValue().doubleValue() / bookingTotal.doubleValue();
+                    BigDecimal amount = services == null ? e.getValue()
+                            : revenueTotal.multiply(BigDecimal.valueOf(share)).setScale(2, RoundingMode.HALF_UP);
+                    return new StayMetrics.SourceShare(e.getKey(), sourceNights.get(e.getKey())[0], amount, share);
+                })
                 .sorted(Comparator.comparing(StayMetrics.SourceShare::revenue).reversed())
                 .toList();
 
@@ -91,6 +131,7 @@ public final class KpiCalculator {
                 available,
                 sold,
                 totalRevenue,
+                totalExtras,
                 ratio(sold, available),
                 divide(totalRevenue, sold),
                 divide(totalRevenue, available),

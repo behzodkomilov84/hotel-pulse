@@ -4,9 +4,11 @@ import behzoddev.hotelpulse.entity.Booking;
 import behzoddev.hotelpulse.entity.DataOrigin;
 import behzoddev.hotelpulse.entity.Hotel;
 import behzoddev.hotelpulse.entity.Payment;
+import behzoddev.hotelpulse.entity.ServiceRevenue;
 import behzoddev.hotelpulse.repository.BookingRepository;
 import behzoddev.hotelpulse.repository.HotelRepository;
 import behzoddev.hotelpulse.repository.PaymentRepository;
+import behzoddev.hotelpulse.repository.ServiceRevenueRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -34,6 +36,7 @@ public class ExelyBookingWriter {
     private final BookingRepository bookingRepository;
     private final PaymentRepository paymentRepository;
     private final HotelRepository hotelRepository;
+    private final ServiceRevenueRepository serviceRevenueRepository;
     private final Clock clock;
 
     /** Bronning eski qatorlarini o'chirib, eng so'nggi versiyasini yozadi (upsert). */
@@ -108,6 +111,38 @@ public class ExelyBookingWriter {
             removed += bookingRepository.deleteByHotelIdAndOrigin(hotelId, o);
         }
         return removed;
+    }
+
+    /**
+     * [from, to] kunlaridagi PMS xizmatlarini (kunlik daromad) to'liq almashtiradi va qamrovni kengaytiradi.
+     * @return yozilgan qatorlar soni
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public int replacePmsServices(Long hotelId, String hotelCurrency, LocalDate from, LocalDate to,
+                                  ExelyPmsApi.ServicesData src, MoneyConverter money) {
+        Map<String, ExelyPmsMapper.BookingMoney> foreign = new HashMap<>();
+        for (Booking b : bookingRepository.findForeignCurrency(hotelId, DataOrigin.EXELY_PMS,
+                hotelCurrency == null ? "UZS" : hotelCurrency)) {
+            String number = ExelyPmsMapper.bookingNumber(b.getExternalId());
+            foreign.merge(number, new ExelyPmsMapper.BookingMoney(b.getCurrency(), b.getTotalAmount()),
+                    (a, c) -> new ExelyPmsMapper.BookingMoney(a.currency(), a.totalInHotelCurrency().add(c.totalInHotelCurrency())));
+        }
+        serviceRevenueRepository.deleteInWindow(hotelId, from, to);
+        Set<String> seen = new HashSet<>();
+        List<ServiceRevenue> rows = ExelyPmsMapper.toServices(src, hotelId, foreign, money).stream()
+                .filter(s -> !s.getServiceDate().isBefore(from) && !s.getServiceDate().isAfter(to))
+                .filter(s -> seen.add(s.getExternalId() + "@" + s.getServiceDate()))
+                .toList();
+        serviceRevenueRepository.saveAll(rows);
+        hotelRepository.findById(hotelId).ifPresent(h -> {
+            if (h.getPmsServicesFrom() == null || from.isBefore(h.getPmsServicesFrom())) {
+                h.setPmsServicesFrom(from);
+            }
+            if (h.getPmsServicesUntil() == null || to.isAfter(h.getPmsServicesUntil())) {
+                h.setPmsServicesUntil(to);
+            }
+        });
+        return rows.size();
     }
 
     /** Xonalar soni Exely PMS'dagi xonalar ro'yxatidan. */

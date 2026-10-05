@@ -103,6 +103,36 @@ class ExelyPmsMapperTest {
         assertEquals(0, new BigDecimal("200000").compareTo(p.getAmount()));
     }
 
+    @Test
+    void servicesAreSplitByKindAndForeignAmountsConverted() {
+        ExelyPmsApi.ServicesData data = new ExelyPmsApi.ServicesData(List.of(
+                new ExelyPmsApi.Service("s1", 0, "Проживание", new BigDecimal("500000"), "20261001", 11L, false),
+                new ExelyPmsApi.Service("s2", 1, "Завтрак", new BigDecimal("80000"), "20261002", 11L, false),
+                // USD bron: hisobotda 86.19 — bizda 1 017 797 so'm → summa USD'da, o'giriladi
+                new ExelyPmsApi.Service("s3", 0, "Проживание", new BigDecimal("86.19"), "20261001", 22L, false),
+                // USD bron, lekin hisobot allaqachon so'mda (total bizdagiga yaqin) → o'girilmaydi
+                new ExelyPmsApi.Service("s4", 0, "Проживание", new BigDecimal("1000000"), "20261001", 33L, false),
+                new ExelyPmsApi.Service("bad", 0, "x", new BigDecimal("1"), null, 11L, false)),
+                List.of(new ExelyPmsApi.ServiceReservation(11L, "UZ-1", new BigDecimal("580000")),
+                        new ExelyPmsApi.ServiceReservation(22L, "US-1", new BigDecimal("86.19")),
+                        new ExelyPmsApi.ServiceReservation(33L, "US-2", new BigDecimal("1000000"))));
+        Map<String, ExelyPmsMapper.BookingMoney> foreign = Map.of(
+                "US-1", new ExelyPmsMapper.BookingMoney("USD", new BigDecimal("1017797.02")),
+                "US-2", new ExelyPmsMapper.BookingMoney("USD", new BigDecimal("1020000")));
+        MoneyConverter usd = (amount, currency, date) ->
+                "USD".equals(currency) ? amount.multiply(new BigDecimal("11808.76")) : amount;
+
+        var rows = ExelyPmsMapper.toServices(data, 5L, foreign, usd);
+
+        assertEquals(4, rows.size(), "sanasiz qator tashlanadi");
+        assertEquals(1, rows.get(1).getKind());
+        assertEquals(LocalDate.of(2026, 10, 2), rows.get(1).getServiceDate());
+        assertEquals("UZ-1", rows.get(0).getBookingNumber());
+        assertEquals(0, new BigDecimal("1017797.0244").compareTo(rows.get(2).getAmount()), "USD → so'm");
+        assertEquals(0, new BigDecimal("1000000").compareTo(rows.get(3).getAmount()), "allaqachon so'mda");
+        assertEquals("N-7", ExelyPmsMapper.bookingNumber("pms:N-7#9007199"));
+    }
+
     private static ExelyPmsApi.Payment pay(long id, int actionKind, String amount, String cancelledAt) {
         return new ExelyPmsApi.Payment(id, "N-1", actionKind, new BigDecimal(amount),
                 "202610011512", "202610011510", 1, "Uzcard", "UZS", cancelledAt);

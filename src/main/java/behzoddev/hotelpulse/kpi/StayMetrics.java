@@ -10,11 +10,14 @@ import java.util.List;
  * @param occupancy bandlik, 0..1 (ortiqcha bron bo'lsa 1 dan oshishi mumkin)
  * @param adr       sotilgan bitta xona-kechaning o'rtacha narxi
  * @param revpar    mavjud bitta xona-kechaga to'g'ri keladigan daromad
+ * @param roomRevenue   yashash daromadi (Exely xizmatlar hisoboti bo'lsa — faqat yashash; aks holda bron narxi)
+ * @param extrasRevenue nonushta va boshqa xizmatlar (faqat Exely xizmatlar hisoboti bo'lsa, aks holda 0)
  */
 public record StayMetrics(
         long availableRoomNights,
         long soldRoomNights,
         BigDecimal roomRevenue,
+        BigDecimal extrasRevenue,
         double occupancy,
         BigDecimal adr,
         BigDecimal revpar,
@@ -23,6 +26,12 @@ public record StayMetrics(
         List<DailyPoint> daily,
         List<SourceShare> sources) {
 
+    /** Jami daromad: yashash + xizmatlar (Exely'dagi "Выручка"). */
+    public BigDecimal totalRevenue() {
+        return roomRevenue.add(extrasRevenue);
+    }
+
+    /** @param revenue kunlik jami daromad (yashash + xizmatlar) */
     public record DailyPoint(LocalDate date, int roomsSold, double occupancy, BigDecimal revenue) {
     }
 

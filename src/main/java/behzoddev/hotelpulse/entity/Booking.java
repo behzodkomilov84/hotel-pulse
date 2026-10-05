@@ -62,6 +62,10 @@ public class Booking {
     @Column(name = "balance_due", precision = 15, scale = 2)
     private BigDecimal balanceDue;
 
+    /** Manbadagi asl valyuta (masalan, OTA bronlarida USD); summalar baribir mehmonxona valyutasida saqlanadi. */
+    @Column(length = 3)
+    private String currency;
+
     @Column(name = "booked_at", nullable = false)
     private LocalDateTime bookedAt;
 

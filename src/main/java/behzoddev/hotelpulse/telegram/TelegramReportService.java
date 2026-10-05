@@ -52,8 +52,14 @@ public class TelegramReportService {
 
         sb.append("🛏 Bandlik: <b>").append(fmt.pct(s.occupancy())).append("</b>")
                 .append(paren(fmt.pointChange(s.occupancy(), ps.occupancy()))).append("\n");
-        sb.append("💰 Xona daromadi: <b>").append(fmt.moneyShort(s.roomRevenue(), cur)).append("</b>")
+        boolean hasExtras = s.extrasRevenue().signum() != 0;
+        sb.append(hasExtras ? "💰 Yashash daromadi: <b>" : "💰 Xona daromadi: <b>")
+                .append(fmt.moneyShort(s.roomRevenue(), cur)).append("</b>")
                 .append(paren(fmt.change(s.roomRevenue(), ps.roomRevenue()))).append("\n");
+        if (hasExtras) {
+            sb.append("🍳 Nonushta va xizmatlar: ").append(fmt.moneyShort(s.extrasRevenue(), cur))
+                    .append(" · jami <b>").append(fmt.moneyShort(s.totalRevenue(), cur)).append("</b>\n");
+        }
         sb.append("🏷 ADR: ").append(fmt.money(s.adr(), cur)).append(paren(fmt.change(s.adr(), ps.adr()))).append("\n");
         sb.append("📈 RevPAR: ").append(fmt.money(s.revpar(), cur)).append("\n");
         sb.append("💳 Tushgan to'lovlar: ").append(fmt.moneyShort(kpi.paymentsReceived(), cur))
@@ -91,10 +97,10 @@ public class TelegramReportService {
             StayMetrics s = kpiService.report(h, period).stays();
             sold += s.soldRoomNights();
             available += s.availableRoomNights();
-            totals.merge(h.getCurrency(), s.roomRevenue(), BigDecimal::add);
+            totals.merge(h.getCurrency(), s.totalRevenue(), BigDecimal::add);
             sb.append("• <b>").append(esc(h.getName())).append("</b> — ")
                     .append(fmt.pct(s.occupancy())).append(" · ")
-                    .append(fmt.moneyShort(s.roomRevenue(), h.getCurrency())).append("\n");
+                    .append(fmt.moneyShort(s.totalRevenue(), h.getCurrency())).append("\n");
         }
         if (available > 0) {
             sb.append("\n<b>Jami</b>: bandlik ").append(fmt.pct((double) sold / available));

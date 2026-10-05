@@ -75,6 +75,19 @@ final class ExelyPmsSamples {
      * 501, 502 — to'lov (+); 503 — bekor qilingan (cancellationDateTime) va 505 — uning bekor qilish
      * yozuvi (actionKind=2) — ikkalasi ham hisobga olinmaydi; 504 — qaytarish (actionKind=1, −).
      */
+    /** Har bir 31 kunlik oynaga bir xil javob — qatorlar faqat o'z sanasi tushgan oynada yoziladi. */
+    static final String SERVICES = """
+            {"data": {
+              "services": [
+                {"id": "sv1", "kind": 0, "name": "Проживание", "amount": 600000.0, "date": "20261001", "reservationId": 1, "isIncluded": false},
+                {"id": "sv2", "kind": 1, "name": "Завтрак", "amount": 90000.0, "date": "20261001", "reservationId": 1, "isIncluded": false},
+                {"id": "sv3", "kind": 0, "name": "Проживание", "amount": 600000.0, "date": "20261002", "reservationId": 1, "isIncluded": false}
+              ],
+              "reservations": [{"id": 1, "bookingNumber": "20261001-508098-1001", "total": 1200000.0}],
+              "customers": [], "agents": [], "roomTypes": []
+            }}
+            """;
+
     static final String PAYMENTS = """
             {"data": {"payments": [
               {"id": 501, "bookingNumber": "20261001-508098-1001", "actionKind": 0, "kind": 0, "amount": 900000.0,

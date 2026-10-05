@@ -37,7 +37,7 @@
                 </div>
                 <div>
                     <div class="k">Daromad (shu oy)</div>
-                    <div class="v" data-count th:text="${@fmt.moneyShort(m.roomRevenue, h.currency)}">0</div>
+                    <div class="v" data-count th:text="${@fmt.moneyShort(m.totalRevenue(), h.currency)}">0</div>
                 </div>
             </div>
         </a>

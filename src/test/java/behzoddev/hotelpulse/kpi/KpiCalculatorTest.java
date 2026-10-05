@@ -45,6 +45,32 @@ class KpiCalculatorTest {
     }
 
     @Test
+    void exelyServicesReplaceBookingRevenueInsideCoverage() {
+        // 3 kun; xizmatlar hisoboti faqat 1- va 2-kunni qamraydi (3-kun — bronlardan).
+        Period p = new Period("custom", D1, D1.plusDays(2));
+        List<Booking> bookings = List.of(
+                booking(D1, 3, 1, 900_000, BookingStatus.CHECKED_OUT, "Booking.com"),  // 300 000 / kecha
+                booking(D1, 1, 1, 500_000, BookingStatus.CHECKED_OUT, "Sayt"));
+        KpiCalculator.ServiceDays services = new KpiCalculator.ServiceDays(D1, D1.plusDays(1), java.util.Map.of(
+                D1, new BigDecimal[]{new BigDecimal("700000"), new BigDecimal("100000")}
+                // D1+1 — qamrovda, lekin xizmat yo'q → 0
+        ));
+
+        StayMetrics m = KpiCalculator.calculate(bookings, 10, p, services);
+
+        assertEquals(4, m.soldRoomNights(), "bandlik baribir bronlardan");
+        // 700 000 (1-kun, yashash) + 0 (2-kun) + 300 000 (3-kun, bron) = 1 000 000
+        assertEquals(0, new BigDecimal("1000000").compareTo(m.roomRevenue()));
+        assertEquals(0, new BigDecimal("100000").compareTo(m.extrasRevenue()));
+        assertEquals(0, new BigDecimal("1100000").compareTo(m.totalRevenue()));
+        assertEquals(0, BigDecimal.valueOf(250_000).compareTo(m.adr()), "ADR — faqat yashashdan: 1M / 4");
+        assertEquals(0, new BigDecimal("800000").compareTo(m.daily().get(0).revenue()), "grafik — jami");
+        // Manbalar ulushi bronlardan, summasi yashash daromadiga moslangan.
+        BigDecimal sourcesSum = m.sources().stream().map(StayMetrics.SourceShare::revenue).reduce(BigDecimal.ZERO, BigDecimal::add);
+        assertEquals(0, new BigDecimal("1000000").compareTo(sourcesSum));
+    }
+
+    @Test
     void bookingSpanningPeriodBoundaryIsProrated() {
         // 4 kechalik bron, davrga faqat oxirgi 2 kechasi tushadi.
         Period p = new Period("custom", D1, D1.plusDays(4));

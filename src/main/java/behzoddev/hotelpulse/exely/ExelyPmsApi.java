@@ -69,6 +69,29 @@ public final class ExelyPmsApi {
     public record Room(String id, String name, String roomTypeId) {
     }
 
+    /** GET /analytics/services (dateKind=1 — yashash kuni bo'yicha). */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ServicesResponse(ServicesData data) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ServicesData(List<Service> services, List<ServiceReservation> reservations) {
+    }
+
+    /**
+     * Bitta kunlik xizmat. kind: 0 — yashash, 1 — qo'shimcha xizmat, 2 — transfer, 3 — erta kirish, 4 — kech chiqish.
+     * amount — chegirma bilan; date — "yyyyMMdd"; reservationId — yashash (roomStay) identifikatori.
+     */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Service(String id, Integer kind, String name, BigDecimal amount, String date,
+                          Long reservationId, Boolean isIncluded) {
+    }
+
+    /** total — yashashning to'liq narxi (valyutani aniqlash uchun bron summasi bilan solishtiriladi). */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record ServiceReservation(Long id, String bookingNumber, BigDecimal total) {
+    }
+
     /** GET /analytics/payments */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record PaymentsResponse(PaymentsData data) {
