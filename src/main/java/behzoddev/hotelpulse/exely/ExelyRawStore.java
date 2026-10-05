@@ -158,6 +158,18 @@ public class ExelyRawStore {
         return q == null || q.isBlank() ? null : q.trim();
     }
 
+    /** Shu turdagi bo'sh bo'lmagan yozuvlar: kalit → JSON (masalan, bron raqami → hisob-fakturalar massivi). */
+    @Transactional(readOnly = true)
+    public Map<String, String> payloads(Long hotelId, String kind) {
+        Map<String, String> result = new java.util.HashMap<>();
+        jdbc.query("select external_id, payload from exely_raw where hotel_id = ? and kind = ?"
+                        + " and json_length(payload) > 0",
+                rs -> {
+                    result.put(rs.getString(1), rs.getString(2));
+                }, hotelId, kind);
+        return result;
+    }
+
     /** Shu turdagi yozuvlarning kalitlari (masalan, saqlangan barcha bron raqamlari). */
     @Transactional(readOnly = true)
     public java.util.Set<String> externalIds(Long hotelId, String kind) {

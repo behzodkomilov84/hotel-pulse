@@ -153,6 +153,39 @@
         confirm.addEventListener('input', checkMatch);
     });
 
+    // Ochiladigan menyular (.nav-group): bosilganda ochiladi/yopiladi (telefon ham); tashqariga bosish yoki Esc — yopadi.
+    // Menyu ekrandan chiqib ketsa — o'ng chetga tekislanadi.
+    (function () {
+        var groups = document.querySelectorAll('.nav-group');
+        if (!groups.length) return;
+        function close(except) {
+            groups.forEach(function (g) {
+                if (g === except) return;
+                g.classList.remove('open');
+                g.querySelector('.nav-toggle').setAttribute('aria-expanded', 'false');
+            });
+        }
+        function fit(group) {
+            var menu = group.querySelector('.nav-menu');
+            menu.classList.remove('align-right');
+            if (menu.getBoundingClientRect().right > window.innerWidth - 8) menu.classList.add('align-right');
+        }
+        groups.forEach(function (g) {
+            var btn = g.querySelector('.nav-toggle');
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var open = !g.classList.contains('open');
+                close(g);
+                g.classList.toggle('open', open);
+                btn.setAttribute('aria-expanded', String(open));
+                if (open) fit(g);
+            });
+            g.addEventListener('mouseenter', function () { fit(g); });
+        });
+        document.addEventListener('click', function () { close(null); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(null); });
+    })();
+
     // Izohlar (button.tip[data-tip]): telefonda title ko'rinmaydi — shuning uchun o'z oynasi.
     // Bosilganda ochiladi/yopiladi (telefon ham), sichqoncha bor qurilmada — olib borilganda ham.
     // Oyna ekran chetidan chiqmasligi uchun joylashuvi hisoblanadi; tashqariga bosish, Esc, aylantirish — yopadi.

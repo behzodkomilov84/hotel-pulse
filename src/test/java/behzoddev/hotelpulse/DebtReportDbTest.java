@@ -182,6 +182,56 @@ class DebtReportDbTest {
                 .andExpect(status().isForbidden());
     }
 
+    @Test
+    void invoicesReportShowsWhetherInvoiceWritten() throws Exception {
+        // Karimov (pms-num-1, rs1) — o'z yashashiga hisob-faktura; Valiyev (pms-num-3) — boshqa yashashniki (hisobga olinmaydi).
+        rawStore.upsert(hotel.getId(), behzoddev.hotelpulse.exely.ExelyRawStore.INVOICES,
+                new behzoddev.hotelpulse.exely.ExelyRawStore.Row("pms-num-1", "pms-num-1", null,
+                        "[{\"number\":\"INV-1\",\"roomStayId\":\"rs1\",\"payer\":{\"name\":\"Tour LLC\"},"
+                                + "\"items\":[{\"kind\":0,\"total\":700000.0},{\"kind\":1,\"total\":300000.0}]}]"));
+        rawStore.upsert(hotel.getId(), behzoddev.hotelpulse.exely.ExelyRawStore.INVOICES,
+                new behzoddev.hotelpulse.exely.ExelyRawStore.Row("pms-num-3", "pms-num-3", null,
+                        "[{\"number\":\"INV-X\",\"roomStayId\":\"rsOTHER\",\"payer\":{\"name\":\"X\"},\"items\":[]}]"));
+        MockMvc mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        CustomUserDetails owner = new CustomUserDetails(saveUser("owner-inv", Role.OWNER, Set.of()));
+
+        String html = mvc.perform(get("/services/invoices").param("hotel", hotel.getId().toString()).with(user(owner)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertTrue(html.contains("INV-1") && html.contains("Tour LLC"));
+        assertFalse(html.contains("INV-X"), "boshqa yashashning hisob-fakturasi hisobga olinmaydi");
+        assertTrue(html.contains("3 ta yashash"));
+
+        // Faqat yozilmaganlar.
+        String no = mvc.perform(get("/services/invoices").param("hotel", hotel.getId().toString())
+                        .param("status", "NO").with(user(owner)))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertTrue(no.contains("Valiyev") && no.contains("Smith") && !no.contains("Karimov"));
+
+        // Saralash: mehmon bo'yicha o'sish — Karimov birinchi.
+        String sorted = mvc.perform(get("/services/invoices").param("hotel", hotel.getId().toString())
+                        .param("sort", "guest").param("dir", "asc").with(user(owner)))
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertTrue(sorted.indexOf("Karimov") < sorted.indexOf("Smith") && sorted.indexOf("Smith") < sorted.indexOf("Valiyev"));
+
+        // Excel: barcha qatorlar, holat va hisob-faktura summasi.
+        String csv = new String(mvc.perform(get("/services/invoices.csv").param("hotel", hotel.getId().toString())
+                        .with(user(owner))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
+        assertTrue(csv.startsWith("﻿Mehmonxona;Bron raqami"));
+        assertEquals(1 + 3, csv.lines().count());
+        assertTrue(csv.contains("pms-num-1;Karimov;") && csv.contains(";Yozilgan;1;INV-1;Tour LLC;1000000;"));
+
+        // Boshqa mehmonxona egasi bu mehmonxonani ko'rmaydi (hotel parametri bilan ham).
+        CustomUserDetails stranger = new CustomUserDetails(saveUser("stranger-inv", Role.HOTEL_OWNER, Set.of(other)));
+        String foreign = mvc.perform(get("/services/invoices").param("hotel", hotel.getId().toString()).with(user(stranger)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertFalse(foreign.contains("Karimov"));
+    }
+
+    @Autowired
+    private behzoddev.hotelpulse.exely.ExelyRawStore rawStore;
+
     private Hotel hotel(String name) {
         Hotel h = new Hotel();
         h.setName(name);

@@ -15,12 +15,28 @@
 
 <header th:fragment="header(active)" class="topbar">
     <a class="brand" th:href="@{/}"><span class="brand-dot"></span>HotelPulse</a>
-    <nav class="nav">
+    <nav class="nav" aria-label="Asosiy menyu">
         <a th:href="@{/}" th:classappend="${active == 'dashboard'} ? 'active'">Mehmonxonalar</a>
-        <th:block sec:authorize="hasRole('OWNER')">
-            <a th:href="@{/admin/hotels}" th:classappend="${active == 'admin-hotels'} ? 'active'">Boshqaruv: mehmonxonalar</a>
-            <a th:href="@{/admin/users}" th:classappend="${active == 'admin-users'} ? 'active'">Boshqaruv: foydalanuvchilar</a>
-        </th:block>
+
+        <!-- Ochiladigan menyular: kompyuterda — olib borilganda, telefonda — bosilganda (app.js). -->
+        <div class="nav-group" th:classappend="${active.startsWith('svc-')} ? 'active'">
+            <button type="button" class="nav-toggle" aria-haspopup="true" aria-expanded="false">
+                Xizmatlar <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="nav-menu">
+                <a th:href="@{/services/invoices}" th:classappend="${active == 'svc-invoices'} ? 'active'">Hisob-fakturalar</a>
+            </div>
+        </div>
+
+        <div class="nav-group" sec:authorize="hasRole('OWNER')" th:classappend="${active.startsWith('admin-')} ? 'active'">
+            <button type="button" class="nav-toggle" aria-haspopup="true" aria-expanded="false">
+                Boshqaruv <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="nav-menu">
+                <a th:href="@{/admin/hotels}" th:classappend="${active == 'admin-hotels'} ? 'active'">Mehmonxonalar</a>
+                <a th:href="@{/admin/users}" th:classappend="${active == 'admin-users'} ? 'active'">Foydalanuvchilar</a>
+            </div>
+        </div>
     </nav>
     <div class="user-box">
         <a class="user-link" th:href="@{/profile}" th:classappend="${active == 'profile'} ? 'active'" title="Profil">

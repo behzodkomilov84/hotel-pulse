@@ -132,6 +132,33 @@ h1, h2, h3 { letter-spacing: -.02em; }
 }
 .nav a:hover { background: var(--surface-2); color: var(--text); }
 .nav a.active { color: var(--primary); background: var(--primary-soft); }
+
+/* Ochiladigan menyular */
+.nav-group { position: relative; }
+.nav-toggle {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 0; border-radius: 10px;
+    background: none; color: var(--muted); font: 600 14px/1.4 inherit; font-family: inherit; cursor: pointer; white-space: nowrap;
+    transition: background var(--t-fast), color var(--t-fast);
+}
+.nav-toggle:hover, .nav-group.open .nav-toggle { background: var(--surface-2); color: var(--text); }
+.nav-group.active .nav-toggle { color: var(--primary); background: var(--primary-soft); }
+.nav-toggle .chev { width: 14px; height: 14px; transition: transform var(--t-fast); }
+.nav-group.open .nav-toggle .chev { transform: rotate(180deg); }
+.nav-menu {
+    position: absolute; top: calc(100% + 6px); left: 0; z-index: 60; min-width: 210px; padding: 6px;
+    display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow-lg); opacity: 0; visibility: hidden; transform: translateY(-4px);
+    transition: opacity var(--t-fast), transform var(--t-fast), visibility var(--t-fast);
+}
+/* Menyu va tugma orasidagi bo'shliqdan sichqoncha o'tganda yopilib qolmasin. */
+.nav-menu::before { content: ""; position: absolute; left: 0; right: 0; top: -8px; height: 8px; }
+.nav-group.open .nav-menu { opacity: 1; visibility: visible; transform: none; }
+@media (hover: hover) and (pointer: fine) {
+    .nav-group:hover .nav-menu { opacity: 1; visibility: visible; transform: none; }
+    .nav-group:hover .nav-toggle .chev { transform: rotate(180deg); }
+}
+.nav-menu a { display: block; padding: 9px 12px; border-radius: 8px; }
+.nav-menu.align-right { left: auto; right: 0; }
 .user-box { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 14px; }
 .user-box span { white-space: nowrap; }
 .avatar {
@@ -299,6 +326,17 @@ td.wrap { white-space: normal; }
 @keyframes live { 70% { box-shadow: 0 0 0 8px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
 
 .stats-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 28px; }
+.stats-grid.stats-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 760px) { .stats-grid.stats-grid-3 { grid-template-columns: 1fr; } }
+
+/* Saralanadigan jadval sarlavhalari */
+.sort-link { display: inline-flex; align-items: center; gap: 4px; color: inherit; white-space: nowrap; }
+.sort-link:hover { color: var(--text); }
+.sort-link.active { color: var(--primary); }
+.sort-arrow { font-size: 11px; opacity: .45; }
+.sort-link.active .sort-arrow { opacity: 1; }
+th.num .sort-link { justify-content: flex-end; width: 100%; }
+.inv-numbers { margin-top: 3px; font-size: 12px; max-width: 220px; white-space: normal; overflow-wrap: anywhere; }
 .stat {
     position: relative;
     display: flex; flex-direction: column; gap: 4px; padding: 18px 20px;
@@ -744,7 +782,7 @@ code { font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--
 /* ---------- Responsive ---------- */
 @media (max-width: 960px) {
     .topbar { padding: 10px 16px; gap: 10px; height: auto; flex-wrap: wrap; justify-content: space-between; }
-    .nav { order: 3; flex-basis: 100%; overflow-x: auto; scrollbar-width: none; }
+    .nav { order: 3; flex-basis: 100%; flex-wrap: wrap; }   /* menyular ochilishi uchun — surilmaydi (bandlar kam) */
     .chart-grid { grid-template-columns: 1fr; }
     .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .profile-grid { grid-template-columns: 1fr; }
