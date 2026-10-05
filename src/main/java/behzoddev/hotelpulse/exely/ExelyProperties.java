@@ -28,7 +28,7 @@ public record ExelyProperties(
             baseUrl = "https://connect.hopenapi.com";
         }
         if (pmsBaseUrl == null || pmsBaseUrl.isBlank()) {
-            pmsBaseUrl = "https://partner.tlintegration.com/api/webpms/v1";
+            pmsBaseUrl = "https://connect.hopenapi.com/api/exelypms/v1";
         }
         if (initialDays <= 0) {
             initialDays = 400;

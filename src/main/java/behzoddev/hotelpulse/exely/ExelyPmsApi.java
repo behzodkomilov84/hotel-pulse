@@ -73,10 +73,15 @@ public final class ExelyPmsApi {
     public record PaymentsData(List<Payment> payments) {
     }
 
+    /**
+     * actionKind (Exely hujjati): 0 — to'lov, 1 — qaytarish, 2 — to'lovni bekor qilish,
+     * 3 — qaytarishni bekor qilish, 4 — oldindan to'lov. Summa doim musbat keladi.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Payment(
             Long id,
             String bookingNumber,
+            Integer actionKind,
             BigDecimal amount,
             /** "yyyyMMddHHmm" */
             String paymentDateTime,

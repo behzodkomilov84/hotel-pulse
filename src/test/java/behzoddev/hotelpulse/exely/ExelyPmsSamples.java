@@ -70,18 +70,28 @@ final class ExelyPmsSamples {
             }
             """;
 
-    /** To'lovlar: biri bekor qilingan — hisobga olinmasligi kerak. */
+    /**
+     * To'lovlar (real javob tuzilishi bo'yicha, summa doim musbat):
+     * 501, 502 — to'lov (+); 503 — bekor qilingan (cancellationDateTime) va 505 — uning bekor qilish
+     * yozuvi (actionKind=2) — ikkalasi ham hisobga olinmaydi; 504 — qaytarish (actionKind=1, −).
+     */
     static final String PAYMENTS = """
             {"data": {"payments": [
-              {"id": 501, "bookingNumber": "20261001-508098-1001", "amount": 900000.0,
+              {"id": 501, "bookingNumber": "20261001-508098-1001", "actionKind": 0, "kind": 0, "amount": 900000.0,
                "dateTime": "202610011510", "paymentDateTime": "202610011512", "paymentMethod": 0,
                "paymentSystem": null, "currency": "UZS", "cancellationDateTime": null},
-              {"id": 502, "bookingNumber": "20261002-508098-1002", "amount": 2400000.0,
+              {"id": 502, "bookingNumber": "20261002-508098-1002", "actionKind": 0, "kind": 4, "amount": 2400000.0,
                "dateTime": "202610031420", "paymentDateTime": "202610031421", "paymentMethod": 1,
                "paymentSystem": "Uzcard", "currency": "UZS", "cancellationDateTime": null},
-              {"id": 503, "bookingNumber": "20261002-508098-1002", "amount": 100000.0,
+              {"id": 503, "bookingNumber": "20261002-508098-1002", "actionKind": 0, "kind": 0, "amount": 100000.0,
                "dateTime": "202610031430", "paymentDateTime": "202610031430", "paymentMethod": 0,
-               "currency": "UZS", "cancellationDateTime": "202610031445"}
+               "currency": "UZS", "cancellationDateTime": "202610031445"},
+              {"id": 504, "bookingNumber": "20261002-508098-1002", "actionKind": 1, "kind": 0, "amount": 150000.0,
+               "dateTime": "202610031500", "paymentDateTime": "202610031500", "paymentMethod": 0,
+               "currency": "UZS", "cancellationDateTime": null},
+              {"id": 505, "bookingNumber": "20261002-508098-1002", "actionKind": 2, "kind": 0, "amount": 100000.0,
+               "dateTime": "202610031445", "paymentDateTime": "202610031445", "paymentMethod": 0,
+               "currency": "UZS", "cancellationDateTime": null}
             ], "customers": [], "roomTypes": [], "services": [], "agents": [], "reservations": []}}
             """;
 

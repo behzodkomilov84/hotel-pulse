@@ -123,8 +123,10 @@ class ExelyPmsSyncDbTest {
         assertEquals(2, rows.stream().filter(b -> b.getStatus() == BookingStatus.CHECKED_IN).count());
         assertEquals(1, rows.stream().filter(b -> b.getStatus() == BookingStatus.CANCELLED).count());
 
-        long payments = paymentRepository.findAll().stream().filter(p -> p.getHotelId().equals(hotel.getId())).count();
-        assertEquals(2, payments, "bekor qilingan to'lov hisobga olinmaydi");
+        var payments = paymentRepository.findAll().stream().filter(p -> p.getHotelId().equals(hotel.getId())).toList();
+        assertEquals(3, payments.size(), "2 to'lov + 1 qaytarish; bekor qilinganlar hisobga olinmaydi");
+        BigDecimal net = payments.stream().map(p -> p.getAmount()).reduce(BigDecimal.ZERO, BigDecimal::add);
+        assertEquals(0, new BigDecimal("3150000").compareTo(net), "900 000 + 2 400 000 − 150 000");
 
         Hotel h = hotelRepository.findById(hotel.getId()).orElseThrow();
         assertTrue(kpiService.paymentsComplete(h), "PMS — to'lovlar to'liq");
@@ -145,7 +147,7 @@ class ExelyPmsSyncDbTest {
         assertTrue(syncService.sync(hotel.getId()).ok());
 
         assertEquals(4, hotelBookings().size(), "takror qator yo'q");
-        assertEquals(2, paymentRepository.findAll().stream().filter(p -> p.getHotelId().equals(hotel.getId())).count());
+        assertEquals(3, paymentRepository.findAll().stream().filter(p -> p.getHotelId().equals(hotel.getId())).count());
         assertEquals(firstSeen, hotelBookings().stream().filter(b -> b.getExternalId().endsWith("#rs1")).findFirst().orElseThrow().getBookedAt());
     }
 

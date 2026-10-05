@@ -79,19 +79,31 @@ class ExelyPmsMapperTest {
         assertEquals(0, BigDecimal.ZERO.compareTo(row.getBalanceDue()), "manfiy qoldiq 0 ga keltiriladi");
     }
 
-    @Test
-    void cancelledPaymentsAreSkipped() {
-        ExelyPmsApi.Payment ok = new ExelyPmsApi.Payment(1L, "N-1", new BigDecimal("500000"),
-                "202610011512", "202610011510", 1, "Uzcard", "UZS", null);
-        ExelyPmsApi.Payment cancelled = new ExelyPmsApi.Payment(2L, "N-1", new BigDecimal("100000"),
-                "202610011512", "202610011510", 0, null, "UZS", "202610011600");
+    private static ExelyPmsApi.Payment pay(long id, int actionKind, String amount, String cancelledAt) {
+        return new ExelyPmsApi.Payment(id, "N-1", actionKind, new BigDecimal(amount),
+                "202610011512", "202610011510", 1, "Uzcard", "UZS", cancelledAt);
+    }
 
-        Payment p = ExelyPmsMapper.toPayment(ok, 5L);
+    @Test
+    void paymentSignFollowsActionKind() {
+        Payment p = ExelyPmsMapper.toPayment(pay(1, 0, "500000", null), 5L);
         assertNotNull(p);
         assertEquals("pms-pay:1", p.getExternalId());
+        assertEquals(0, new BigDecimal("500000").compareTo(p.getAmount()));
         assertEquals(LocalDateTime.of(2026, 10, 1, 15, 12), p.getPaidAt());
         assertEquals("Uzcard", p.getMethod());
         assertNull(p.getBookingId());
-        assertNull(ExelyPmsMapper.toPayment(cancelled, 5L));
+
+        assertEquals(0, new BigDecimal("300000").compareTo(ExelyPmsMapper.toPayment(pay(2, 4, "300000", null), 5L).getAmount()),
+                "oldindan to'lov — qo'shiladi");
+        assertEquals(0, new BigDecimal("-150000").compareTo(ExelyPmsMapper.toPayment(pay(3, 1, "150000", null), 5L).getAmount()),
+                "qaytarish — ayiriladi");
+    }
+
+    @Test
+    void cancelledPaymentsAndCancellationRecordsAreSkipped() {
+        assertNull(ExelyPmsMapper.toPayment(pay(1, 0, "100000", "202610011600"), 5L), "bekor qilingan asl yozuv");
+        assertNull(ExelyPmsMapper.toPayment(pay(2, 2, "100000", null), 5L), "to'lovni bekor qilish yozuvi");
+        assertNull(ExelyPmsMapper.toPayment(pay(3, 3, "100000", null), 5L), "qaytarishni bekor qilish yozuvi");
     }
 }

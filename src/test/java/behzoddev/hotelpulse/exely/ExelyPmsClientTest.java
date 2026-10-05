@@ -72,8 +72,9 @@ class ExelyPmsClientTest {
         List<ExelyPmsApi.Payment> p = client.payments(KEY,
                 LocalDateTime.of(2026, 9, 1, 0, 0), LocalDateTime.of(2026, 10, 1, 0, 0));
 
-        assertEquals(3, p.size());
+        assertEquals(5, p.size());
         assertEquals("202610031445", p.get(2).cancellationDateTime());
+        assertEquals(1, p.get(3).actionKind());
     }
 
     @Test

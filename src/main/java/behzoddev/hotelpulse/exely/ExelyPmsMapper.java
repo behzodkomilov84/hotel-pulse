@@ -98,6 +98,14 @@ public final class ExelyPmsMapper {
         if (p.id() == null || p.amount() == null || notBlank(p.cancellationDateTime())) {
             return null;
         }
+        // Belgi actionKind bo'yicha (summa doim musbat keladi): 0/4 — tushum, 1 — qaytarish (ayiriladi).
+        // 2/3 — bekor qilish yozuvlari: asl yozuv cancellationDateTime bilan belgilanib, yuqorida
+        // allaqachon chiqarib tashlanadi — bularni ham hisoblasak, ikki marta ayirilgan bo'lardi.
+        int action = p.actionKind() == null ? 0 : p.actionKind();
+        if (action == 2 || action == 3) {
+            return null;
+        }
+        BigDecimal amount = action == 1 ? p.amount().abs().negate() : p.amount().abs();
         LocalDateTime paidAt = analyticsTime(notBlank(p.paymentDateTime()) ? p.paymentDateTime() : p.dateTime());
         if (paidAt == null) {
             return null;
@@ -106,7 +114,7 @@ public final class ExelyPmsMapper {
         pay.setHotelId(hotelId);
         pay.setOrigin(DataOrigin.EXELY_PMS);
         pay.setExternalId("pms-pay:" + p.id());
-        pay.setAmount(p.amount());
+        pay.setAmount(amount);
         pay.setMethod(method(p));
         pay.setPaidAt(paidAt);
         return pay;
