@@ -4,6 +4,7 @@ import behzoddev.hotelpulse.entity.Hotel;
 import behzoddev.hotelpulse.security.CustomUserDetails;
 import behzoddev.hotelpulse.service.HotelService;
 import behzoddev.hotelpulse.service.InvoiceReportService;
+import behzoddev.hotelpulse.service.InvoiceReportService.BookingRow;
 import behzoddev.hotelpulse.service.InvoiceReportService.Row;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ContentDisposition;
@@ -74,14 +75,41 @@ public class ServicesController {
                                               @RequestParam(required = false) Long hotel,
                                               @RequestParam(required = false) String q,
                                               @RequestParam(defaultValue = "debt") String sort,
-                                              @RequestParam(defaultValue = "desc") String dir) {
+                                              @RequestParam(defaultValue = "desc") String dir,
+                                              @RequestParam(defaultValue = "bookings") String level) {
         List<Hotel> accessible = hotelService.accessibleHotels(user);
         String s = InvoiceReportService.SORTS.contains(sort) ? sort : "debt";
         InvoiceReportService.Result result = invoices.report(selected(accessible, hotel), q, s, !"asc".equals(dir), 1);
         StringBuilder sb = new StringBuilder("﻿");
+        boolean rooms = "rooms".equals(level);
+        if (!rooms) {
+            // Bron bo'yicha: bitta qator — bitta bron (guruh hisoblari takrorlanmaydi).
+            sb.append("Mehmonxona;Bron raqami;Mehmon;Manba;Kelish;Ketish;Holat;Qarzdor xonalar;Jami xonalar;Qarz;"
+                    + "Qarz yoshi (kun);Exely hisoblari soni;Exely hisob raqamlari;To'lovchi;Exely hisob summasi;Valyuta\n");
+            for (BookingRow b : result.rows()) {
+                sb.append(csv(b.hotelName())).append(';')
+                        .append(csv(b.bookingNumber())).append(';')
+                        .append(csv(b.guestName())).append(';')
+                        .append(csv(b.source())).append(';')
+                        .append(b.arrival().format(DAY)).append(';')
+                        .append(b.departure().format(DAY)).append(';')
+                        .append(csv(String.join(", ", b.categories().stream().map(c -> c.getLabel()).toList()))).append(';')
+                        .append(b.debtorRooms()).append(';')
+                        .append(b.totalRooms()).append(';')
+                        .append(b.debt().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
+                        .append(b.ageDays()).append(';')
+                        .append(b.accountCount()).append(';')
+                        .append(csv(b.accountNumbers())).append(';')
+                        .append(csv(b.payer())).append(';')
+                        .append(b.accountTotal().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
+                        .append(csv(b.currency())).append('\n');
+            }
+            return csvResponse(sb, "hisob-fakturalar-bronlar-" + LocalDate.now(clock) + ".csv");
+        }
+        // Xonalar bo'yicha: hisob — faqat shu xonaga bog'langanlari.
         sb.append("Mehmonxona;Bron raqami;Mehmon;Manba;Kelish;Ketish;Holat;Yashash narxi;Qarz;Qarz yoshi (kun);"
-                + "Exely hisoblari soni;Exely hisob raqamlari;To'lovchi;Exely hisob summasi;Valyuta\n");
-        for (Row r : result.rows()) {
+                + "Xona hisoblari soni;Xona hisob raqamlari;To'lovchi;Xona hisob summasi;Valyuta\n");
+        for (Row r : result.stays()) {
             sb.append(csv(r.hotelName())).append(';')
                     .append(csv(r.bookingNumber())).append(';')
                     .append(csv(r.guestName())).append(';')
@@ -98,7 +126,10 @@ public class ServicesController {
                     .append(r.accountTotal().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
                     .append(csv(r.currency())).append('\n');
         }
-        String file = "hisob-fakturalar-" + LocalDate.now(clock) + ".csv";
+        return csvResponse(sb, "hisob-fakturalar-xonalar-" + LocalDate.now(clock) + ".csv");
+    }
+
+    private static ResponseEntity<byte[]> csvResponse(StringBuilder sb, String file) {
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(file).build().toString())
                 .contentType(new MediaType("text", "csv", StandardCharsets.UTF_8))

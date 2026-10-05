@@ -17,20 +17,22 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
- * Xizmatlar → Hisob-fakturalar: qarzdor yashashlar (Exely PMS qoldig'i) va ularning Exely hisoblari.
+ * Xizmatlar → Hisob-fakturalar: qarzdor bronlar (Exely PMS qoldig'i) va ularning Exely hisoblari — bron bo'yicha
+ * guruhlangan; har bir bron ichida qarzdor xonalari (yashashlar).
  *
  * Diqqat: Exely "/bookings/{raqam}/invoices" — rasmiy (soliq) hisob-faktura EMAS, Exely har bir bron uchun
  * avtomatik ochadigan hisob (счёт, folio): raqami bron raqamidan ("1264938911-01"), to'lovchi va qatorlar.
- * Shuning uchun bu yerda "hisob-faktura yozilganmi" aniqlanmaydi — rasmiy hisob-faktura manbasi
- * (qo'lda belgilash yoki Didox/Faktura.uz) tanlangach qo'shiladi.
- * Hisob yashashga roomStayId bo'yicha bog'lanadi; yashashi ko'rsatilmagan hisob butun bron uchun hisoblanadi.
+ * Guruh bronida bitta umumiy hisob barcha xonalarni qamraydi — shuning uchun hisob summasi bron darajasida
+ * ko'rsatiladi (xonalarga bo'linmaydi); xona qatorida faqat shu xonaga bog'langan (roomStayId) hisoblar.
  */
 @Service
 @RequiredArgsConstructor
@@ -44,8 +46,10 @@ public class InvoiceReportService {
     private final Clock clock;
 
     /**
+     * Qarzdor xona (yashash).
+     *
      * @param stayKey        yashash kaliti (bookings.external_id) — tafsilot oynasi uchun
-     * @param accountNumbers Exely hisoblari (folio) raqamlari; accountTotal — ulardagi qatorlar summasi
+     * @param accountNumbers faqat shu xonaga bog'langan Exely hisoblari; accountTotal — ulardagi summa
      */
     public record Row(Long hotelId, String stayKey, String hotelName, String currency, String bookingNumber, String guestName,
                       String source, LocalDate arrival, LocalDate departure, Category category,
@@ -53,29 +57,146 @@ public class InvoiceReportService {
                       int accountCount, String accountNumbers, String payer, BigDecimal accountTotal) {
     }
 
-    public record Summary(long count, BigDecimal debt) {
+    /**
+     * Qarzdor bron — xonalari bilan.
+     *
+     * @param debtorRooms qarzdor xonalar soni; totalRooms — bronning (bekor qilinmagan) jami xonalari
+     * @param accountNumbers bronning barcha Exely hisoblari; accountTotal — ulardagi summa (guruh hisobi ham)
+     */
+    public record BookingRow(Long hotelId, String hotelName, String currency, String bookingNumber, String guestName,
+                             String source, LocalDate arrival, LocalDate departure, List<Category> categories,
+                             BigDecimal debt, long ageDays, int debtorRooms, int totalRooms, List<Row> stays,
+                             int accountCount, String accountNumbers, String payer, BigDecimal accountTotal) {
+
+        public String key() {
+            return hotelId + ":" + bookingNumber;
+        }
     }
 
-    public record Result(List<Row> rows, Summary summary, long total, int page, int pages) {
+    public record Summary(long bookings, long stays, BigDecimal debt) {
     }
 
-    /** Qidiruv va saralash qo'llangan barcha qatorlar (eksport uchun) + umumiy ko'rsatkichlar. */
+    public record Result(List<BookingRow> rows, Summary summary, long total, int page, int pages) {
+
+        /** Barcha xonalar (eksport — xonalar bo'yicha). */
+        public List<Row> stays() {
+            return rows.stream().flatMap(b -> b.stays().stream()).toList();
+        }
+    }
+
+    /** Qidiruv va saralash qo'llangan barcha bronlar (eksport uchun) + umumiy ko'rsatkichlar. */
     @Transactional(readOnly = true)
     public Result report(List<Hotel> hotels, String query, String sort, boolean desc, int page) {
         LocalDate today = LocalDate.now(clock);
-        List<Row> all = new ArrayList<>();
+        List<BookingRow> all = new ArrayList<>();
         for (Hotel h : hotels) {
-            all.addAll(rows(h, today));
+            all.addAll(bookings(h, today));
         }
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
-        List<Row> filtered = all.stream()
-                .filter(r -> q.isEmpty() || matches(r, q))
+        List<BookingRow> filtered = all.stream()
+                .filter(b -> q.isEmpty() || matches(b, q))
                 .sorted(comparator(sort, desc))
                 .toList();
-        BigDecimal debt = filtered.stream().map(Row::debt).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal debt = filtered.stream().map(BookingRow::debt).reduce(BigDecimal.ZERO, BigDecimal::add);
+        long stays = filtered.stream().mapToLong(BookingRow::debtorRooms).sum();
         int pages = Math.max(1, (filtered.size() + PAGE_SIZE - 1) / PAGE_SIZE);
         int current = Math.min(Math.max(page, 1), pages);
-        return new Result(filtered, new Summary(filtered.size(), debt), filtered.size(), current, pages);
+        return new Result(filtered, new Summary(filtered.size(), stays, debt), filtered.size(), current, pages);
+    }
+
+    /** Joriy sahifadagi bronlar. */
+    public static List<BookingRow> pageRows(Result r) {
+        int from = (r.page() - 1) * PAGE_SIZE;
+        return r.rows().subList(Math.min(from, r.rows().size()), Math.min(from + PAGE_SIZE, r.rows().size()));
+    }
+
+    private List<BookingRow> bookings(Hotel hotel, LocalDate today) {
+        List<Booking> debtors = bookingRepository.findPmsDebtors(hotel.getId(), today);
+        if (debtors.isEmpty()) {
+            return List.of();
+        }
+        Map<String, String> accounts = raw.payloads(hotel.getId(), ExelyRawStore.INVOICES);
+        Map<String, Long> roomsByBooking = new java.util.HashMap<>();
+        for (Object[] r : bookingRepository.countActiveStaysByBooking(hotel.getId())) {
+            roomsByBooking.put(DebtService.bookingNumber((String) r[0]), ((Number) r[1]).longValue());
+        }
+
+        // Xonalar — bron raqami bo'yicha guruhlanadi.
+        Map<String, List<Row>> byBooking = new LinkedHashMap<>();
+        for (Booking b : debtors) {
+            String number = DebtService.bookingNumber(b);
+            Matched own = match(accounts.get(number), stayId(b), true);
+            Category category = DebtService.pmsCategory(b, today);
+            long age = category == Category.IN_HOUSE ? 0 : Math.max(0, ChronoUnit.DAYS.between(b.getDepartureDate(), today));
+            byBooking.computeIfAbsent(number, k -> new ArrayList<>()).add(new Row(hotel.getId(), b.getExternalId(),
+                    hotel.getName(), hotel.getCurrency(), number, b.getGuestName(), b.getSource(),
+                    b.getArrivalDate(), b.getDepartureDate(), category, b.getTotalAmount(), b.getBalanceDue(), age,
+                    own.count, String.join(", ", own.numbers), String.join(", ", own.payers), own.total));
+        }
+
+        List<BookingRow> result = new ArrayList<>();
+        for (Map.Entry<String, List<Row>> e : byBooking.entrySet()) {
+            List<Row> stays = e.getValue().stream()
+                    .sorted(Comparator.comparing(Row::debt).reversed().thenComparing(Row::stayKey)).toList();
+            Matched all = match(accounts.get(e.getKey()), null, false);
+            Row first = stays.get(0);
+            Set<Category> categories = new TreeSet<>();
+            BigDecimal debt = BigDecimal.ZERO;
+            long age = 0;
+            LocalDate arrival = first.arrival();
+            LocalDate departure = first.departure();
+            for (Row r : stays) {
+                categories.add(r.category());
+                debt = debt.add(r.debt());
+                age = Math.max(age, r.ageDays());
+                arrival = r.arrival().isBefore(arrival) ? r.arrival() : arrival;
+                departure = r.departure().isAfter(departure) ? r.departure() : departure;
+            }
+            int totalRooms = (int) Math.max(stays.size(), roomsByBooking.getOrDefault(e.getKey(), 0L));
+            result.add(new BookingRow(hotel.getId(), hotel.getName(), hotel.getCurrency(), e.getKey(),
+                    first.guestName(), first.source(), arrival, departure, List.copyOf(categories), debt, age,
+                    stays.size(), totalRooms, stays,
+                    all.count, String.join(", ", all.numbers), String.join(", ", all.payers), all.total));
+        }
+        return result;
+    }
+
+    record Matched(int count, Set<String> numbers, Set<String> payers, BigDecimal total) {
+    }
+
+    /**
+     * Exely hisoblari: stayId null — bronning barcha hisoblari; aks holda — shu xonaga tegishlilari
+     * (ownOnly — faqat roomStayId mos kelganlari; aks holda xonasi ko'rsatilmaganlari ham).
+     */
+    static Matched match(String json, String stayId, boolean ownOnly) {
+        int count = 0;
+        Set<String> numbers = new LinkedHashSet<>();
+        Set<String> payers = new LinkedHashSet<>();
+        BigDecimal total = BigDecimal.ZERO;
+        if (json != null) {
+            for (JsonNode inv : ExelyPmsClient.tree(json)) {
+                String rs = text(inv.get("roomStayId"));
+                if (stayId != null && (rs == null ? ownOnly : !rs.equals(stayId))) {
+                    continue;
+                }
+                count++;
+                String n = text(inv.get("number"));
+                if (n != null) {
+                    numbers.add(n);
+                }
+                String payer = text(inv.path("payer").get("name"));
+                if (payer != null) {
+                    payers.add(payer);
+                }
+                for (JsonNode item : inv.path("items")) {
+                    JsonNode t = item.get("total");
+                    if (t != null && t.isNumber()) {
+                        total = total.add(t.decimalValue());
+                    }
+                }
+            }
+        }
+        return new Matched(count, numbers, payers, total);
     }
 
     // ------------------------------------------------------------------ yashash tafsiloti (qarz bosilganda)
@@ -135,7 +256,7 @@ public class InvoiceReportService {
             }
 
             // Xizmatlar (kunlik daromad jadvalidan) — nom bo'yicha jamlanadi.
-            Map<String, BigDecimal[]> byName = new java.util.LinkedHashMap<>();
+            Map<String, BigDecimal[]> byName = new LinkedHashMap<>();
             Long reservationId = stay == null ? null : parseLong(stay);
             if (reservationId != null) {
                 for (behzoddev.hotelpulse.entity.ServiceRevenue s
@@ -194,72 +315,14 @@ public class InvoiceReportService {
         };
     }
 
+    // ------------------------------------------------------------------ yordamchilar
+
     private static Long parseLong(String s) {
         try {
             return Long.parseLong(s);
         } catch (NumberFormatException e) {
             return null;
         }
-    }
-
-    /** Joriy sahifadagi qatorlar. */
-    public static List<Row> pageRows(Result r) {
-        int from = (r.page() - 1) * PAGE_SIZE;
-        return r.rows().subList(Math.min(from, r.rows().size()), Math.min(from + PAGE_SIZE, r.rows().size()));
-    }
-
-    private List<Row> rows(Hotel hotel, LocalDate today) {
-        List<Booking> debtors = bookingRepository.findPmsDebtors(hotel.getId(), today);
-        if (debtors.isEmpty()) {
-            return List.of();
-        }
-        Map<String, String> accounts = raw.payloads(hotel.getId(), ExelyRawStore.INVOICES);
-        List<Row> rows = new ArrayList<>();
-        for (Booking b : debtors) {
-            String number = DebtService.bookingNumber(b);
-            Matched m = match(accounts.get(number), stayId(b));
-            Category category = DebtService.pmsCategory(b, today);
-            long age = category == Category.IN_HOUSE ? 0 : Math.max(0, ChronoUnit.DAYS.between(b.getDepartureDate(), today));
-            rows.add(new Row(hotel.getId(), b.getExternalId(), hotel.getName(), hotel.getCurrency(), number, b.getGuestName(), b.getSource(),
-                    b.getArrivalDate(), b.getDepartureDate(), category, b.getTotalAmount(), b.getBalanceDue(), age,
-                    m.count, String.join(", ", m.numbers), String.join(", ", m.payers), m.total));
-        }
-        return rows;
-    }
-
-    record Matched(int count, Set<String> numbers, Set<String> payers, BigDecimal total) {
-    }
-
-    /** Yashashga tegishli Exely hisoblari (roomStayId mos yoki yashash ko'rsatilmagan). */
-    static Matched match(String json, String stayId) {
-        int count = 0;
-        Set<String> numbers = new LinkedHashSet<>();
-        Set<String> payers = new LinkedHashSet<>();
-        BigDecimal total = BigDecimal.ZERO;
-        if (json != null) {
-            for (JsonNode inv : ExelyPmsClient.tree(json)) {
-                String rs = text(inv.get("roomStayId"));
-                if (rs != null && stayId != null && !rs.equals(stayId)) {
-                    continue;
-                }
-                count++;
-                String n = text(inv.get("number"));
-                if (n != null) {
-                    numbers.add(n);
-                }
-                String payer = text(inv.path("payer").get("name"));
-                if (payer != null) {
-                    payers.add(payer);
-                }
-                for (JsonNode item : inv.path("items")) {
-                    JsonNode t = item.get("total");
-                    if (t != null && t.isNumber()) {
-                        total = total.add(t.decimalValue());
-                    }
-                }
-            }
-        }
-        return new Matched(count, numbers, payers, total);
     }
 
     /** "pms:{raqam}#{roomStayId}" → roomStayId. */
@@ -276,9 +339,10 @@ public class InvoiceReportService {
         return s == null || s.isBlank() ? null : s;
     }
 
-    private static boolean matches(Row r, String q) {
-        return contains(r.bookingNumber(), q) || contains(r.guestName(), q) || contains(r.payer(), q)
-                || contains(r.accountNumbers(), q) || contains(r.hotelName(), q) || contains(r.source(), q);
+    private static boolean matches(BookingRow b, String q) {
+        return contains(b.bookingNumber(), q) || contains(b.payer(), q) || contains(b.accountNumbers(), q)
+                || contains(b.hotelName(), q) || contains(b.source(), q)
+                || b.stays().stream().anyMatch(r -> contains(r.guestName(), q));
     }
 
     private static boolean contains(String s, String q) {
@@ -287,25 +351,26 @@ public class InvoiceReportService {
 
     /** Saralash ustunlari. */
     public static final List<String> SORTS = List.of("hotel", "booking", "guest", "payer", "arrival", "departure",
-            "category", "debt", "accountTotal", "age");
+            "category", "rooms", "debt", "accountTotal", "age");
 
-    static Comparator<Row> comparator(String sort, boolean desc) {
-        Comparator<Row> c = switch (sort == null ? "" : sort) {
-            case "hotel" -> Comparator.comparing(Row::hotelName, String.CASE_INSENSITIVE_ORDER);
-            case "booking" -> Comparator.comparing(Row::bookingNumber);
-            case "guest" -> Comparator.comparing(r -> r.guestName() == null ? "" : r.guestName(), String.CASE_INSENSITIVE_ORDER);
-            case "payer" -> Comparator.comparing(Row::payer, String.CASE_INSENSITIVE_ORDER);
-            case "arrival" -> Comparator.comparing(Row::arrival);
-            case "departure" -> Comparator.comparing(Row::departure);
-            case "category" -> Comparator.comparing(Row::category);
-            case "accountTotal" -> Comparator.comparing(Row::accountTotal);
-            case "age" -> Comparator.comparingLong(Row::ageDays);
-            default -> Comparator.comparing(Row::debt);
+    static Comparator<BookingRow> comparator(String sort, boolean desc) {
+        Comparator<BookingRow> c = switch (sort == null ? "" : sort) {
+            case "hotel" -> Comparator.comparing(BookingRow::hotelName, String.CASE_INSENSITIVE_ORDER);
+            case "booking" -> Comparator.comparing(BookingRow::bookingNumber);
+            case "guest" -> Comparator.comparing(b -> b.guestName() == null ? "" : b.guestName(), String.CASE_INSENSITIVE_ORDER);
+            case "payer" -> Comparator.comparing(BookingRow::payer, String.CASE_INSENSITIVE_ORDER);
+            case "arrival" -> Comparator.comparing(BookingRow::arrival);
+            case "departure" -> Comparator.comparing(BookingRow::departure);
+            case "category" -> Comparator.comparing(b -> b.categories().get(0));
+            case "rooms" -> Comparator.comparingInt(BookingRow::debtorRooms);
+            case "accountTotal" -> Comparator.comparing(BookingRow::accountTotal);
+            case "age" -> Comparator.comparingLong(BookingRow::ageDays);
+            default -> Comparator.comparing(BookingRow::debt);
         };
         if (desc) {
             c = c.reversed();
         }
         // Teng qiymatlarda — barqaror tartib.
-        return c.thenComparing(Row::hotelName).thenComparing(Row::bookingNumber);
+        return c.thenComparing(BookingRow::hotelName).thenComparing(BookingRow::bookingNumber);
     }
 }

@@ -122,6 +122,18 @@
         });
     });
 
+    // Guruhlangan jadval: [data-toggle-rows=key] bosilsa — data-row-group=key qatorlari ochiladi/yopiladi.
+    document.querySelectorAll('[data-toggle-rows]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const rows = document.querySelectorAll('[data-row-group="' + CSS.escape(btn.dataset.toggleRows) + '"]');
+            const open = btn.getAttribute('aria-expanded') !== 'true';
+            rows.forEach(r => { r.hidden = !open; });
+            btn.setAttribute('aria-expanded', String(open));
+            btn.textContent = (open ? '▾' : '▸') + btn.textContent.slice(1);
+            btn.closest('tbody')?.classList.toggle('open', open);
+        });
+    });
+
     // Parol maydonlari: ko'rsatish/yashirish tugmasi.
     document.querySelectorAll('.pw-toggle').forEach(btn => {
         btn.addEventListener('click', () => {

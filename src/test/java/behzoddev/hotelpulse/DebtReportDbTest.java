@@ -199,8 +199,8 @@ class DebtReportDbTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertTrue(html.contains("INV-1") && html.contains("Tour LLC"));
-        assertFalse(html.contains("INV-X"), "boshqa yashashning hisobi hisobga olinmaydi");
-        assertTrue(html.contains("3 ta yashash"));
+        assertTrue(html.contains("INV-X"), "bron qatorida — bronning barcha hisoblari");
+        assertTrue(html.contains("3 ta bron"));
         assertTrue(html.contains("rasmiy hisob-faktura emas"), "Exely hisobi nima ekani ochiq aytiladi");
         assertFalse(html.contains("Yozilmagan"), "noto'g'ri yozilgan/yozilmagan belgisi yo'q");
 
@@ -223,7 +223,12 @@ class DebtReportDbTest {
         assertTrue(csv.startsWith("﻿Mehmonxona;Bron raqami"));
         assertEquals(1 + 3, csv.lines().count());
         assertTrue(csv.lines().findFirst().orElseThrow().contains("Exely hisob raqamlari"));
-        assertTrue(csv.contains("pms-num-1;Karimov;") && csv.contains(";1;INV-1;Tour LLC;1000000;"));
+        assertTrue(csv.contains("pms-num-1;Karimov;") && csv.contains(";1;1;300000;40;1;INV-1;Tour LLC;1000000;"), csv);
+        String roomsCsv = new String(mvc.perform(get("/services/invoices.csv").param("hotel", hotel.getId().toString())
+                        .param("level", "rooms").with(user(owner))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
+        assertTrue(roomsCsv.lines().findFirst().orElseThrow().contains("Xona hisob raqamlari"));
+        assertTrue(roomsCsv.contains("pms-num-3;Valiyev;") && !roomsCsv.contains("INV-X"), "xona darajasida — faqat o'z hisoblari");
 
         // Qarz bosilganda — tafsilot: narx, to'langan, qarz, Exely hisobi.
         assertTrue(html.contains("data-detail-url"), "qarz summasi bosiladigan");
@@ -242,6 +247,53 @@ class DebtReportDbTest {
         mvc.perform(get("/services/invoices/detail").param("hotel", hotel.getId().toString())
                         .param("stay", "pms:pms-num-1#rs1").with(user(stranger)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void invoicesAreGroupedByBookingWithoutDuplicatingGroupAccount() throws Exception {
+        // Guruh broni GRP-1: 2 ta qarzdor xona; umumiy hisob (xonasiz) 500 000 + A xonaning o'z hisobi 50 000.
+        for (String[] s : new String[][]{{"a", "Aliyev", "100000"}, {"b", "Botirov", "200000"}}) {
+            Booking b = new Booking();
+            b.setHotelId(hotel.getId());
+            b.setOrigin(DataOrigin.EXELY_PMS);
+            b.setExternalId("pms:GRP-1#" + s[0]);
+            b.setSource("Test");
+            b.setStatus(BookingStatus.CHECKED_OUT);
+            b.setGuestName(s[1]);
+            b.setArrivalDate(today.minusDays(5));
+            b.setDepartureDate(today.minusDays(2));
+            b.setTotalAmount(new BigDecimal(s[2]));
+            b.setBalanceDue(new BigDecimal(s[2]));
+            b.setBookedAt(LocalDateTime.of(today.minusDays(9), java.time.LocalTime.NOON));
+            bookingRepository.save(b);
+        }
+        rawStore.upsert(hotel.getId(), behzoddev.hotelpulse.exely.ExelyRawStore.INVOICES,
+                new behzoddev.hotelpulse.exely.ExelyRawStore.Row("GRP-1", "GRP-1", null,
+                        "[{\"number\":\"GRP-1-34\",\"payer\":{\"name\":\"Rahbar\"},\"items\":[{\"total\":500000.0}]},"
+                                + "{\"number\":\"GRP-1-35\",\"roomStayId\":\"a\",\"payer\":{\"name\":\"Rahbar\"},\"items\":[{\"total\":50000.0}]}]"));
+        MockMvc mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        CustomUserDetails owner = new CustomUserDetails(saveUser("owner-grp", Role.OWNER, Set.of()));
+
+        String html = mvc.perform(get("/services/invoices").param("hotel", hotel.getId().toString())
+                        .param("q", "GRP-1").with(user(owner)))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertTrue(html.contains("1 ta bron"), "ikki xona — bitta bron qatori");
+        assertTrue(html.contains("▸ 2 xona"), "xonalarni ochish tugmasi");
+        assertEquals(2, html.split("class=\"stay-row\"", -1).length - 1, "ikki xona qatori (yashirin)");
+
+        String csv = new String(mvc.perform(get("/services/invoices.csv").param("hotel", hotel.getId().toString())
+                        .param("q", "GRP-1").with(user(owner)))
+                .andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
+        assertEquals(2, csv.lines().count(), "sarlavha + bitta bron");
+        assertTrue(csv.contains(";2;2;300000;2;2;GRP-1-34, GRP-1-35;Rahbar;550000;"), csv);
+
+        String rooms = new String(mvc.perform(get("/services/invoices.csv").param("hotel", hotel.getId().toString())
+                        .param("q", "GRP-1").param("level", "rooms").with(user(owner)))
+                .andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
+        assertEquals(3, rooms.lines().count());
+        assertTrue(rooms.contains("GRP-1;Aliyev;") && rooms.contains(";1;GRP-1-35;Rahbar;50000;"),
+                "xonada — faqat o'z hisobi (umumiy hisob takrorlanmaydi)");
+        assertTrue(rooms.contains("GRP-1;Botirov;") && rooms.contains(";0;;;0;"));
     }
 
     @Autowired

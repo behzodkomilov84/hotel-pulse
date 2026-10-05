@@ -8,16 +8,23 @@
         <div>
             <h1>Hisob-fakturalar</h1>
             <p class="subtitle">
-                <span th:text="${@fmt.number(sm.count)} + ' ta qarzdor yashash · qarz ' + ${@fmt.moneyShort(sm.debt, 'UZS')}"></span>
+                <span th:text="${@fmt.number(sm.bookings)} + ' ta qarzdor bron (' + ${@fmt.number(sm.stays)} + ' xona) · qarz ' + ${@fmt.moneyShort(sm.debt, 'UZS')}"></span>
                 <span>·</span>
                 <span th:text="'holat: ' + ${#temporals.format(#temporals.createNow(), 'dd.MM.yyyy HH:mm')}"></span>
             </p>
         </div>
-        <a class="btn btn-secondary"
-           th:href="@{/services/invoices.csv(hotel=${hotel}, q=${q}, sort=${sort}, dir=${dir})}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
-            Excel'ga yuklash
-        </a>
+        <div class="head-actions">
+            <a class="btn btn-secondary"
+               th:href="@{/services/invoices.csv(hotel=${hotel}, q=${q}, sort=${sort}, dir=${dir})}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+                Excel — bronlar
+            </a>
+            <a class="btn btn-secondary"
+               th:href="@{/services/invoices.csv(hotel=${hotel}, q=${q}, sort=${sort}, dir=${dir}, level='rooms')}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+                Excel — xonalar
+            </a>
+        </div>
     </div>
 
     <div class="alert alert-info reveal">
@@ -48,9 +55,9 @@
     <!-- ===== Jadval ===== -->
     <div class="card table-wrap reveal" th:if="${!rows.isEmpty()}">
         <p class="table-caption">
-            <b th:text="${@fmt.number(result.total)} + ' ta yashash'"></b>
+            <b th:text="${@fmt.number(result.total)} + ' ta bron'"></b>
             <span th:if="${q != null and !q.isBlank()}" th:text="' · «' + ${q} + '»'"></span>
-            <span class="muted">· ustun nomini bosing — saralash · qarz summasini bosing — tafsilot</span>
+            <span class="muted">· ustun nomini bosing — saralash · «▸ xona» — bron xonalari · qarz summasini bosing — tafsilot</span>
         </p>
         <table class="debt-table inv-table">
             <thead>
@@ -58,20 +65,52 @@
                 <th:block th:if="${showHotel}"><th th:replace="~{:: sortable('hotel', 'Mehmonxona', '')}"></th></th:block>
                 <th th:replace="~{:: sortable('booking', 'Bron', '')}"></th>
                 <th th:replace="~{:: sortable('guest', 'Mehmon', '')}"></th>
+                <th th:replace="~{:: sortable('rooms', 'Xonalar', 'num')}"></th>
                 <th th:replace="~{:: sortable('departure', 'Yashash', 'col-source')}"></th>
                 <th th:replace="~{:: sortable('category', 'Holat', '')}"></th>
                 <th th:replace="~{:: sortable('debt', 'Qarz', 'num')}"></th>
                 <th th:replace="~{:: sortable('age', 'O\'tdi', 'num col-paid')}"></th>
-                <th>Exely hisobi</th>
+                <th>Exely hisoblari</th>
                 <th th:replace="~{:: sortable('payer', 'To\'lovchi', 'col-total')}"></th>
                 <th th:replace="~{:: sortable('accountTotal', 'Hisob summasi', 'num col-total')}"></th>
             </tr>
             </thead>
-            <tbody>
-            <tr th:each="r : ${rows}">
-                <td th:if="${showHotel}" class="wrap" th:text="${r.hotelName}"></td>
-                <td class="mono" th:text="${r.bookingNumber}"></td>
-                <td class="wrap"><strong th:text="${r.guestName} ?: '—'"></strong></td>
+            <!-- Har bir bron — alohida tbody: bron qatori + (ko'p xonali bo'lsa) yashirin xonalar qatorlari. -->
+            <tbody th:each="b : ${rows}" class="booking-group">
+            <tr class="booking-row">
+                <td th:if="${showHotel}" class="wrap" th:text="${b.hotelName}"></td>
+                <td class="mono" th:text="${b.bookingNumber}"></td>
+                <td class="wrap"><strong th:text="${b.guestName} ?: '—'"></strong></td>
+                <td class="num">
+                    <button type="button" class="rooms-toggle" th:if="${b.debtorRooms > 1}" aria-expanded="false"
+                            th:attr="data-toggle-rows=${b.key()}"
+                            th:text="'▸ ' + ${b.debtorRooms} + (${b.totalRooms > b.debtorRooms} ? ' / ' + ${b.totalRooms} : '') + ' xona'"></button>
+                    <span th:unless="${b.debtorRooms > 1}" class="muted"
+                          th:text="${b.totalRooms > 1} ? '1 / ' + ${b.totalRooms} : '1'"></span>
+                </td>
+                <td class="col-source" th:text="${#temporals.format(b.arrival, 'dd.MM.yy')} + ' → ' + ${#temporals.format(b.departure, 'dd.MM.yy')}"></td>
+                <td>
+                    <span th:each="c : ${b.categories}" class="badge" th:text="${c.label}"
+                          th:classappend="${c.name() == 'IN_HOUSE'} ? 'badge-role' : (${c.name() == 'CHECKED_OUT'} ? 'badge-off' : 'badge-warn')"></span>
+                </td>
+                <td class="num">
+                    <button type="button" class="debt-link" th:if="${b.debtorRooms == 1}" data-detail-target="stayModal"
+                            th:attr="data-detail-url=@{/services/invoices/detail(hotel=${b.hotelId}, stay=${b.stays[0].stayKey})}"
+                            th:text="${@fmt.money(b.debt, b.currency)}" title="Tafsilot"></button>
+                    <b class="debt-cell" th:unless="${b.debtorRooms == 1}" th:text="${@fmt.money(b.debt, b.currency)}"></b>
+                </td>
+                <td class="num col-paid" th:text="${b.ageDays > 0} ? ${b.ageDays} + ' kun' : '—'"
+                    th:classappend="${b.ageDays > 90} ? 'text-danger'"></td>
+                <td class="inv-numbers mono" th:text="${b.accountNumbers.isEmpty()} ? '—' : ${b.accountNumbers}"></td>
+                <td class="wrap col-total" th:text="${b.payer.isEmpty()} ? '—' : ${b.payer}"></td>
+                <td class="num col-total" th:text="${b.accountCount > 0} ? ${@fmt.money(b.accountTotal, b.currency)} : '—'"></td>
+            </tr>
+            <tr class="stay-row" th:each="r : ${b.stays}" th:if="${b.debtorRooms > 1}" hidden
+                th:attr="data-row-group=${b.key()}">
+                <td th:if="${showHotel}"></td>
+                <td class="stay-indent muted">↳ xona</td>
+                <td class="wrap" th:text="${r.guestName} ?: '—'"></td>
+                <td></td>
                 <td class="col-source" th:text="${#temporals.format(r.arrival, 'dd.MM.yy')} + ' → ' + ${#temporals.format(r.departure, 'dd.MM.yy')}"></td>
                 <td>
                     <span class="badge" th:text="${r.category.label}"
@@ -82,11 +121,10 @@
                             th:attr="data-detail-url=@{/services/invoices/detail(hotel=${r.hotelId}, stay=${r.stayKey})}"
                             th:text="${@fmt.money(r.debt, r.currency)}" title="Tafsilot"></button>
                 </td>
-                <td class="num col-paid" th:text="${r.ageDays > 0} ? ${r.ageDays} + ' kun' : '—'"
-                    th:classappend="${r.ageDays > 90} ? 'text-danger'"></td>
+                <td class="num col-paid" th:text="${r.ageDays > 0} ? ${r.ageDays} + ' kun' : '—'"></td>
                 <td class="inv-numbers mono" th:text="${r.accountNumbers.isEmpty()} ? '—' : ${r.accountNumbers}"></td>
-                <td class="wrap col-total" th:text="${r.payer.isEmpty()} ? '—' : ${r.payer}"></td>
-                <td class="num col-total" th:text="${r.accountCount > 0} ? ${@fmt.money(r.accountTotal, r.currency)} : '—'"></td>
+                <td class="wrap col-total muted" th:text="${r.payer.isEmpty()} ? '' : ${r.payer}"></td>
+                <td class="num col-total muted" th:text="${r.accountCount > 0} ? ${@fmt.money(r.accountTotal, r.currency)} : ''"></td>
             </tr>
             </tbody>
         </table>

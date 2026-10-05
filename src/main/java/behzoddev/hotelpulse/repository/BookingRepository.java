@@ -62,6 +62,14 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     java.util.Optional<Booking> findFirstByHotelIdAndExternalId(Long hotelId, String externalId);
 
+    /** PMS bronlarining bekor qilinmagan xonalari soni: ["pms:{raqam}", soni]. */
+    @Query(value = """
+            select substring_index(external_id, '#', 1), count(*) from bookings
+            where hotel_id = :hotelId and origin = 'EXELY_PMS' and status <> 'CANCELLED'
+            group by substring_index(external_id, '#', 1)
+            """, nativeQuery = true)
+    List<Object[]> countActiveStaysByBooking(@Param("hotelId") Long hotelId);
+
     List<Booking> findByHotelIdAndOriginAndExternalIdStartingWith(Long hotelId, DataOrigin origin, String prefix);
 
     /** Qarzdorlik hisoboti: PMS qoldig'i bor, zaselenie qilingan yashashlar. */

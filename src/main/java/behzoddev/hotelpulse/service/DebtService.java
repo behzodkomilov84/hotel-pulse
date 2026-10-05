@@ -82,6 +82,13 @@ public class DebtService {
     }
 
     /** "pms:20261001-508098-1001#rs1" → "20261001-508098-1001"; Read Reservation "N#0" → "N". */
+    /** "pms:{raqam}" (yoki "pms:{raqam}#{xona}") → raqam. */
+    static String bookingNumber(String pmsKey) {
+        String id = pmsKey.startsWith("pms:") ? pmsKey.substring(4) : pmsKey;
+        int hash = id.lastIndexOf('#');
+        return hash > 0 ? id.substring(0, hash) : id;
+    }
+
     static String bookingNumber(Booking b) {
         String id = b.getExternalId();
         if (b.getOrigin() == DataOrigin.EXELY_PMS && id.startsWith("pms:")) {
