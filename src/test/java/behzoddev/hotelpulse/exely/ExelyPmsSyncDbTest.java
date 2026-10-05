@@ -160,19 +160,20 @@ class ExelyPmsSyncDbTest {
 
         // Xizmatlar: 01.10 — yashash 600 000 + nonushta 90 000; 02.10 — yashash 600 000.
         var svc = serviceRevenueRepository.findAll().stream().filter(x -> x.getHotelId().equals(hotel.getId())).toList();
-        assertEquals(3, svc.size(), "har qator faqat o'z oynasida yoziladi");
+        assertEquals(5, svc.size(), "har qator faqat o'z oynasida yoziladi");
         assertNotNull(h.getPmsServicesFrom());
         assertTrue(h.getPmsServicesUntil().isAfter(java.time.LocalDate.now()), "kelajak ham qamraladi");
         var day = kpiService.report(h, new behzoddev.hotelpulse.kpi.Period("custom",
                 java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2026, 10, 1))).stays();
-        assertEquals(0, new BigDecimal("600000").compareTo(day.roomRevenue()), "yashash — xizmatlar hisobotidan");
-        assertEquals(0, new BigDecimal("90000").compareTo(day.extrasRevenue()));
+        assertEquals(0, new BigDecimal("650000").compareTo(day.roomRevenue()), "yashash + kech chiqish (DRR kabi)");
+        assertEquals(0, new BigDecimal("110000").compareTo(day.extrasRevenue()), "nonushta + kir yuvish");
+        assertEquals(0, new BigDecimal("90000").compareTo(day.mealsRevenue()), "nonushta (Meals)");
 
         // Xom arxiv: Exely bergan hamma narsa saqlanadi.
         var archive = rawStore.counts(hotel.getId());
         assertEquals(3L, archive.get(ExelyRawStore.BOOKING), "3 ta bron");
         assertEquals(3L, archive.get(ExelyRawStore.INVOICES));
-        assertEquals(3L, archive.get(ExelyRawStore.SERVICE), "xizmat qatorlari");
+        assertEquals(5L, archive.get(ExelyRawStore.SERVICE), "xizmat qatorlari");
         assertEquals(1L, archive.get(ExelyRawStore.RESERVATION));
         assertEquals(5L, archive.get(ExelyRawStore.PAYMENT), "xomda bekor qilingan to'lovlar ham bor");
         assertTrue(archive.get(ExelyRawStore.GUEST) >= 1, "mehmon profillari");

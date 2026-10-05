@@ -184,6 +184,7 @@ public final class ExelyPmsMapper {
             row.setServiceDate(date);
             row.setKind(s.kind() == null ? ServiceRevenue.ACCOMMODATION : s.kind());
             row.setName(s.name() == null ? null : trim(s.name(), 128));
+            row.setCategory(s.optionCategory() == null || s.optionCategory().isBlank() ? null : trim(s.optionCategory(), 64));
             row.setAmount(amount);
             row.setCurrency(currency);
             row.setReservationId(s.reservationId());

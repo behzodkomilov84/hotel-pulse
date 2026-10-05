@@ -123,7 +123,7 @@ public class KpiService {
         }
         Map<LocalDate, BigDecimal[]> byDate = new HashMap<>();
         for (Object[] r : serviceRevenueRepository.dailyTotals(hotel.getId(), period.from(), period.to())) {
-            byDate.put((LocalDate) r[0], new BigDecimal[]{(BigDecimal) r[1], (BigDecimal) r[2]});
+            byDate.put((LocalDate) r[0], new BigDecimal[]{(BigDecimal) r[1], (BigDecimal) r[2], (BigDecimal) r[3]});
         }
         return new KpiCalculator.ServiceDays(hotel.getPmsServicesFrom(), hotel.getPmsServicesUntil(), byDate);
     }

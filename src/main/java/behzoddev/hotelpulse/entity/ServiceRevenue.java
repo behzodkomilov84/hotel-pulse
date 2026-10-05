@@ -42,6 +42,10 @@ public class ServiceRevenue {
     @Column(length = 128)
     private String name;
 
+    /** Exely optionCategory: Meals, Food service, Laundry, Entertainments, ... (bo'lmasligi mumkin). */
+    @Column(length = 64)
+    private String category;
+
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal amount;
 

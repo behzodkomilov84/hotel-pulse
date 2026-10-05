@@ -104,3 +104,14 @@ SET pms_services_from  = NULL,
 WHERE exely_pms_key IS NOT NULL;
 DELETE FROM service_revenue;
 DELETE FROM exely_raw WHERE kind IN ('service', 'service_cancelled');
+
+--changeset behzod:18
+-- Xizmat toifasi (Exely optionCategory: Meals, Food service, Laundry, ...) — DRR qatorlari bo'yicha
+-- taqsimlash uchun: yashash (kind 0, 3 — erta kirish, 4 — kech chiqish), nonushta (Meals/Food service), boshqa.
+ALTER TABLE service_revenue
+    ADD COLUMN category VARCHAR(64) NULL AFTER name;
+UPDATE hotels
+SET pms_services_from  = NULL,
+    pms_services_until = NULL
+WHERE exely_pms_key IS NOT NULL;
+DELETE FROM service_revenue;

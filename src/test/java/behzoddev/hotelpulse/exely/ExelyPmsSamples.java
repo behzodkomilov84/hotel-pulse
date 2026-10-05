@@ -80,7 +80,9 @@ final class ExelyPmsSamples {
             {"data": {
               "services": [
                 {"id": "sv1", "kind": 0, "name": "Проживание", "amount": 600000.0, "date": "20261001", "reservationId": 1, "isIncluded": false},
-                {"id": "sv2", "kind": 1, "name": "Завтрак", "amount": 90000.0, "date": "20261001", "reservationId": 1, "isIncluded": false},
+                {"id": "sv2", "kind": 1, "name": "Завтрак", "amount": 90000.0, "date": "20261001", "reservationId": 1, "isIncluded": true, "optionCategory": "Meals"},
+                {"id": "sv4", "kind": 4, "name": "Late check-out", "amount": 50000.0, "date": "20261001", "reservationId": 1, "isIncluded": false},
+                {"id": "sv5", "kind": 1, "name": "Laundry", "amount": 20000.0, "date": "20261001", "reservationId": 1, "isIncluded": false, "optionCategory": "Laundry"},
                 {"id": "sv3", "kind": 0, "name": "Проживание", "amount": 600000.0, "date": "20261002", "reservationId": 1, "isIncluded": false}
               ],
               "reservations": [{"id": 1, "bookingNumber": "20261001-508098-1001", "total": 1200000.0}],

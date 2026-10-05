@@ -16,11 +16,18 @@ public interface ServiceRevenueRepository extends JpaRepository<ServiceRevenue, 
     @Query("delete from ServiceRevenue s where s.hotelId = :hotelId and s.serviceDate >= :from and s.serviceDate <= :to")
     int deleteInWindow(@Param("hotelId") Long hotelId, @Param("from") LocalDate from, @Param("to") LocalDate to);
 
-    /** Kunlar bo'yicha: [sana, yashash summasi, xizmatlar summasi]. */
+    /**
+     * Kunlar bo'yicha (Exely DRR qatorlari kabi): [sana, yashash, nonushta/ovqatlanish, boshqa xizmatlar].
+     * Yashash — kind 0 (yashash), 3 (erta kirish), 4 (kech chiqish); nonushta — Meals / Food service toifasi.
+     */
     @Query("""
             select s.serviceDate,
-                   coalesce(sum(case when s.kind = 0 then s.amount else 0 end), 0),
-                   coalesce(sum(case when s.kind <> 0 then s.amount else 0 end), 0)
+                   coalesce(sum(case when s.kind in (0, 3, 4) then s.amount else 0 end), 0),
+                   coalesce(sum(case when s.kind not in (0, 3, 4) and s.category in ('Meals', 'Food service')
+                                     then s.amount else 0 end), 0),
+                   coalesce(sum(case when s.kind not in (0, 3, 4)
+                                      and (s.category is null or s.category not in ('Meals', 'Food service'))
+                                     then s.amount else 0 end), 0)
             from ServiceRevenue s
             where s.hotelId = :hotelId and s.serviceDate >= :from and s.serviceDate <= :to
             group by s.serviceDate

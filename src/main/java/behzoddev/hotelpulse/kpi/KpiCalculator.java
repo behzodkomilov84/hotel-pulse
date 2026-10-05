@@ -27,7 +27,8 @@ public final class KpiCalculator {
     }
 
     /**
-     * Exely xizmatlar hisoboti: kunlik [yashash, xizmatlar] summalari va u qamragan sanalar [from, until].
+     * Exely xizmatlar hisoboti: kunlik [yashash, nonushta, boshqa xizmatlar] (yoki [yashash, xizmatlar]) summalari
+     * va u qamragan sanalar [from, until].
      * Qamrovdagi, lekin byDate'da yo'q kun — daromad 0 (o'sha kuni xizmat bo'lmagan).
      */
     public record ServiceDays(LocalDate from, LocalDate until, Map<LocalDate, BigDecimal[]> byDate) {
@@ -51,6 +52,8 @@ public final class KpiCalculator {
         BigDecimal[] extras = new BigDecimal[days];
         Arrays.fill(revenue, BigDecimal.ZERO);
         Arrays.fill(extras, BigDecimal.ZERO);
+        BigDecimal[] meals = new BigDecimal[days];
+        Arrays.fill(meals, BigDecimal.ZERO);
 
         Map<String, long[]> sourceNights = new HashMap<>();
         Map<String, BigDecimal> sourceRevenue = new HashMap<>();
@@ -96,7 +99,8 @@ public final class KpiCalculator {
                 if (services.covers(d)) {
                     BigDecimal[] v = services.byDate().get(d);
                     revenue[i] = v == null ? BigDecimal.ZERO : v[0];
-                    extras[i] = v == null ? BigDecimal.ZERO : v[1];
+                    extras[i] = v == null ? BigDecimal.ZERO : (v.length > 2 ? v[1].add(v[2]) : v[1]);
+                    meals[i] = v == null || v.length < 3 ? BigDecimal.ZERO : v[1];
                 }
             }
         }
@@ -104,11 +108,13 @@ public final class KpiCalculator {
         long sold = 0;
         BigDecimal totalRevenue = BigDecimal.ZERO;
         BigDecimal totalExtras = BigDecimal.ZERO;
+        BigDecimal totalMeals = BigDecimal.ZERO;
         List<StayMetrics.DailyPoint> daily = new ArrayList<>(days);
         for (int i = 0; i < days; i++) {
             sold += roomsSold[i];
             totalRevenue = totalRevenue.add(revenue[i]);
             totalExtras = totalExtras.add(extras[i]);
+            totalMeals = totalMeals.add(meals[i]);
             daily.add(new StayMetrics.DailyPoint(from.plusDays(i), roomsSold[i],
                     ratio(roomsSold[i], roomsCount), revenue[i].add(extras[i])));
         }
@@ -132,6 +138,7 @@ public final class KpiCalculator {
                 sold,
                 totalRevenue,
                 totalExtras,
+                totalMeals,
                 ratio(sold, available),
                 divide(totalRevenue, sold),
                 divide(totalRevenue, available),

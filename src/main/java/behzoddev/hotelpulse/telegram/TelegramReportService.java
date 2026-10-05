@@ -57,8 +57,9 @@ public class TelegramReportService {
                 .append(fmt.moneyShort(s.roomRevenue(), cur)).append("</b>")
                 .append(paren(fmt.change(s.roomRevenue(), ps.roomRevenue()))).append("\n");
         if (hasExtras) {
-            sb.append("🍳 Nonushta va xizmatlar: ").append(fmt.moneyShort(s.extrasRevenue(), cur))
-                    .append(" · jami <b>").append(fmt.moneyShort(s.totalRevenue(), cur)).append("</b>\n");
+            sb.append("🍳 Nonushta: ").append(fmt.moneyShort(s.mealsRevenue(), cur))
+                    .append(" · boshqa xizmatlar: ").append(fmt.moneyShort(s.extrasRevenue().subtract(s.mealsRevenue()), cur))
+                    .append("\n💵 Jami daromad: <b>").append(fmt.moneyShort(s.totalRevenue(), cur)).append("</b>\n");
         }
         sb.append("🏷 ADR: ").append(fmt.money(s.adr(), cur)).append(paren(fmt.change(s.adr(), ps.adr()))).append("\n");
         sb.append("📈 RevPAR: ").append(fmt.money(s.revpar(), cur)).append("\n");

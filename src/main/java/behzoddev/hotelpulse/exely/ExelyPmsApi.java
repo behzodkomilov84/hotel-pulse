@@ -84,7 +84,12 @@ public final class ExelyPmsApi {
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Service(String id, Integer kind, String name, BigDecimal amount, String date,
-                          Long reservationId, Boolean isIncluded) {
+                          Long reservationId, Boolean isIncluded, String optionCategory) {
+
+        public Service(String id, Integer kind, String name, BigDecimal amount, String date,
+                       Long reservationId, Boolean isIncluded) {
+            this(id, kind, name, amount, date, reservationId, isIncluded, null);
+        }
     }
 
     /** total — yashashning to'liq narxi; currency/currencyRate — summalar valyutasi va Exely kursi (mehmonxona valyutasiga). */

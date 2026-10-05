@@ -155,8 +155,13 @@
                      th:text="${@fmt.change(s.roomRevenue, ps.roomRevenue)}"></div>
                 <div class="stat-sub" th:if="${s.extrasRevenue.signum() == 0}" th:text="${@fmt.money(s.roomRevenue, cur)}"></div>
                 <div class="stat-sub" th:if="${s.extrasRevenue.signum() != 0}"
-                     th:title="'Yashash: ' + ${@fmt.money(s.roomRevenue, cur)} + ' · Nonushta va xizmatlar: ' + ${@fmt.money(s.extrasRevenue, cur)}">
-                    + nonushta va xizmatlar <b th:text="${@fmt.moneyShort(s.extrasRevenue, cur)}"></b>
+                     th:title="'Yashash (erta kirish / kech chiqish bilan): ' + ${@fmt.money(s.roomRevenue, cur)}
+                               + ' · Nonushta: ' + ${@fmt.money(s.mealsRevenue, cur)}
+                               + ' · Boshqa xizmatlar: ' + ${@fmt.money(s.extrasRevenue.subtract(s.mealsRevenue), cur)}
+                               + ' · Jami: ' + ${@fmt.money(s.totalRevenue(), cur)}">
+                    + nonushta <b th:text="${@fmt.moneyShort(s.mealsRevenue, cur)}"></b>
+                    <span th:if="${s.extrasRevenue.compareTo(s.mealsRevenue) != 0}">· boshqa
+                        <b th:text="${@fmt.moneyShort(s.extrasRevenue.subtract(s.mealsRevenue), cur)}"></b></span>
                     <span class="muted">· jami</span> <b th:text="${@fmt.moneyShort(s.totalRevenue(), cur)}"></b>
                 </div>
             </div>

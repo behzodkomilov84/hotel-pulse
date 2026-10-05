@@ -12,12 +12,14 @@ import java.util.List;
  * @param revpar    mavjud bitta xona-kechaga to'g'ri keladigan daromad
  * @param roomRevenue   yashash daromadi (Exely xizmatlar hisoboti bo'lsa — faqat yashash; aks holda bron narxi)
  * @param extrasRevenue nonushta va boshqa xizmatlar (faqat Exely xizmatlar hisoboti bo'lsa, aks holda 0)
+ * @param mealsRevenue  shundan nonushta / ovqatlanish (Exely DRR "Выручка завтраков")
  */
 public record StayMetrics(
         long availableRoomNights,
         long soldRoomNights,
         BigDecimal roomRevenue,
         BigDecimal extrasRevenue,
+        BigDecimal mealsRevenue,
         double occupancy,
         BigDecimal adr,
         BigDecimal revpar,
