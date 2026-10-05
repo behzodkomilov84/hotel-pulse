@@ -354,6 +354,12 @@ table.compact td { padding: 8px 4px; font-size: 14px; }
 table.compact tr:hover { background: none; }
 td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 10px; vertical-align: middle; }
+/* Savdo kanallari: tor kartada ham raqamlar karta ichida qoladi — uzun nom "…" bilan qisqaradi (to'liq nomi — title). */
+.source-table { table-layout: fixed; width: 100%; }
+.source-table .col-pct { width: 58px; }
+.source-table .col-sum { width: 104px; }
+.source-table td.source-name { overflow: hidden; text-overflow: ellipsis; }
+.source-table td.num { padding-left: 6px; }
 
 /* ---------- Exely: yo'riqnoma va sinxronlash holati ---------- */
 .field-wide { grid-column: 1 / -1; }

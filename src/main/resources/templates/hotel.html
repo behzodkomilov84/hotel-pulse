@@ -211,9 +211,10 @@
             <div class="card">
                 <h3 class="card-title">Savdo kanallari</h3>
                 <div class="chart-box chart-box-sm" th:if="${!s.sources.isEmpty()}"><canvas id="sourceChart" aria-label="Savdo kanallari ulushi" role="img"></canvas></div>
-                <table class="compact" th:if="${!s.sources.isEmpty()}">
+                <table class="compact source-table" th:if="${!s.sources.isEmpty()}">
+                    <colgroup><col><col class="col-pct"><col class="col-sum"></colgroup>
                     <tr th:each="src, st : ${s.sources}">
-                        <td><span class="swatch" th:style="'background:' + ${palette[st.index % palette.size()]}"></span><span th:text="${src.source}"></span></td>
+                        <td class="source-name" th:title="${src.source}"><span class="swatch" th:style="'background:' + ${palette[st.index % palette.size()]}"></span><span th:text="${src.source}"></span></td>
                         <td class="num" th:text="${@fmt.pct(src.share)}"></td>
                         <td class="num" th:text="${@fmt.moneyShort(src.revenue, cur)}"></td>
                     </tr>
