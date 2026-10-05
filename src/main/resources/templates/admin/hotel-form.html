@@ -26,7 +26,8 @@
                 <label for="roomsCount">Xonalar soni</label>
                 <input type="number" id="roomsCount" name="roomsCount" min="0"
                        th:value="${hotel != null} ? ${hotel.roomsCount} : 0">
-                <span class="hint">Bandlik foizi va RevPAR shu son asosida hisoblanadi</span>
+                <span class="hint">Bandlik foizi va RevPAR shu son asosida hisoblanadi. Exely PMS ulangan bo'lsa —
+                    har sinxronlashda Exely'dagi xonalar ro'yxatidan avtomatik yangilanadi.</span>
             </div>
             <div class="field">
                 <label for="currency">Valyuta</label>

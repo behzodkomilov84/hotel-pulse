@@ -80,6 +80,29 @@ class ExelyPmsMapperTest {
         assertEquals(0, BigDecimal.ZERO.compareTo(row.getBalanceDue()), "manfiy qoldiq 0 ga keltiriladi");
     }
 
+    @Test
+    void foreignCurrencyAmountsAreConvertedOnArrivalDate() {
+        ExelyPmsApi.Booking usd = new ExelyPmsApi.Booking("b2", "N-2", "2026-09-30T08:00:00Z", "USD",
+                new ExelyPmsApi.Customer("Smith", "John"), List.of(
+                stay("rs1", "2026-10-01T14:00", "2026-10-02T12:00", "CheckedOut", "Confirmed",
+                        new BigDecimal("86.19"), new BigDecimal("10"))), null, "Trip.com Group");
+        List<String> calls = new java.util.ArrayList<>();
+        MoneyConverter x10000 = (amount, currency, date) -> {
+            calls.add(currency + "@" + date);
+            return "USD".equals(currency) ? amount.multiply(BigDecimal.valueOf(10_000)) : amount;
+        };
+
+        Booking row = ExelyPmsMapper.toBookings(usd, 5L, TASHKENT, Map.of(), x10000).get(0);
+
+        assertEquals(0, new BigDecimal("861900").compareTo(row.getTotalAmount()));
+        assertEquals(0, new BigDecimal("100000").compareTo(row.getBalanceDue()));
+        assertTrue(calls.stream().allMatch(c -> c.equals("USD@2026-10-01")), calls.toString());
+
+        Payment p = ExelyPmsMapper.toPayment(new ExelyPmsApi.Payment(9L, "N-2", 0, new BigDecimal("20"),
+                "202610011512", null, 1, null, "USD", null), 5L, x10000);
+        assertEquals(0, new BigDecimal("200000").compareTo(p.getAmount()));
+    }
+
     private static ExelyPmsApi.Payment pay(long id, int actionKind, String amount, String cancelledAt) {
         return new ExelyPmsApi.Payment(id, "N-1", actionKind, new BigDecimal(amount),
                 "202610011512", "202610011510", 1, "Uzcard", "UZS", cancelledAt);

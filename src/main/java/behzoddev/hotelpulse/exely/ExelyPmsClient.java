@@ -38,6 +38,14 @@ public class ExelyPmsClient {
                 .retrieve().toBodilessEntity());
     }
 
+    /** Mehmonxonadagi xonalar ro'yxati (xonalar sonini aniqlash uchun). */
+    public List<ExelyPmsApi.Room> rooms(String key) {
+        ExelyPmsApi.Room[] r = call(() -> rest.get().uri("/rooms")
+                .header("X-API-KEY", key).accept(MediaType.APPLICATION_JSON)
+                .retrieve().body(ExelyPmsApi.Room[].class));
+        return r == null ? List.of() : List.of(r);
+    }
+
     /** [from, to] oralig'ida o'zgargan bronlar raqamlari (state: Active yoki Cancelled; oraliq ≤ 365 kun). */
     public List<String> modifiedBookings(String key, String state, LocalDateTime from, LocalDateTime to) {
         ExelyPmsApi.BookingNumbers r = call(() -> rest.get()

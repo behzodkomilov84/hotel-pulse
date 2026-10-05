@@ -66,14 +66,14 @@ public class ExelyBookingWriter {
 
     /** PMS broni: eski qatorlarini o'chirib, yangisini yozadi; birinchi ko'rilgan vaqt (bookedAt) saqlanadi. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void upsertPms(Long hotelId, ExelyPmsApi.Booking src) {
+    public void upsertPms(Long hotelId, ExelyPmsApi.Booking src, MoneyConverter money) {
         String prefix = ExelyPmsMapper.externalPrefix(src.number());
         Map<String, LocalDateTime> known = new HashMap<>();
         for (Booking old : bookingRepository.findByHotelIdAndOriginAndExternalIdStartingWith(hotelId, DataOrigin.EXELY_PMS, prefix)) {
             known.put(old.getExternalId(), old.getBookedAt());
         }
         bookingRepository.deleteByExternalPrefix(hotelId, DataOrigin.EXELY_PMS, prefix);
-        List<Booking> rows = ExelyPmsMapper.toBookings(src, hotelId, clock.getZone(), known);
+        List<Booking> rows = ExelyPmsMapper.toBookings(src, hotelId, clock.getZone(), known, money);
         if (!rows.isEmpty()) {
             bookingRepository.saveAll(rows);
         }
@@ -81,12 +81,13 @@ public class ExelyBookingWriter {
 
     /** [from, to) oynasidagi PMS to'lovlarini to'liq almashtiradi (keyin bekor qilinganlari ham to'g'rilanadi). */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public int replacePmsPayments(Long hotelId, LocalDateTime from, LocalDateTime to, List<ExelyPmsApi.Payment> src) {
+    public int replacePmsPayments(Long hotelId, LocalDateTime from, LocalDateTime to, List<ExelyPmsApi.Payment> src,
+                                  MoneyConverter money) {
         paymentRepository.deleteInWindow(hotelId, DataOrigin.EXELY_PMS, from, to);
         List<Payment> rows = new ArrayList<>();
         Set<String> seen = new HashSet<>();
         for (ExelyPmsApi.Payment p : src) {
-            Payment pay = ExelyPmsMapper.toPayment(p, hotelId);
+            Payment pay = ExelyPmsMapper.toPayment(p, hotelId, money);
             if (pay != null && !pay.getPaidAt().isBefore(from) && pay.getPaidAt().isBefore(to) && seen.add(pay.getExternalId())) {
                 rows.add(pay);
             }
@@ -107,6 +108,12 @@ public class ExelyBookingWriter {
             removed += bookingRepository.deleteByHotelIdAndOrigin(hotelId, o);
         }
         return removed;
+    }
+
+    /** Xonalar soni Exely PMS'dagi xonalar ro'yxatidan. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void saveRoomsCount(Long hotelId, int rooms) {
+        hotelRepository.findById(hotelId).ifPresent(h -> h.setRoomsCount(rooms));
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)

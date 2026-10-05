@@ -87,6 +87,11 @@ class ExelyPmsSyncDbTest {
 
     private void expectPms() {
         MockRestServiceServer s = MockPms.SERVER;
+        s.expect(ExpectedCount.manyTimes(), requestTo(API + "/rooms"))
+                .andExpect(header("X-API-KEY", KEY))
+                .andRespond(withSuccess("[{\"id\":\"1\",\"name\":\"101\",\"roomTypeId\":\"t1\"},"
+                        + "{\"id\":\"2\",\"name\":\"102\",\"roomTypeId\":\"t1\"},{\"id\":\"3\",\"name\":\"201\",\"roomTypeId\":\"t2\"}]",
+                        MediaType.APPLICATION_JSON));
         s.expect(ExpectedCount.manyTimes(), requestTo(startsWith(API + "/bookings?state=Active")))
                 .andExpect(header("X-API-KEY", KEY))
                 .andRespond(withSuccess(ExelyPmsSamples.NUMBERS_ACTIVE, MediaType.APPLICATION_JSON));
@@ -136,6 +141,8 @@ class ExelyPmsSyncDbTest {
         assertNotNull(h.getPmsBookingsSyncedUntil());
         assertNotNull(h.getPmsPaymentsSyncedUntil());
         assertEquals(Boolean.TRUE, h.getExelyLastSyncOk());
+        assertEquals(3, h.getRoomsCount(), "xonalar soni Exely /rooms dan");
+        assertTrue(r.message().contains("xonalar soni: 20 → 3"), r.message());
     }
 
     @Test
@@ -153,7 +160,7 @@ class ExelyPmsSyncDbTest {
 
     @Test
     void wrongKeyIsRecordedAsFailure() {
-        MockPms.SERVER.expect(ExpectedCount.manyTimes(), requestTo(startsWith(API + "/bookings")))
+        MockPms.SERVER.expect(ExpectedCount.manyTimes(), requestTo(startsWith(API + "/")))
                 .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators
                         .withStatus(org.springframework.http.HttpStatus.UNAUTHORIZED));
 

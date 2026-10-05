@@ -64,6 +64,11 @@ public final class ExelyPmsApi {
     public record TotalPrice(BigDecimal amount, BigDecimal toPayAmount, BigDecimal toRefundAmount) {
     }
 
+    /** GET /rooms — mehmonxonadagi xonalar (massiv). */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Room(String id, String name, String roomTypeId) {
+    }
+
     /** GET /analytics/payments */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record PaymentsResponse(PaymentsData data) {

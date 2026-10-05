@@ -38,6 +38,7 @@ public class ExelySyncService {
     private final ExelyProperties props;
     private final ExecutorService exelySyncExecutor;
     private final Clock clock;
+    private final CurrencyRates rates;
 
     /** Hozir sinxronlanayotgan mehmonxonalar — bir vaqtda ikki marta ishga tushmasligi uchun. */
     private final Set<Long> running = ConcurrentHashMap.newKeySet();
@@ -156,6 +157,24 @@ public class ExelySyncService {
         LocalDateTime initial = now.minusDays(props.initialDays());
         StringBuilder note = new StringBuilder();
 
+        // OTA bronlari (Booking.com, Trip.com) ko'pincha USD'da keladi — mehmonxona valyutasiga o'giriladi.
+        String hotelCurrency = hotel.getCurrency();
+        MoneyConverter money = (amount, currency, date) -> rates.convert(amount, currency, hotelCurrency, date);
+
+        // --- Xonalar soni: Exely'dagi xonalar ro'yxatidan ---
+        try {
+            int rooms = pmsClient.rooms(key).size();
+            if (rooms > 0 && rooms != hotel.getRoomsCount()) {
+                writer.saveRoomsCount(hotelId, rooms);
+                note.append(", xonalar soni: ").append(hotel.getRoomsCount()).append(" → ").append(rooms);
+            }
+        } catch (ExelyException e) {
+            if (e.isRateLimited()) {
+                throw e;
+            }
+            log.warn("Exely PMS: xonalar ro'yxatini olib bo'lmadi (mehmonxona {}): {}", hotelId, e.getMessage());
+        }
+
         int purged = writer.purgeNonPmsData(hotelId);
         if (purged > 0) {
             note.append(", ").append(purged).append(" ta eski (demo/Read Reservation) bron o'chirildi");
@@ -175,7 +194,7 @@ public class ExelySyncService {
             for (String number : numbers) {
                 pause();
                 try {
-                    writer.upsertPms(hotelId, pmsClient.booking(key, number));
+                    writer.upsertPms(hotelId, pmsClient.booking(key, number), money);
                     bookings++;
                 } catch (ExelyException e) {
                     if (e.isRateLimited()) {
@@ -196,7 +215,7 @@ public class ExelySyncService {
         while (payFrom.isBefore(now)) {
             LocalDateTime to = payFrom.plusDays(30).isBefore(now) ? payFrom.plusDays(30) : now;
             pause();
-            payments += writer.replacePmsPayments(hotelId, payFrom, to, pmsClient.payments(key, payFrom, to));
+            payments += writer.replacePmsPayments(hotelId, payFrom, to, pmsClient.payments(key, payFrom, to), money);
             writer.savePmsCursors(hotelId, null, to);
             payFrom = to;
         }

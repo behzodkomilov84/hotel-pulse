@@ -17,3 +17,11 @@ ALTER TABLE hotels
 -- to'lovlar jadvalidan hisoblanadi.
 ALTER TABLE bookings
     ADD COLUMN balance_due DECIMAL(15, 2) NULL;
+
+--changeset behzod:13
+-- Boshqa valyutadagi (USD) bron va to'lovlar endi so'mga o'giriladi — ilgari noto'g'ri
+-- (o'girilmasdan) yozilganlari to'g'rilanishi uchun PMS ma'lumotlari boshidan qayta olinadi.
+UPDATE hotels
+SET pms_bookings_synced_until = NULL,
+    pms_payments_synced_until = NULL
+WHERE exely_pms_key IS NOT NULL;

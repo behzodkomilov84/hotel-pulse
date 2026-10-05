@@ -34,6 +34,15 @@ public final class ExelyPmsMapper {
 
     public static List<Booking> toBookings(ExelyPmsApi.Booking src, Long hotelId, ZoneId zone,
                                            Map<String, LocalDateTime> knownBookedAt) {
+        return toBookings(src, hotelId, zone, knownBookedAt, MoneyConverter.NONE);
+    }
+
+    /**
+     * @param money bron valyutasi (currencyId, masalan OTA bronlarida USD) mehmonxonanikidan farq qilsa —
+     *              summalar kelish sanasidagi kurs bo'yicha o'giriladi
+     */
+    public static List<Booking> toBookings(ExelyPmsApi.Booking src, Long hotelId, ZoneId zone,
+                                           Map<String, LocalDateTime> knownBookedAt, MoneyConverter money) {
         List<Booking> result = new ArrayList<>();
         if (src.roomStays() == null) {
             return result;
@@ -61,8 +70,10 @@ public final class ExelyPmsMapper {
             b.setRooms(1);
             b.setGuests(guests(rs.guestCountInfo()));
             ExelyPmsApi.TotalPrice price = rs.totalPrice();
-            b.setTotalAmount(price != null && price.amount() != null ? price.amount() : BigDecimal.ZERO);
-            b.setBalanceDue(price != null && price.toPayAmount() != null ? price.toPayAmount().max(BigDecimal.ZERO) : BigDecimal.ZERO);
+            BigDecimal total = price != null && price.amount() != null ? price.amount() : BigDecimal.ZERO;
+            BigDecimal due = price != null && price.toPayAmount() != null ? price.toPayAmount().max(BigDecimal.ZERO) : BigDecimal.ZERO;
+            b.setTotalAmount(money.convert(total, src.currencyId(), arrival));
+            b.setBalanceDue(money.convert(due, src.currencyId(), arrival));
 
             LocalDateTime firstSeen = knownBookedAt.get(externalId);
             b.setBookedAt(firstSeen != null ? firstSeen : (modified != null ? modified : arrival.atStartOfDay()));
@@ -98,6 +109,11 @@ public final class ExelyPmsMapper {
      * FK cascade to'lovni ham o'chirib yuborardi; qarz baribir PMS'ning toPayAmount'idan olinadi.
      */
     public static Payment toPayment(ExelyPmsApi.Payment p, Long hotelId) {
+        return toPayment(p, hotelId, MoneyConverter.NONE);
+    }
+
+    /** @param money to'lov valyutasi mehmonxonanikidan farq qilsa — to'lov kunidagi kurs bo'yicha o'giriladi */
+    public static Payment toPayment(ExelyPmsApi.Payment p, Long hotelId, MoneyConverter money) {
         if (p.id() == null || p.amount() == null || notBlank(p.cancellationDateTime())) {
             return null;
         }
@@ -117,7 +133,7 @@ public final class ExelyPmsMapper {
         pay.setHotelId(hotelId);
         pay.setOrigin(DataOrigin.EXELY_PMS);
         pay.setExternalId("pms-pay:" + p.id());
-        pay.setAmount(amount);
+        pay.setAmount(money.convert(amount, p.currency(), paidAt.toLocalDate()));
         pay.setMethod(method(p));
         pay.setPaidAt(paidAt);
         return pay;
