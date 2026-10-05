@@ -60,3 +60,37 @@ ALTER TABLE bookings
 UPDATE hotels
 SET pms_bookings_synced_until = NULL
 WHERE exely_pms_key IS NOT NULL;
+
+--changeset behzod:16
+-- Exely PMS'dan kelgan BARCHA ma'lumot o'zgarishsiz (xom JSON) saqlanadi — keyingi tahlillar uchun.
+-- kind: booking, invoices, guest, payment, service, service_cancelled, reservation, customer, agent,
+--       room_type, room, company. external_id — kind ichida yagona kalit.
+-- ref_date — tahlil uchun asosiy sana (xizmat kuni, to'lov kuni, kelish kuni va h.k.).
+CREATE TABLE exely_raw
+(
+    id             BIGINT AUTO_INCREMENT PRIMARY KEY,
+    hotel_id       BIGINT       NOT NULL,
+    kind           VARCHAR(32)  NOT NULL,
+    external_id    VARCHAR(160) NOT NULL,
+    booking_number VARCHAR(64)  NULL,
+    ref_date       DATE         NULL,
+    payload        JSON         NOT NULL,
+    fetched_at     DATETIME(6)  NOT NULL,
+    CONSTRAINT fk_exely_raw_hotel FOREIGN KEY (hotel_id) REFERENCES hotels (id) ON DELETE CASCADE,
+    UNIQUE KEY uk_exely_raw (hotel_id, kind, external_id),
+    INDEX idx_exely_raw_booking (hotel_id, booking_number),
+    INDEX idx_exely_raw_date (hotel_id, kind, ref_date)
+);
+-- Xizmat identifikatori bronlar orasida takrorlanadi (masalan, nonushta) — kalit: id + yashash.
+ALTER TABLE service_revenue
+    MODIFY COLUMN external_id VARCHAR(160) NOT NULL,
+    ADD COLUMN reservation_id BIGINT NULL AFTER booking_number,
+    ADD COLUMN currency VARCHAR(3) NULL AFTER amount;
+-- Hamma narsa (xom ma'lumotlar bilan) bir marta boshidan olinadi.
+UPDATE hotels
+SET pms_bookings_synced_until = NULL,
+    pms_payments_synced_until = NULL,
+    pms_services_from         = NULL,
+    pms_services_until        = NULL
+WHERE exely_pms_key IS NOT NULL;
+DELETE FROM service_revenue;

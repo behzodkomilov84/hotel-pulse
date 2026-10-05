@@ -60,14 +60,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByHotelIdAndOriginAndExternalIdStartingWith(Long hotelId, DataOrigin origin, String prefix);
 
-    /** Mehmonxona valyutasidan boshqa valyutadagi (masalan, OTA — USD) bronlar. */
-    @Query("""
-            select b from Booking b
-            where b.hotelId = :hotelId and b.origin = :origin and b.currency is not null and b.currency <> :currency
-            """)
-    List<Booking> findForeignCurrency(@Param("hotelId") Long hotelId, @Param("origin") DataOrigin origin,
-                                      @Param("currency") String currency);
-
     /** Qarzdorlik hisoboti: PMS qoldig'i bor, zaselenie qilingan yashashlar. */
     @Query("""
             select b from Booking b

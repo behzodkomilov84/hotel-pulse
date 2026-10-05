@@ -101,6 +101,8 @@ public class HotelService {
             if (!key.equals(hotel.getExelyPmsKey())) {
                 hotel.setPmsBookingsSyncedUntil(null);
                 hotel.setPmsPaymentsSyncedUntil(null);
+                hotel.setPmsServicesFrom(null);
+                hotel.setPmsServicesUntil(null);
             }
             hotel.setExelyPmsKey(key);
         }
@@ -118,6 +120,8 @@ public class HotelService {
         hotel.setExelyPmsKey(null);
         hotel.setPmsBookingsSyncedUntil(null);
         hotel.setPmsPaymentsSyncedUntil(null);
+        hotel.setPmsServicesFrom(null);
+        hotel.setPmsServicesUntil(null);
     }
 
     /** Keyingi sinxronlash boshidan (oxirgi initial-days kun) qayta yuklaydi. */
@@ -127,6 +131,8 @@ public class HotelService {
         hotel.setExelyContinueToken(null);
         hotel.setPmsBookingsSyncedUntil(null);
         hotel.setPmsPaymentsSyncedUntil(null);
+        hotel.setPmsServicesFrom(null);
+        hotel.setPmsServicesUntil(null);
     }
 
     private static String blankToNull(String s) {

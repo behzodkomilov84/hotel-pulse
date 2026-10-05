@@ -4,6 +4,7 @@ import behzoddev.hotelpulse.entity.Booking;
 import behzoddev.hotelpulse.entity.BookingStatus;
 import behzoddev.hotelpulse.entity.DataOrigin;
 import behzoddev.hotelpulse.entity.Payment;
+import behzoddev.hotelpulse.entity.ServiceRevenue;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -104,32 +105,38 @@ class ExelyPmsMapperTest {
     }
 
     @Test
-    void servicesAreSplitByKindAndForeignAmountsConverted() {
+    void servicesUseExelyRateAndKeepDuplicateServiceIdsPerStay() {
+        // Real ma'lumotdagi holat: bitta nonushta id'si ikki xil yashashda (bronda) takrorlanadi.
         ExelyPmsApi.ServicesData data = new ExelyPmsApi.ServicesData(List.of(
-                new ExelyPmsApi.Service("s1", 0, "Проживание", new BigDecimal("500000"), "20261001", 11L, false),
-                new ExelyPmsApi.Service("s2", 1, "Завтрак", new BigDecimal("80000"), "20261002", 11L, false),
-                // USD bron: hisobotda 86.19 — bizda 1 017 797 so'm → summa USD'da, o'giriladi
-                new ExelyPmsApi.Service("s3", 0, "Проживание", new BigDecimal("86.19"), "20261001", 22L, false),
-                // USD bron, lekin hisobot allaqachon so'mda (total bizdagiga yaqin) → o'girilmaydi
-                new ExelyPmsApi.Service("s4", 0, "Проживание", new BigDecimal("1000000"), "20261001", 33L, false),
-                new ExelyPmsApi.Service("bad", 0, "x", new BigDecimal("1"), null, 11L, false)),
-                List.of(new ExelyPmsApi.ServiceReservation(11L, "UZ-1", new BigDecimal("580000")),
-                        new ExelyPmsApi.ServiceReservation(22L, "US-1", new BigDecimal("86.19")),
-                        new ExelyPmsApi.ServiceReservation(33L, "US-2", new BigDecimal("1000000"))));
-        Map<String, ExelyPmsMapper.BookingMoney> foreign = Map.of(
-                "US-1", new ExelyPmsMapper.BookingMoney("USD", new BigDecimal("1017797.02")),
-                "US-2", new ExelyPmsMapper.BookingMoney("USD", new BigDecimal("1020000")));
-        MoneyConverter usd = (amount, currency, date) ->
-                "USD".equals(currency) ? amount.multiply(new BigDecimal("11808.76")) : amount;
+                new ExelyPmsApi.Service("acc1", 0, "Accommodation", new BigDecimal("45.61"), "20261001", 11L, false),
+                new ExelyPmsApi.Service("BRK", 1, "Buffet breakfast", new BigDecimal("24"), "20261001", 11L, true),
+                new ExelyPmsApi.Service("acc2", 0, "Accommodation", new BigDecimal("45.61"), "20261001", 12L, false),
+                new ExelyPmsApi.Service("BRK", 1, "Buffet breakfast", new BigDecimal("24"), "20261001", 12L, true),
+                new ExelyPmsApi.Service("uz", 0, "Проживание", new BigDecimal("500000"), "20261002", 13L, false),
+                // kurs berilmagan USD — Markaziy bank kursi (money) bilan
+                new ExelyPmsApi.Service("norate", 0, "Accommodation", new BigDecimal("10"), "20261002", 14L, false),
+                new ExelyPmsApi.Service("bad", 0, "x", new BigDecimal("1"), null, 13L, false)),
+                List.of(new ExelyPmsApi.ServiceReservation(11L, "US-1", new BigDecimal("69.61"), "USD", new BigDecimal("11808.76")),
+                        new ExelyPmsApi.ServiceReservation(12L, "US-1", new BigDecimal("69.61"), "USD", new BigDecimal("11808.76")),
+                        new ExelyPmsApi.ServiceReservation(13L, "UZ-1", new BigDecimal("500000"), "UZS", BigDecimal.ONE),
+                        new ExelyPmsApi.ServiceReservation(14L, "US-2", new BigDecimal("10"), "USD", null)));
+        MoneyConverter cbu = (amount, currency, date) ->
+                "USD".equals(currency) ? amount.multiply(new BigDecimal("12000")) : amount;
 
-        var rows = ExelyPmsMapper.toServices(data, 5L, foreign, usd);
+        var rows = ExelyPmsMapper.toServices(data, 5L, "UZS", cbu);
 
-        assertEquals(4, rows.size(), "sanasiz qator tashlanadi");
+        assertEquals(6, rows.size(), "sanasiz qator tashlanadi");
+        assertEquals(6, rows.stream().map(ServiceRevenue::getExternalId).distinct().count(),
+                "takroriy nonushta id'si turli yashashlarda — alohida qatorlar");
+        assertEquals(0, new BigDecimal("538597.54").compareTo(rows.get(0).getAmount()), "45.61 × 11808.76 (Exely kursi)");
+        assertEquals(0, new BigDecimal("283410.24").compareTo(rows.get(1).getAmount()), "24 × 11808.76");
         assertEquals(1, rows.get(1).getKind());
-        assertEquals(LocalDate.of(2026, 10, 2), rows.get(1).getServiceDate());
-        assertEquals("UZ-1", rows.get(0).getBookingNumber());
-        assertEquals(0, new BigDecimal("1017797.0244").compareTo(rows.get(2).getAmount()), "USD → so'm");
-        assertEquals(0, new BigDecimal("1000000").compareTo(rows.get(3).getAmount()), "allaqachon so'mda");
+        assertEquals("USD", rows.get(1).getCurrency());
+        assertEquals(11L, rows.get(1).getReservationId());
+        assertEquals("US-1", rows.get(1).getBookingNumber());
+        assertEquals(0, new BigDecimal("500000").compareTo(rows.get(4).getAmount()), "so'm — o'girilmaydi");
+        assertEquals(LocalDate.of(2026, 10, 2), rows.get(4).getServiceDate());
+        assertEquals(0, new BigDecimal("120000").compareTo(rows.get(5).getAmount()), "kurs yo'q — CBU");
         assertEquals("N-7", ExelyPmsMapper.bookingNumber("pms:N-7#9007199"));
     }
 

@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,6 +41,7 @@ public class ExelySyncService {
     private final ExecutorService exelySyncExecutor;
     private final Clock clock;
     private final CurrencyRates rates;
+    private final ExelyRawStore raw;
 
     /** Hozir sinxronlanayotgan mehmonxonalar — bir vaqtda ikki marta ishga tushmasligi uchun. */
     /**
@@ -170,21 +172,27 @@ public class ExelySyncService {
         String hotelCurrency = hotel.getCurrency();
         MoneyConverter money = (amount, currency, date) -> rates.convert(amount, currency, hotelCurrency, date);
 
-        if (!hotel.isRoomsCountManual()) {
-            syncRoomsCount(hotel, key, note);
-        }
+        // --- Ma'lumotnomalar: xonalar va kompaniyalar ---
+        syncRooms(hotel, key, note);
+        optional(hotelId, "kompaniyalar", () -> {
+            String json = pmsClient.companiesJson(key);
+            if (json != null) {
+                raw.replaceAll(hotelId, ExelyRawStore.COMPANY, ExelyRawRows.list(json, "id"));
+            }
+        });
 
         int purged = writer.purgeNonPmsData(hotelId);
         if (purged > 0) {
             note.append(", ").append(purged).append(" ta eski (demo/Read Reservation) bron o'chirildi");
         }
 
-        // --- Bronlar ---
+        // --- Bronlar (+ hisob-fakturalar va mehmonlar) ---
         LocalDateTime from = hotel.getPmsBookingsSyncedUntil() != null
                 ? hotel.getPmsBookingsSyncedUntil().minusMinutes(10)   // chegaradagi o'zgarishlar tushib qolmasin
                 : initial;
         int bookings = 0;
         int failed = 0;
+        Set<String> guestsSeen = new HashSet<>();
         while (from.isBefore(now)) {
             LocalDateTime to = from.plusDays(BOOKING_WINDOW_DAYS).isBefore(now) ? from.plusDays(BOOKING_WINDOW_DAYS) : now;
             Set<String> numbers = new LinkedHashSet<>();
@@ -193,7 +201,10 @@ public class ExelySyncService {
             for (String number : numbers) {
                 pause();
                 try {
-                    writer.upsertPms(hotelId, pmsClient.booking(key, number), money);
+                    String json = pmsClient.bookingJson(key, number);
+                    writer.upsertPms(hotelId, ExelyPmsClient.parse(json, ExelyPmsApi.Booking.class), money);
+                    raw.upsert(hotelId, ExelyRawStore.BOOKING, ExelyRawRows.booking(number, json));
+                    archiveBookingDetails(hotelId, key, number, json, guestsSeen);
                     bookings++;
                 } catch (ExelyException e) {
                     if (e.isRateLimited()) {
@@ -214,12 +225,19 @@ public class ExelySyncService {
         while (payFrom.isBefore(now)) {
             LocalDateTime to = payFrom.plusDays(30).isBefore(now) ? payFrom.plusDays(30) : now;
             pause();
-            payments += writer.replacePmsPayments(hotelId, payFrom, to, pmsClient.payments(key, payFrom, to), money);
+            String json = pmsClient.paymentsJson(key, payFrom, to);
+            ExelyPmsApi.PaymentsResponse r = json == null ? null : ExelyPmsClient.parse(json, ExelyPmsApi.PaymentsResponse.class);
+            List<ExelyPmsApi.Payment> list = r == null || r.data() == null || r.data().payments() == null
+                    ? List.of() : r.data().payments();
+            payments += writer.replacePmsPayments(hotelId, payFrom, to, list, money);
+            if (json != null) {
+                raw.upsertAll(hotelId, ExelyRawStore.PAYMENT, ExelyRawRows.payments(json));
+            }
             writer.savePmsCursors(hotelId, null, to);
             payFrom = to;
         }
 
-        // --- Xizmatlar (kunlik daromad: yashash, nonushta va h.k.) ---
+        // --- Xizmatlar (kunlik daromad: yashash, nonushta va h.k.) + bekor qilingan bronlarniki ---
         // Birinchi marta — initial-days kun oldindan; keyin oxirgi 31 kun qayta olinadi (tuzatishlar uchun),
         // oldinga — SERVICES_AHEAD_DAYS kun (kelajakdagi bronlar daromadi).
         LocalDate today = now.toLocalDate();
@@ -230,8 +248,17 @@ public class ExelySyncService {
         while (!svcFrom.isAfter(svcTo)) {
             LocalDate end = svcFrom.plusDays(30).isBefore(svcTo) ? svcFrom.plusDays(30) : svcTo;
             pause();
-            services += writer.replacePmsServices(hotelId, hotel.getCurrency(), svcFrom, end,
-                    pmsClient.services(key, svcFrom, end), money);
+            String json = pmsClient.servicesJson(key, svcFrom, end, false);
+            services += writer.replacePmsServices(hotelId, hotel.getCurrency(), svcFrom, end, servicesData(json), money);
+            archiveServices(hotelId, ExelyRawStore.SERVICE, svcFrom, end, json);
+
+            LocalDate cancelledFrom = svcFrom;
+            LocalDate cancelledTo = end;
+            optional(hotelId, "bekor qilingan xizmatlar", () -> {
+                pause();
+                archiveServices(hotelId, ExelyRawStore.SERVICE_CANCELLED, cancelledFrom, cancelledTo,
+                        pmsClient.servicesJson(key, cancelledFrom, cancelledTo, true));
+            });
             svcFrom = end.plusDays(1);
         }
         if (services > 0) {
@@ -247,19 +274,78 @@ public class ExelySyncService {
         return new SyncResult(true, bookings, message);
     }
 
-    /** Xonalar soni Exely'dagi xonalar ro'yxatidan (admin qo'lda belgilamagan bo'lsa). */
-    private void syncRoomsCount(Hotel hotel, String key, StringBuilder note) {
-        try {
-            int rooms = pmsClient.rooms(key).size();
-            if (rooms > 0 && rooms != hotel.getRoomsCount()) {
-                writer.saveRoomsCount(hotel.getId(), rooms);
-                note.append(", xonalar soni: ").append(hotel.getRoomsCount()).append(" → ").append(rooms);
+    private static ExelyPmsApi.ServicesData servicesData(String json) {
+        ExelyPmsApi.ServicesResponse r = json == null ? null : ExelyPmsClient.parse(json, ExelyPmsApi.ServicesResponse.class);
+        if (r == null || r.data() == null) {
+            return new ExelyPmsApi.ServicesData(List.of(), List.of());
+        }
+        return new ExelyPmsApi.ServicesData(
+                r.data().services() == null ? List.of() : r.data().services(),
+                r.data().reservations() == null ? List.of() : r.data().reservations());
+    }
+
+    /** Bron hisob-fakturalari va mehmonlar profillari — xom arxivga (xatosi bronni to'xtatmaydi). */
+    private void archiveBookingDetails(Long hotelId, String key, String number, String bookingJson, Set<String> guestsSeen) {
+        optional(hotelId, number + " hisob-fakturalari", () -> {
+            pause();
+            String invoices = pmsClient.invoicesJson(key, number);
+            if (invoices != null) {
+                raw.upsert(hotelId, ExelyRawStore.INVOICES, new ExelyRawStore.Row(number, number, null, invoices));
             }
+        });
+        for (String guestId : ExelyRawRows.guestIds(bookingJson)) {
+            if (!guestsSeen.add(guestId)) {
+                continue;
+            }
+            optional(hotelId, "mehmon " + guestId, () -> {
+                pause();
+                String guest = pmsClient.guestJson(key, guestId);
+                if (guest != null) {
+                    raw.upsert(hotelId, ExelyRawStore.GUEST, new ExelyRawStore.Row(guestId, number, null, guest));
+                }
+            });
+        }
+    }
+
+    /** Xizmatlar oynasi: xizmat qatorlari almashtiriladi, yashashlar/to'lovchilar/agentlar/xona turlari yangilanadi. */
+    private void archiveServices(Long hotelId, String kind, LocalDate from, LocalDate to, String json) {
+        if (json == null) {
+            raw.replaceWindow(hotelId, kind, from, to, List.of());
+            return;
+        }
+        ExelyRawRows.Services s = ExelyRawRows.services(json);
+        raw.replaceWindow(hotelId, kind, from, to, s.services());
+        raw.upsertAll(hotelId, ExelyRawStore.RESERVATION, s.reservations());
+        raw.upsertAll(hotelId, ExelyRawStore.CUSTOMER, s.customers());
+        raw.upsertAll(hotelId, ExelyRawStore.AGENT, s.agents());
+        raw.upsertAll(hotelId, ExelyRawStore.ROOM_TYPE, s.roomTypes());
+    }
+
+    /** Xonalar ro'yxati — arxivga; xonalar soni (admin qo'lda belgilamagan bo'lsa) shundan. */
+    private void syncRooms(Hotel hotel, String key, StringBuilder note) {
+        optional(hotel.getId(), "xonalar ro'yxati", () -> {
+            String json = pmsClient.roomsJson(key);
+            if (json == null) {
+                return;
+            }
+            List<ExelyRawStore.Row> rooms = ExelyRawRows.list(json, "id");
+            raw.replaceAll(hotel.getId(), ExelyRawStore.ROOM, rooms);
+            if (!hotel.isRoomsCountManual() && !rooms.isEmpty() && rooms.size() != hotel.getRoomsCount()) {
+                writer.saveRoomsCount(hotel.getId(), rooms.size());
+                note.append(", xonalar soni: ").append(hotel.getRoomsCount()).append(" → ").append(rooms.size());
+            }
+        });
+    }
+
+    /** Qo'shimcha ma'lumot: xatosi (limitdan tashqari) sinxronlashni to'xtatmaydi. */
+    private void optional(Long hotelId, String what, Runnable action) {
+        try {
+            action.run();
         } catch (ExelyException e) {
             if (e.isRateLimited()) {
                 throw e;
             }
-            log.warn("Exely PMS: xonalar ro'yxatini olib bo'lmadi (mehmonxona {}): {}", hotel.getId(), e.getMessage());
+            log.warn("Exely PMS: {} olinmadi (mehmonxona {}): {}", what, hotelId, e.getMessage());
         }
     }
 

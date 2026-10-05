@@ -145,6 +145,16 @@
             </div>
         </dl>
 
+        <div class="archive" th:if="${archive != null and !archive.isEmpty()}">
+            <h4 class="archive-title">Exely'dan olingan ma'lumotlar <span class="muted">— tahlillar uchun bazada saqlanadi</span></h4>
+            <div class="archive-grid">
+                <div class="archive-item" th:each="e : ${archive}">
+                    <b th:text="${@fmt.number(e.value)}">0</b>
+                    <span th:text="${archiveLabels[e.key]} ?: ${e.key}"></span>
+                </div>
+            </div>
+        </div>
+
         <div class="sync-actions" th:if="${hotel.exelyConnected}">
             <form method="post" th:action="@{/admin/hotels/{id}/exely/test(id=${hotel.id})}">
                 <button type="submit" class="btn btn-secondary">Ulanishni tekshirish</button>
@@ -153,8 +163,8 @@
                 <button type="submit" class="btn btn-primary" th:disabled="${syncRunning}">Hozir sinxronlash</button>
             </form>
             <form method="post" th:action="@{/admin/hotels/{id}/exely/reset(id=${hotel.id})}"
-                  onsubmit="return confirm('Keyingi sinxronlash barcha bronlarni boshidan yuklaydi. Davom etasizmi?')">
-                <button type="submit" class="btn btn-secondary">Boshidan qayta yuklash</button>
+                  onsubmit="return confirm('Exely\'dagi barcha ma\'lumotlar boshidan qayta yuklanadi (bir necha daqiqa). Davom etasizmi?')">
+                <button type="submit" class="btn btn-secondary" th:disabled="${syncRunning}">Hammasini boshidan yuklash</button>
             </form>
             <form method="post" class="push-right" th:action="@{/admin/hotels/{id}/exely/disconnect(id=${hotel.id})}"
                   onsubmit="return confirm('Exely ulanishini o\'chirasizmi? Olingan bronlar saqlanib qoladi.')">

@@ -150,30 +150,20 @@ public final class ExelyPmsMapper {
         return pay;
     }
 
-    /** Bron haqida xizmatlar summasining valyutasini aniqlash uchun kerak bo'lgan ma'lumot. */
-    public record BookingMoney(String currency, BigDecimal totalInHotelCurrency) {
-    }
-
     /**
-     * Xizmatlar hisobotini qatorlarga o'giradi. Hisobot summalari qaysi valyutada kelishi hujjatda
-     * aytilmagan, shuning uchun har bir bron uchun tekshiriladi: bron boshqa valyutada (masalan, USD) bo'lsa
-     * va hisobotdagi yashash narxi (reservation.total) bizdagi so'mdagi summadan ko'p marta kichik bo'lsa —
-     * summalar bron valyutasida, ular xizmat kunidagi kurs bo'yicha o'giriladi.
-     *
-     * @param bookings bron raqami → valyuta va mehmonxona valyutasidagi jami narx
+     * Xizmatlar hisobotini qatorlarga o'giradi. Summalar bron valyutasida keladi; Exely har bir yashash
+     * uchun o'z kursini beradi (reservation.currency, currencyRate — DRR ham shu bilan hisoblanadi).
+     * Kurs bo'lmasa — money (Markaziy bank kursi) bilan o'giriladi.
      */
-    public static List<ServiceRevenue> toServices(ExelyPmsApi.ServicesData data, Long hotelId,
-                                                  Map<String, BookingMoney> bookings, MoneyConverter money) {
+    public static List<ServiceRevenue> toServices(ExelyPmsApi.ServicesData data, Long hotelId, String hotelCurrency,
+                                                  MoneyConverter money) {
         Map<Long, ExelyPmsApi.ServiceReservation> byId = new HashMap<>();
-        Map<String, BigDecimal> reportedTotals = new HashMap<>();
         for (ExelyPmsApi.ServiceReservation r : data.reservations()) {
             if (r.id() != null) {
                 byId.put(r.id(), r);
             }
-            if (r.bookingNumber() != null && r.total() != null) {
-                reportedTotals.merge(r.bookingNumber(), r.total(), BigDecimal::add);
-            }
         }
+        String base = currencyCode(hotelCurrency == null ? "UZS" : hotelCurrency);
         List<ServiceRevenue> result = new ArrayList<>();
         for (ExelyPmsApi.Service s : data.services()) {
             LocalDate date = serviceDate(s.date());
@@ -181,32 +171,31 @@ public final class ExelyPmsMapper {
                 continue;
             }
             ExelyPmsApi.ServiceReservation r = s.reservationId() == null ? null : byId.get(s.reservationId());
-            String number = r == null ? null : r.bookingNumber();
+            String currency = r == null ? null : currencyCode(r.currency());
             BigDecimal amount = s.amount();
-            BookingMoney bm = number == null ? null : bookings.get(number);
-            if (bm != null && bm.currency() != null
-                    && inBookingCurrency(reportedTotals.get(number), bm.totalInHotelCurrency())) {
-                amount = money.convert(amount, bm.currency(), date);
+            if (currency != null && !currency.equals(base)) {
+                amount = r.currencyRate() != null && r.currencyRate().signum() > 0
+                        ? amount.multiply(r.currencyRate()).setScale(2, java.math.RoundingMode.HALF_UP)
+                        : money.convert(amount, currency, date);
             }
             ServiceRevenue row = new ServiceRevenue();
             row.setHotelId(hotelId);
-            row.setExternalId(trim(s.id(), 64));
+            row.setExternalId(serviceKey(s));
             row.setServiceDate(date);
             row.setKind(s.kind() == null ? ServiceRevenue.ACCOMMODATION : s.kind());
             row.setName(s.name() == null ? null : trim(s.name(), 128));
             row.setAmount(amount);
-            row.setBookingNumber(number == null ? null : trim(number, 64));
+            row.setCurrency(currency);
+            row.setReservationId(s.reservationId());
+            row.setBookingNumber(r == null || r.bookingNumber() == null ? null : trim(r.bookingNumber(), 64));
             result.add(row);
         }
         return result;
     }
 
-    /** Hisobotdagi summa bizdagi (o'girilgan) summadan 20 martadan ko'p kichik — demak, asl valyutada. */
-    static boolean inBookingCurrency(BigDecimal reported, BigDecimal ours) {
-        if (reported == null || ours == null || reported.signum() <= 0 || ours.signum() <= 0) {
-            return false;
-        }
-        return ours.compareTo(reported.multiply(BigDecimal.valueOf(20))) > 0;
+    /** Xizmat id bronlar orasida takrorlanadi (masalan, nonushta) — yagona kalit: id + yashash + kun. */
+    public static String serviceKey(ExelyPmsApi.Service s) {
+        return trim(s.id() + ":" + s.reservationId() + ":" + s.date(), 160);
     }
 
     private static LocalDate serviceDate(String yyyyMMdd) {

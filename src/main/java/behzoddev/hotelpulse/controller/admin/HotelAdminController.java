@@ -2,6 +2,7 @@ package behzoddev.hotelpulse.controller.admin;
 
 import behzoddev.hotelpulse.entity.Hotel;
 import behzoddev.hotelpulse.exely.ExelyException;
+import behzoddev.hotelpulse.exely.ExelyRawStore;
 import behzoddev.hotelpulse.exely.ExelySyncService;
 import behzoddev.hotelpulse.service.DemoDataService;
 import behzoddev.hotelpulse.service.HotelService;
@@ -19,6 +20,7 @@ public class HotelAdminController {
     private final HotelService hotelService;
     private final DemoDataService demoDataService;
     private final ExelySyncService exelySyncService;
+    private final ExelyRawStore exelyRawStore;
 
     @GetMapping
     public String list(Model model) {
@@ -39,6 +41,8 @@ public class HotelAdminController {
         model.addAttribute("hotel", hotelService.getById(id));
         model.addAttribute("currencies", HotelService.SUPPORTED_CURRENCIES);
         model.addAttribute("syncRunning", exelySyncService.isRunning(id));
+        model.addAttribute("archive", exelyRawStore.counts(id));
+        model.addAttribute("archiveLabels", ARCHIVE_LABELS);
         return "admin/hotel-form";
     }
 
@@ -104,9 +108,28 @@ public class HotelAdminController {
     @PostMapping("/{id}/exely/reset")
     public String resetExely(@PathVariable Long id, RedirectAttributes ra) {
         hotelService.resetExelySync(id);
-        ra.addFlashAttribute("success", "Keyingi sinxronlash barcha bronlarni boshidan yuklaydi");
+        if (exelySyncService.startAsync(id)) {
+            ra.addFlashAttribute("success", "Exely'dagi barcha ma'lumotlar boshidan yuklanmoqda — bir necha daqiqa davom etadi");
+        } else {
+            ra.addFlashAttribute("success", "Joriy sinxronlash tugagach, keyingisi hammasini boshidan yuklaydi");
+        }
         return "redirect:/admin/hotels/" + id;
     }
+
+    /** Xom arxiv turlarining nomlari (admin sahifasi). */
+    private static final java.util.Map<String, String> ARCHIVE_LABELS = java.util.Map.ofEntries(
+            java.util.Map.entry(ExelyRawStore.BOOKING, "Bronlar"),
+            java.util.Map.entry(ExelyRawStore.RESERVATION, "Yashashlar"),
+            java.util.Map.entry(ExelyRawStore.SERVICE, "Xizmatlar (kunlik)"),
+            java.util.Map.entry(ExelyRawStore.SERVICE_CANCELLED, "Bekor qilingan xizmatlar"),
+            java.util.Map.entry(ExelyRawStore.PAYMENT, "To'lovlar"),
+            java.util.Map.entry(ExelyRawStore.INVOICES, "Hisob-fakturalar"),
+            java.util.Map.entry(ExelyRawStore.GUEST, "Mehmonlar"),
+            java.util.Map.entry(ExelyRawStore.CUSTOMER, "To'lovchilar"),
+            java.util.Map.entry(ExelyRawStore.AGENT, "Agentlar"),
+            java.util.Map.entry(ExelyRawStore.COMPANY, "Kompaniyalar"),
+            java.util.Map.entry(ExelyRawStore.ROOM_TYPE, "Xona turlari"),
+            java.util.Map.entry(ExelyRawStore.ROOM, "Xonalar"));
 
     @PostMapping("/{id}/exely/disconnect")
     public String disconnectExely(@PathVariable Long id, RedirectAttributes ra) {

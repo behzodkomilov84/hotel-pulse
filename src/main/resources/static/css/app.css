@@ -390,6 +390,17 @@ details.integration-option:not([open]) { gap: 0; }
 .sync-meta dt { font-size: 12px; font-weight: 600; color: var(--muted); }
 .sync-meta dd { margin: 2px 0 0; font-weight: 600; overflow-wrap: anywhere; }
 .text-danger { color: var(--danger); }
+.archive { margin-top: 18px; }
+.archive-title { margin: 0 0 10px; font-size: 14px; font-weight: 700; }
+.archive-title .muted { font-weight: 500; }
+.archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.archive-item {
+    display: grid; gap: 2px; padding: 10px 12px; border-radius: 11px; background: var(--surface-2);
+    border: 1px solid var(--border); transition: border-color var(--t-fast), transform var(--t-fast);
+}
+.archive-item:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+.archive-item b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.archive-item span { font-size: 12.5px; color: var(--muted); }
 .sync-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
 .push-right { margin-left: auto; }
 .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }

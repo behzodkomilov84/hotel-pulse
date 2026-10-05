@@ -120,18 +120,11 @@ public class ExelyBookingWriter {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public int replacePmsServices(Long hotelId, String hotelCurrency, LocalDate from, LocalDate to,
                                   ExelyPmsApi.ServicesData src, MoneyConverter money) {
-        Map<String, ExelyPmsMapper.BookingMoney> foreign = new HashMap<>();
-        for (Booking b : bookingRepository.findForeignCurrency(hotelId, DataOrigin.EXELY_PMS,
-                hotelCurrency == null ? "UZS" : hotelCurrency)) {
-            String number = ExelyPmsMapper.bookingNumber(b.getExternalId());
-            foreign.merge(number, new ExelyPmsMapper.BookingMoney(b.getCurrency(), b.getTotalAmount()),
-                    (a, c) -> new ExelyPmsMapper.BookingMoney(a.currency(), a.totalInHotelCurrency().add(c.totalInHotelCurrency())));
-        }
         serviceRevenueRepository.deleteInWindow(hotelId, from, to);
         Set<String> seen = new HashSet<>();
-        List<ServiceRevenue> rows = ExelyPmsMapper.toServices(src, hotelId, foreign, money).stream()
+        List<ServiceRevenue> rows = ExelyPmsMapper.toServices(src, hotelId, hotelCurrency, money).stream()
                 .filter(s -> !s.getServiceDate().isBefore(from) && !s.getServiceDate().isAfter(to))
-                .filter(s -> seen.add(s.getExternalId() + "@" + s.getServiceDate()))
+                .filter(s -> seen.add(s.getExternalId()))
                 .toList();
         serviceRevenueRepository.saveAll(rows);
         hotelRepository.findById(hotelId).ifPresent(h -> {

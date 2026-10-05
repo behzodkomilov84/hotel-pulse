@@ -28,7 +28,8 @@ public class ServiceRevenue {
     @Column(name = "hotel_id", nullable = false)
     private Long hotelId;
 
-    @Column(name = "external_id", nullable = false, length = 64)
+    /** Xizmat id + ":" + yashash id (xizmat id bronlar orasida takrorlanishi mumkin). */
+    @Column(name = "external_id", nullable = false, length = 160)
     private String externalId;
 
     @Column(name = "service_date", nullable = false)
@@ -46,4 +47,12 @@ public class ServiceRevenue {
 
     @Column(name = "booking_number", length = 64)
     private String bookingNumber;
+
+    /** Exely yashash (roomStay) identifikatori. */
+    @Column(name = "reservation_id")
+    private Long reservationId;
+
+    /** Asl valyuta (amount baribir mehmonxona valyutasida saqlanadi). */
+    @Column(length = 3)
+    private String currency;
 }

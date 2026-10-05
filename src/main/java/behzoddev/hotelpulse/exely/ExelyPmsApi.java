@@ -87,9 +87,10 @@ public final class ExelyPmsApi {
                           Long reservationId, Boolean isIncluded) {
     }
 
-    /** total — yashashning to'liq narxi (valyutani aniqlash uchun bron summasi bilan solishtiriladi). */
+    /** total — yashashning to'liq narxi; currency/currencyRate — summalar valyutasi va Exely kursi (mehmonxona valyutasiga). */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record ServiceReservation(Long id, String bookingNumber, BigDecimal total) {
+    public record ServiceReservation(Long id, String bookingNumber, BigDecimal total, String currency,
+                                     BigDecimal currencyRate) {
     }
 
     /** GET /analytics/payments */

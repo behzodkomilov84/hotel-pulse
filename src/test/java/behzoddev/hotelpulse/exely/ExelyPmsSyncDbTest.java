@@ -69,6 +69,8 @@ class ExelyPmsSyncDbTest {
     @Autowired
     private behzoddev.hotelpulse.repository.ServiceRevenueRepository serviceRevenueRepository;
     @Autowired
+    private ExelyRawStore rawStore;
+    @Autowired
     private DemoDataService demoDataService;
     @Autowired
     private KpiService kpiService;
@@ -108,6 +110,14 @@ class ExelyPmsSyncDbTest {
         // Har bir 30 kunlik oynaga bir xil javob — to'lovlar faqat o'z sanasi tushgan oynada yoziladi.
         s.expect(ExpectedCount.manyTimes(), requestTo(startsWith(API + "/analytics/payments?")))
                 .andRespond(withSuccess(ExelyPmsSamples.PAYMENTS, MediaType.APPLICATION_JSON));
+        s.expect(ExpectedCount.manyTimes(), requestTo(API + "/companies"))
+                .andRespond(withSuccess("[{\"id\": 77, \"name\": \"Tour LLC\", \"type\": \"Customer\"}]", MediaType.APPLICATION_JSON));
+        s.expect(ExpectedCount.manyTimes(), requestTo(org.hamcrest.Matchers.matchesPattern(API + "/bookings/[^/]+/invoices\\?language=ru")))
+                .andRespond(withSuccess("[{\"id\": \"inv1\", \"items\": []}]", MediaType.APPLICATION_JSON));
+        s.expect(ExpectedCount.manyTimes(), requestTo(startsWith(API + "/guests/")))
+                .andRespond(withSuccess("{\"id\": \"g1\", \"lastName\": \"Karimov\"}", MediaType.APPLICATION_JSON));
+        s.expect(ExpectedCount.manyTimes(), requestTo(startsWith(API + "/analytics/services/cancelled?")))
+                .andRespond(withSuccess("{\"data\": {\"services\": [], \"reservations\": []}}", MediaType.APPLICATION_JSON));
         s.expect(ExpectedCount.manyTimes(), requestTo(startsWith(API + "/analytics/services?")))
                 .andExpect(header("X-API-KEY", KEY))
                 .andRespond(withSuccess(ExelyPmsSamples.SERVICES, MediaType.APPLICATION_JSON));
@@ -157,6 +167,17 @@ class ExelyPmsSyncDbTest {
                 java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2026, 10, 1))).stays();
         assertEquals(0, new BigDecimal("600000").compareTo(day.roomRevenue()), "yashash — xizmatlar hisobotidan");
         assertEquals(0, new BigDecimal("90000").compareTo(day.extrasRevenue()));
+
+        // Xom arxiv: Exely bergan hamma narsa saqlanadi.
+        var archive = rawStore.counts(hotel.getId());
+        assertEquals(3L, archive.get(ExelyRawStore.BOOKING), "3 ta bron");
+        assertEquals(3L, archive.get(ExelyRawStore.INVOICES));
+        assertEquals(3L, archive.get(ExelyRawStore.SERVICE), "xizmat qatorlari");
+        assertEquals(1L, archive.get(ExelyRawStore.RESERVATION));
+        assertEquals(5L, archive.get(ExelyRawStore.PAYMENT), "xomda bekor qilingan to'lovlar ham bor");
+        assertTrue(archive.get(ExelyRawStore.GUEST) >= 1, "mehmon profillari");
+        assertEquals(3L, archive.get(ExelyRawStore.ROOM));
+        assertEquals(1L, archive.get(ExelyRawStore.COMPANY));
         assertTrue(r.message().contains("xonalar soni: 20 → 3"), r.message());
     }
 

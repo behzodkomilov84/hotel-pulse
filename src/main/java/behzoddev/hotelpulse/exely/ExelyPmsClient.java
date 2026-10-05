@@ -6,11 +6,15 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -33,6 +37,78 @@ public class ExelyPmsClient {
                           @Qualifier("exelyRestClientBuilder") RestClient.Builder builder) {
         this.rest = builder.clone().baseUrl(props.pmsBaseUrl()).build();
     }
+
+    /** Xom javoblarni o'qish uchun (JSON arxiv + tipli modellar bir xil javobdan). */
+    private static final JsonMapper JSON = JsonMapper.builder()
+            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+            .build();
+
+    // ------------------------------------------------------------------ xom (JSON) so'rovlar
+
+    /** GET {path} — javob o'zgarishsiz (JSON matn); 404 — null. */
+    public String json(String key, String path, Map<String, Object> query) {
+        try {
+            return call(() -> rest.get()
+                    .uri(b -> {
+                        b.path(path);
+                        query.forEach(b::queryParam);
+                        return b.build();
+                    })
+                    .header("X-API-KEY", key).accept(MediaType.APPLICATION_JSON)
+                    .retrieve().body(String.class));
+        } catch (ExelyException e) {
+            if (e.getCause() instanceof RestClientResponseException re && re.getStatusCode().value() == 404) {
+                return null;
+            }
+            throw e;
+        }
+    }
+
+    public String bookingJson(String key, String number) {
+        String json = json(key, "/bookings/" + number, Map.of());
+        if (json == null) {
+            throw new ExelyException("Exely PMS: " + number + " bron topilmadi");
+        }
+        return json;
+    }
+
+    public String invoicesJson(String key, String number) {
+        return json(key, "/bookings/" + number + "/invoices", Map.of("language", "ru"));
+    }
+
+    public String guestJson(String key, String guestId) {
+        return json(key, "/guests/" + guestId, Map.of());
+    }
+
+    public String roomsJson(String key) {
+        return json(key, "/rooms", Map.of());
+    }
+
+    public String companiesJson(String key) {
+        return json(key, "/companies", Map.of());
+    }
+
+    /** Xizmatlar (yashash kuni bo'yicha), [from, to] ≤ 31 kun; cancelled — bekor qilingan bronlarniki. */
+    public String servicesJson(String key, LocalDate from, LocalDate to, boolean cancelled) {
+        return json(key, cancelled ? "/analytics/services/cancelled" : "/analytics/services", Map.of(
+                "startDate", from.format(SERVICE_DAY), "endDate", to.format(SERVICE_DAY), "dateKind", 1));
+    }
+
+    public String paymentsJson(String key, LocalDateTime from, LocalDateTime to) {
+        return json(key, "/analytics/payments", Map.of(
+                "startDateTime", from.format(ANALYTICS), "endDateTime", to.format(ANALYTICS),
+                "includeExternalPayments", true));
+    }
+
+    public static <T> T parse(String json, Class<T> type) {
+        return JSON.readValue(json, type);
+    }
+
+    public static JsonNode tree(String json) {
+        return JSON.readTree(json == null ? "null" : json);
+    }
+
+    // ------------------------------------------------------------------ tipli so'rovlar
 
     /** Kalitni tekshirish — faqat o'qiydigan yengil so'rov (xonalar ro'yxati). */
     public void testKey(String key) {
