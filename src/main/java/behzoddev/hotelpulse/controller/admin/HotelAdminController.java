@@ -5,7 +5,6 @@ import behzoddev.hotelpulse.exely.ExelyException;
 import behzoddev.hotelpulse.exely.ExelyRawStore;
 import behzoddev.hotelpulse.exely.ExelySyncService;
 import behzoddev.hotelpulse.exely.ExelyVerifyService;
-import behzoddev.hotelpulse.service.DemoDataService;
 import behzoddev.hotelpulse.service.HotelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -19,7 +18,6 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class HotelAdminController {
 
     private final HotelService hotelService;
-    private final DemoDataService demoDataService;
     private final ExelySyncService exelySyncService;
     private final ExelyRawStore exelyRawStore;
 
@@ -151,25 +149,5 @@ public class HotelAdminController {
         hotelService.disconnectExely(id);
         ra.addFlashAttribute("success", "Exely ulanishi o'chirildi (olingan bronlar saqlanib qoldi)");
         return "redirect:/admin/hotels/" + id;
-    }
-
-    /** Exely ulanmaguncha panelni sinab ko'rish uchun sinov ma'lumotlari. */
-    @PostMapping("/{id}/demo-data")
-    public String generateDemo(@PathVariable Long id, RedirectAttributes ra) {
-        Hotel hotel = hotelService.getById(id);
-        try {
-            int count = demoDataService.generate(hotel);
-            ra.addFlashAttribute("success", count + " ta sinov broni yaratildi");
-        } catch (IllegalArgumentException e) {
-            ra.addFlashAttribute("error", e.getMessage());
-        }
-        return "redirect:/hotels/" + id;
-    }
-
-    @PostMapping("/{id}/demo-data/delete")
-    public String deleteDemo(@PathVariable Long id, RedirectAttributes ra) {
-        demoDataService.delete(hotelService.getById(id));
-        ra.addFlashAttribute("success", "Sinov ma'lumotlari o'chirildi");
-        return "redirect:/hotels/" + id;
     }
 }

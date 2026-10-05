@@ -83,10 +83,12 @@ class PageRenderingDbTest {
     }
 
     @Test
-    void hotelWithoutDataShowsDemoButtonForOwner() throws Exception {
+    void hotelWithoutDataShowsEmptyStateWithoutDemoButtons() throws Exception {
         mvc.perform(get("/hotels/{id}", hotelB.getId()).with(user(owner)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Sinov ma'lumotlarini yaratish")));
+                .andExpect(content().string(containsString("Hali ma'lumot yo'q")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Sinov ma'lumotlari"))))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("demo-data"))));
     }
 
     @Test

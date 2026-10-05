@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Exely ulanmaguncha panelni sinab ko'rish uchun real ko'rinishdagi sinov
- * ma'lumotlari: o'tgan 180 kun va kelgusi 45 kun. Barcha yozuvlar
- * origin=DEMO bilan belgilanadi va bitta tugma bilan o'chiriladi.
+ * Testlar uchun real ko'rinishdagi sinov ma'lumotlari: o'tgan 180 kun va kelgusi 45 kun.
+ * Barcha yozuvlar origin=DEMO bilan belgilanadi (saytda sinov ma'lumotlari tugmalari olib tashlangan —
+ * endi faqat testlar ishlatadi).
  * Bir xil mehmonxona uchun natija har safar bir xil (seed = hotel id).
  */
 @Service

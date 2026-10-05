@@ -153,6 +153,73 @@
         confirm.addEventListener('input', checkMatch);
     });
 
+    // Izohlar (button.tip[data-tip]): telefonda title ko'rinmaydi — shuning uchun o'z oynasi.
+    // Bosilganda ochiladi/yopiladi (telefon ham), sichqoncha bor qurilmada — olib borilganda ham.
+    // Oyna ekran chetidan chiqmasligi uchun joylashuvi hisoblanadi; tashqariga bosish, Esc, aylantirish — yopadi.
+    (function () {
+        var tips = document.querySelectorAll('.tip[data-tip]');
+        if (!tips.length) return;
+        var pop = document.createElement('div');
+        pop.className = 'tip-pop';
+        pop.setAttribute('role', 'tooltip');
+        pop.id = 'tip-pop';
+        document.body.appendChild(pop);
+        var current = null;
+        var shownAt = 0;
+        var hover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+        function place(btn) {
+            var r = btn.getBoundingClientRect();
+            var margin = 12;
+            pop.style.left = '0px';
+            pop.style.top = '0px';
+            var w = pop.offsetWidth, h = pop.offsetHeight;
+            var left = Math.min(Math.max(r.left + r.width / 2 - w / 2, margin), window.innerWidth - w - margin);
+            var below = r.bottom + 8;
+            var top = below + h > window.innerHeight - margin ? r.top - h - 8 : below;
+            pop.style.left = left + 'px';
+            pop.style.top = Math.max(margin, top) + 'px';
+        }
+        function show(btn) {
+            if (current && current !== btn) current.setAttribute('aria-expanded', 'false');
+            current = btn;
+            pop.textContent = btn.getAttribute('data-tip').replace(/\\n/g, '\n');
+            pop.classList.add('show');
+            btn.setAttribute('aria-expanded', 'true');
+            btn.setAttribute('aria-describedby', 'tip-pop');
+            shownAt = window.scrollY;
+            place(btn);
+        }
+        function hide() {
+            if (!current) return;
+            current.setAttribute('aria-expanded', 'false');
+            current.removeAttribute('aria-describedby');
+            current = null;
+            pop.classList.remove('show');
+        }
+        tips.forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();   // havola ichida bo'lsa ham sahifa almashmasin
+                current === btn ? hide() : show(btn);
+            });
+            if (hover) {
+                btn.addEventListener('mouseenter', function () { show(btn); });
+                btn.addEventListener('mouseleave', hide);
+            }
+            btn.addEventListener('blur', hide);
+        });
+        document.addEventListener('click', hide);
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') hide(); });
+        // Telefonda tugmaga bosilganda brauzer sahifani biroz surishi mumkin (fokus) — kichik surilishda
+        // izoh yopilmaydi, faqat joyi yangilanadi; sezilarli aylantirishda yopiladi.
+        window.addEventListener('scroll', function () {
+            if (!current) return;
+            if (Math.abs(window.scrollY - shownAt) > 40) hide(); else place(current);
+        }, { passive: true });
+        window.addEventListener('resize', hide);
+    })();
+
     // Progress chiziqlari: data-fill="0.57" — kechikish bilan to'ladi (CSS transition).
     requestAnimationFrame(() => {
         setTimeout(() => {

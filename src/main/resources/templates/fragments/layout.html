@@ -33,6 +33,10 @@
     </div>
 </header>
 
+<!-- Izoh (ⓘ): kompyuterda sichqoncha olib borilganda, telefonda bosilganda ochiladi (app.js). Qatorlar — "\n". -->
+<button type="button" class="tip" th:fragment="tip(text)"
+        th:attr="data-tip=${text}, aria-label='Izoh: ' + ${text}" aria-expanded="false">i</button>
+
 <th:block th:fragment="alerts">
     <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>
     <div class="alert alert-error" role="alert" th:if="${error}" th:text="${error}"></div>

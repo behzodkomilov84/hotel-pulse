@@ -25,10 +25,10 @@
                 <td th:text="${h.city} ?: '—'"></td>
                 <td th:text="${h.roomsCount}"></td>
                 <td>
-                    <span class="badge badge-ok" th:if="${h.exelyConnected and h.exelyLastSyncOk != false}"
-                          th:title="${h.exelyLastSyncMessage}">Ulangan</span>
-                    <span class="badge badge-warn" th:if="${h.exelyConnected and h.exelyLastSyncOk == false}"
-                          th:title="${h.exelyLastSyncMessage}">Sinxronlash xatosi</span>
+                    <span class="badge badge-ok" th:if="${h.exelyConnected and h.exelyLastSyncOk != false}">Ulangan</span>
+                    <span class="badge badge-warn" th:if="${h.exelyConnected and h.exelyLastSyncOk == false}">Sinxronlash xatosi</span>
+                    <th:block th:if="${h.exelyConnected and h.exelyLastSyncMessage != null}"><button
+                            th:replace="~{fragments/layout :: tip(${h.exelyLastSyncMessage})}"></button></th:block>
                     <span class="badge badge-off" th:unless="${h.exelyConnected}">Ulanmagan</span>
                 </td>
                 <td>

@@ -354,12 +354,32 @@ table.compact td { padding: 8px 4px; font-size: 14px; }
 table.compact tr:hover { background: none; }
 td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 10px; vertical-align: middle; }
-/* Savdo kanallari: tor kartada ham raqamlar karta ichida qoladi — uzun nom "…" bilan qisqaradi (to'liq nomi — title). */
+/* Savdo kanallari: tor kartada ham raqamlar karta ichida qoladi — uzun nom keyingi qatorga o'tadi (telefonda ham to'liq ko'rinadi). */
 .source-table { table-layout: fixed; width: 100%; }
 .source-table .col-pct { width: 58px; }
 .source-table .col-sum { width: 104px; }
-.source-table td.source-name { overflow: hidden; text-overflow: ellipsis; }
+.source-table td { vertical-align: top; }
+.source-table td.source-name { white-space: normal; overflow-wrap: anywhere; line-height: 1.4; padding-left: 20px; text-indent: -20px; }
 .source-table td.num { padding-left: 6px; }
+
+/* ---------- Izoh (ⓘ) ---------- */
+.tip {
+    display: inline-grid; place-items: center; width: 17px; height: 17px; margin-left: 5px; padding: 0;
+    border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface); color: var(--muted);
+    font: italic 700 11px/1 Georgia, serif; cursor: pointer; vertical-align: 1px; flex: none;
+    transition: color var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+}
+.tip:hover, .tip[aria-expanded="true"] { color: var(--primary); border-color: var(--primary); background: var(--primary-soft); }
+.tip:focus-visible { outline: none; box-shadow: var(--ring); }
+/* Telefonda barmoq bilan bosish uchun kattaroq maydon (ko'rinishi o'zgarmaydi). */
+@media (pointer: coarse) { .tip { position: relative; } .tip::after { content: ""; position: absolute; inset: -12px; } }
+.tip-pop {
+    position: fixed; z-index: 1000; max-width: min(300px, calc(100vw - 24px)); padding: 10px 12px; border-radius: 10px;
+    background: var(--text); color: var(--surface); font-size: 13px; line-height: 1.5; white-space: pre-line;
+    box-shadow: var(--shadow-lg); opacity: 0; transform: translateY(-4px); pointer-events: none;
+    transition: opacity var(--t-fast), transform var(--t-fast);
+}
+.tip-pop.show { opacity: 1; transform: none; }
 
 /* ---------- Exely: yo'riqnoma va sinxronlash holati ---------- */
 .field-wide { grid-column: 1 / -1; }
