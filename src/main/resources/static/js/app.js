@@ -203,6 +203,13 @@
                 e.stopPropagation();   // havola ichida bo'lsa ham sahifa almashmasin
                 current === btn ? hide() : show(btn);
             });
+            btn.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    current === btn ? hide() : show(btn);
+                }
+            });
             if (hover) {
                 btn.addEventListener('mouseenter', function () { show(btn); });
                 btn.addEventListener('mouseleave', hide);

@@ -34,8 +34,9 @@
 </header>
 
 <!-- Izoh (ⓘ): kompyuterda sichqoncha olib borilganda, telefonda bosilganda ochiladi (app.js). Qatorlar — "\n". -->
-<button type="button" class="tip" th:fragment="tip(text)"
-        th:attr="data-tip=${text}, aria-label='Izoh: ' + ${text}" aria-expanded="false">i</button>
+<!-- span[role=button] — havola-kartalar (<a>) ichida ham to'g'ri HTML bo'lishi uchun. -->
+<span class="tip" role="button" tabindex="0" th:fragment="tip(text)"
+      th:attr="data-tip=${text}, aria-label='Izoh: ' + ${text}" aria-expanded="false">i</span>
 
 <th:block th:fragment="alerts">
     <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>

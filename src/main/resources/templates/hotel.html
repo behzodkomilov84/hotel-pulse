@@ -38,7 +38,7 @@
         <div class="stats-grid stagger">
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Bandlik</span>
+                    <span class="stat-label">Bandlik<span th:replace="~{fragments/layout :: tip(#{tip.today.occupancy})}"></span></span>
                     <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.pct(today.occupancy)}">0%</div>
@@ -47,7 +47,7 @@
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Keladiganlar</span>
+                    <span class="stat-label">Keladiganlar<span th:replace="~{fragments/layout :: tip(#{tip.today.arrivals})}"></span></span>
                     <span class="stat-icon i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${today.arrivals}">0</div>
@@ -55,7 +55,7 @@
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Ketadiganlar</span>
+                    <span class="stat-label">Ketadiganlar<span th:replace="~{fragments/layout :: tip(#{tip.today.departures})}"></span></span>
                     <span class="stat-icon i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${today.departures}">0</div>
@@ -65,7 +65,7 @@
             <a class="card stat stat-link" th:href="@{/hotels/{id}/debts(id=${hotel.id})}"
                th:classappend="${paymentsComplete and today.debtorCount > 0} ? 'stat-alert'">
                 <div class="stat-top">
-                    <span class="stat-label">Qarzdorlik</span>
+                    <span class="stat-label">Qarzdorlik<span th:replace="~{fragments/layout :: tip(#{tip.today.debt})}"></span></span>
                     <span class="stat-icon i-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span>
                 </div>
                 <th:block th:if="${paymentsComplete}">
@@ -106,7 +106,7 @@
         <div class="stats-grid stagger">
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Bandlik<button th:replace="~{fragments/layout :: tip('Sotilgan xona-kechalar / mavjud xona-kechalar (xonalar soni × kunlar)')}"></button></span>
+                    <span class="stat-label">Bandlik<span th:replace="~{fragments/layout :: tip(#{tip.occupancy})}"></span></span>
                     <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.pct(s.occupancy)}">0%</div>
@@ -116,7 +116,7 @@
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">ADR<button th:replace="~{fragments/layout :: tip('Average Daily Rate — sotilgan bitta xona-kechaning o\'rtacha narxi: yashash daromadi / sotilgan xona-kechalar')}"></button></span>
+                    <span class="stat-label">ADR<span th:replace="~{fragments/layout :: tip(#{tip.adr})}"></span></span>
                     <span class="stat-icon i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.money(s.adr, cur)}">0</div>
@@ -126,7 +126,7 @@
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">RevPAR<button th:replace="~{fragments/layout :: tip('Revenue Per Available Room — yashash daromadi / mavjud xona-kechalar (band bo\'lmagan xonalar ham hisobga olinadi)')}"></button></span>
+                    <span class="stat-label">RevPAR<span th:replace="~{fragments/layout :: tip(#{tip.revpar})}"></span></span>
                     <span class="stat-icon i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.money(s.revpar, cur)}">0</div>
@@ -137,11 +137,14 @@
             <div class="card stat">
                 <div class="stat-top">
                     <span class="stat-label"><span th:text="${s.extrasRevenue.signum() > 0} ? 'Yashash daromadi' : 'Xona daromadi'">Xona daromadi</span><th:block
-                            th:if="${s.extrasRevenue.signum() != 0}"><button
-                            th:replace="~{fragments/layout :: tip('Yashash (erta kirish / kech chiqish bilan): ' + ${@fmt.money(s.roomRevenue, cur)}
+                            th:if="${s.extrasRevenue.signum() != 0}"><span
+                            th:replace="~{fragments/layout :: tip(#{tip.revenue.services} + '\n\n'
+                                + 'Yashash: ' + ${@fmt.money(s.roomRevenue, cur)}
                                 + '\n' + 'Nonushta: ' + ${@fmt.money(s.mealsRevenue, cur)}
                                 + '\n' + 'Boshqa xizmatlar: ' + ${@fmt.money(s.extrasRevenue.subtract(s.mealsRevenue), cur)}
-                                + '\n' + 'Jami: ' + ${@fmt.money(s.totalRevenue(), cur)})}"></button></th:block></span>
+                                + '\n' + 'Jami: ' + ${@fmt.money(s.totalRevenue(), cur)})}"></span></th:block><th:block
+                            th:if="${s.extrasRevenue.signum() == 0}"><span
+                            th:replace="~{fragments/layout :: tip(#{tip.revenue.rooms})}"></span></th:block></span>
                     <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20M16 15h2"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.roomRevenue, cur)}">0</div>
@@ -158,7 +161,7 @@
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Tushgan to'lovlar</span>
+                    <span class="stat-label">Tushgan to'lovlar<span th:replace="~{fragments/layout :: tip(${paymentsComplete} ? #{tip.payments} : #{tip.payments.partial})}"></span></span>
                     <span class="stat-icon i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.moneyShort(kpi.paymentsReceived, cur)}">0</div>
@@ -169,7 +172,7 @@
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Yangi bronlar</span>
+                    <span class="stat-label">Yangi bronlar<span th:replace="~{fragments/layout :: tip(#{tip.newBookings})}"></span></span>
                     <span class="stat-icon i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${kpi.newBookings}">0</div>
@@ -177,7 +180,7 @@
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Bekor qilingan / kelmagan</span>
+                    <span class="stat-label">Bekor qilingan / kelmagan<span th:replace="~{fragments/layout :: tip(#{tip.cancellations})}"></span></span>
                     <span class="stat-icon i-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg></span>
                 </div>
                 <div class="stat-value" th:text="${kpi.cancellations} + ' / ' + ${s.noShows}">0</div>
@@ -185,7 +188,7 @@
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">O'rtacha yashash</span>
+                    <span class="stat-label">O'rtacha yashash<span th:replace="~{fragments/layout :: tip(#{tip.los})}"></span></span>
                     <span class="stat-icon i-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.number(s.avgLengthOfStay)} + ' kecha'">0</div>

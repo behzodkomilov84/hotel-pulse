@@ -33,14 +33,14 @@
     <div class="stats-grid stagger">
         <a class="card stat stat-link stat-alert" th:href="@{/hotels/{id}/debts(id=${hotel.id})}"
            th:classappend="${category == null} ? 'selected'">
-            <div class="stat-top"><span class="stat-label">Jami qarz</span></div>
+            <div class="stat-top"><span class="stat-label">Jami qarz<span th:replace="~{fragments/layout :: tip(#{tip.debt.total})}"></span></span></div>
             <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.total, cur)}">0</div>
             <div class="stat-sub" th:text="${s.count} + ' ta yashash'"></div>
         </a>
         <a class="card stat stat-link" th:href="@{/hotels/{id}/debts(id=${hotel.id}, category='IN_HOUSE')}"
            th:classappend="${category != null and category.name() == 'IN_HOUSE'} ? 'selected'">
             <div class="stat-top">
-                <span class="stat-label">Hozir yashayapti</span>
+                <span class="stat-label">Hozir yashayapti<span th:replace="~{fragments/layout :: tip(#{tip.debt.inHouse})}"></span></span>
                 <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9"/></svg></span>
             </div>
             <div class="stat-value" data-count th:text="${cats[0]}">0</div>
@@ -49,7 +49,7 @@
         <a class="card stat stat-link" th:href="@{/hotels/{id}/debts(id=${hotel.id}, category='CHECKED_OUT')}"
            th:classappend="${category != null and category.name() == 'CHECKED_OUT'} ? 'selected'">
             <div class="stat-top">
-                <span class="stat-label">Ketgan</span>
+                <span class="stat-label">Ketgan<span th:replace="~{fragments/layout :: tip(#{tip.debt.checkedOut})}"></span></span>
                 <span class="stat-icon i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span>
             </div>
             <div class="stat-value" data-count th:text="${cats[1]}">0</div>
@@ -58,7 +58,7 @@
         <a class="card stat stat-link stat-warn" th:href="@{/hotels/{id}/debts(id=${hotel.id}, category='NOT_CHECKED_OUT')}"
            th:classappend="${category != null and category.name() == 'NOT_CHECKED_OUT'} ? 'selected'">
             <div class="stat-top">
-                <span class="stat-label">Vyselenie qilinmagan</span>
+                <span class="stat-label">Vyselenie qilinmagan<span th:replace="~{fragments/layout :: tip(#{tip.debt.notCheckedOut})}"></span></span>
                 <span class="stat-icon i-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>
             </div>
             <div class="stat-value" data-count th:text="${cats[2]}">0</div>
@@ -68,7 +68,7 @@
 
     <!-- ===== Qarz yoshi ===== -->
     <section class="card aging-card reveal" th:if="${s.count > 0}">
-        <h3 class="card-title">Qarz yoshi <span class="muted">— ketish sanasidan beri o'tgan vaqt</span></h3>
+        <h3 class="card-title">Qarz yoshi<span th:replace="~{fragments/layout :: tip(#{tip.debt.aging})}"></span> <span class="muted">— ketish sanasidan beri o'tgan vaqt</span></h3>
         <div class="aging-grid">
             <div class="aging-item" th:each="a, st : ${report.aging}">
                 <div class="aging-top">

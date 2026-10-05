@@ -31,12 +31,12 @@
             </div>
             <div class="hotel-stats" th:if="${summaries[h.id].soldRoomNights > 0}" th:with="m=${summaries[h.id]}">
                 <div>
-                    <div class="k">Bandlik (shu oy)</div>
+                    <div class="k">Bandlik (shu oy)<span th:replace="~{fragments/layout :: tip(#{tip.home.occupancy})}"></span></div>
                     <div class="v" data-count th:text="${@fmt.pct(m.occupancy)}">0%</div>
                     <div class="meter"><div class="meter-fill" th:attr="data-fill=${m.occupancy}"></div></div>
                 </div>
                 <div>
-                    <div class="k">Daromad (shu oy)</div>
+                    <div class="k">Daromad (shu oy)<span th:replace="~{fragments/layout :: tip(#{tip.home.revenue})}"></span></div>
                     <div class="v" data-count th:text="${@fmt.moneyShort(m.totalRevenue(), h.currency)}">0</div>
                 </div>
             </div>

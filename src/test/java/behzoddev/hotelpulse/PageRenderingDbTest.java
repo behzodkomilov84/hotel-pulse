@@ -18,6 +18,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -80,6 +81,20 @@ class PageRenderingDbTest {
                         .with(user(owner)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("01.01.2026")));
+    }
+
+    @Test
+    void everyCardHasTapFriendlyTip() throws Exception {
+        String html = mvc.perform(get("/hotels/{id}", hotelA.getId()).with(user(owner)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        int cards = html.split("class=\"card stat", -1).length - 1;
+        int tips = html.split("class=\"tip\" role=\"button\"", -1).length - 1;
+        assertEquals(12, cards, "bugun — 4, davr — 8 karta");
+        assertTrue(tips >= cards, "har bir kartada izoh: " + tips + " / " + cards);
+        assertTrue(html.contains("ADR (Average Daily Rate)"), "izoh matni messages.properties'dan");
+        assertTrue(html.contains("no-show"));
+        assertFalse(html.contains("??tip."), "topilmagan kalit yo'q");
     }
 
     @Test
