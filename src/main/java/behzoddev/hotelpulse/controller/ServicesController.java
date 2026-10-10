@@ -1,6 +1,7 @@
 package behzoddev.hotelpulse.controller;
 
 import behzoddev.hotelpulse.entity.Hotel;
+import behzoddev.hotelpulse.faktura.FakturaService;
 import behzoddev.hotelpulse.security.CustomUserDetails;
 import behzoddev.hotelpulse.service.HotelService;
 import behzoddev.hotelpulse.service.InvoiceReportService;
@@ -23,7 +24,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /** "Xizmatlar" menyusi: hisob-fakturalar — qarzdor yashashlar va ularning Exely hisoblari (folio). */
 @Controller
@@ -35,6 +38,7 @@ public class ServicesController {
 
     private final HotelService hotelService;
     private final InvoiceReportService invoices;
+    private final FakturaService faktura;
     private final Clock clock;
 
     @GetMapping("/invoices")
@@ -57,6 +61,9 @@ public class ServicesController {
         model.addAttribute("result", result);
         model.addAttribute("rows", InvoiceReportService.pageRows(result));
         model.addAttribute("showHotel", hotel == null && accessible.size() > 1);
+        List<Hotel> shown = selected(accessible, hotel);
+        model.addAttribute("official", official(shown));
+        model.addAttribute("fakturaOn", shown.stream().anyMatch(h -> faktura.enabled(h.getId())));
         return "services/invoices";
     }
 
@@ -80,12 +87,13 @@ public class ServicesController {
         List<Hotel> accessible = hotelService.accessibleHotels(user);
         String s = InvoiceReportService.SORTS.contains(sort) ? sort : "debt";
         InvoiceReportService.Result result = invoices.report(selected(accessible, hotel), q, s, !"asc".equals(dir), 1);
+        Map<String, List<FakturaService.Doc>> official = official(selected(accessible, hotel));
         StringBuilder sb = new StringBuilder("﻿");
         boolean rooms = "rooms".equals(level);
         if (!rooms) {
             // Bron bo'yicha: bitta qator — bitta bron (guruh hisoblari takrorlanmaydi).
             sb.append("Меҳмонхона;Брон рақами;Меҳмон;Манба;Келиш;Кетиш;Ҳолат;Қарздор хоналар;Жами хоналар;Қарз;"
-                    + "Қарз ёши (кун);Exely ҳисоблари сони;Exely ҳисоб рақамлари;Тўловчи;Exely ҳисоб суммаси;Валюта\n");
+                    + "Қарз ёши (кун);Exely ҳисоблари сони;Exely ҳисоб рақамлари;Тўловчи;Exely ҳисоб суммаси;Валюта;Расмий ҳисоб-фактура (ЭСФ)\n");
             for (BookingRow b : result.rows()) {
                 sb.append(csv(b.hotelName())).append(';')
                         .append(csv(b.bookingNumber())).append(';')
@@ -102,7 +110,8 @@ public class ServicesController {
                         .append(csv(b.accountNumbers())).append(';')
                         .append(csv(b.payer())).append(';')
                         .append(b.accountTotal().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
-                        .append(csv(b.currency())).append('\n');
+                        .append(csv(b.currency())).append(';')
+                        .append(csv(officialText(official.get(b.hotelId() + ":" + b.bookingNumber())))).append('\n');
             }
             return csvResponse(sb, "hisob-fakturalar-bronlar-" + LocalDate.now(clock) + ".csv");
         }
@@ -127,6 +136,24 @@ public class ServicesController {
                     .append(csv(r.currency())).append('\n');
         }
         return csvResponse(sb, "hisob-fakturalar-xonalar-" + LocalDate.now(clock) + ".csv");
+    }
+
+    /** "№ 15 (01.10.2026, Имзоланган), …" yoki bo'sh. */
+    static String officialText(List<FakturaService.Doc> docs) {
+        if (docs == null || docs.isEmpty()) {
+            return "";
+        }
+        return String.join(", ", docs.stream().map(d -> "№ " + (d.number() == null ? "—" : d.number())
+                + " (" + (d.date() == null ? "—" : d.date().format(DAY)) + ", " + d.statusLabel() + ")").toList());
+    }
+
+    /** ЭСФ operatoridagi chiquvchi rasmiy hisob-fakturalari: "mehmonxona:bron" → hujjatlar. */
+    private Map<String, List<FakturaService.Doc>> official(List<Hotel> hotels) {
+        Map<String, List<FakturaService.Doc>> result = new HashMap<>();
+        for (Hotel h : hotels) {
+            faktura.outgoingByBooking(h.getId()).forEach((number, docs) -> result.put(h.getId() + ":" + number, docs));
+        }
+        return result;
     }
 
     private static ResponseEntity<byte[]> csvResponse(StringBuilder sb, String file) {

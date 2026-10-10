@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Электрон ҳисоб-фактуралар')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('svc-faktura')}"></header>
+<main class="container">
+    <div class="page-head reveal">
+        <div>
+            <h1>Электрон ҳисоб-фактуралар</h1>
+            <p class="subtitle" th:if="${hotel != null and account != null}">
+                <b th:text="${account.providerName}"></b> ·
+                <span th:text="${account.syncedAt != null} ? 'Охирги янгиланиш: ' + ${#temporals.format(account.syncedAt, 'dd.MM.yyyy HH:mm')} : 'Ҳали синхронланмаган'"></span>
+                <span th:if="${account.syncMessage != null}" th:text="' · ' + ${account.syncMessage}"
+                      th:classappend="${account.syncOk == false} ? 'text-danger'"></span>
+            </p>
+        </div>
+        <div class="head-actions" th:if="${hotel != null and account != null}">
+            <form method="post" th:action="@{/faktura/sync}">
+                <input type="hidden" name="hotel" th:value="${hotel.id}">
+                <input type="hidden" name="back" th:value="${back}">
+                <button type="submit" class="btn btn-primary" th:disabled="${running}"
+                        th:text="${running} ? 'Синхронланмоқда…' : 'Ҳозир янгилаш'"></button>
+            </form>
+        </div>
+    </div>
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="card empty reveal" th:if="${hotel == null}"><p><strong>Сизга ҳали меҳмонхона бириктирилмаган</strong></p></div>
+
+    <th:block th:if="${hotel != null}">
+        <div class="alert alert-info reveal" th:if="${account == null}">
+            <span>Бу меҳмонхонага ЭСФ оператори (Didox ёки Faktura.uz) уланмаган. Эгаси уни <b>Бошқарув → Меҳмонхоналар</b> саҳифасида улайди
+                (ИНН, логин, парол, Client ID ва Client Secret).</span>
+        </div>
+
+        <!-- Yo'nalish -->
+        <nav class="segmented reveal" aria-label="Йўналиш">
+            <a th:classappend="${dir == 'IN'} ? 'active'" th:href="@{/faktura(hotel=${hotel.id}, dir='IN', month=${month})}">Кирувчи (харажатлар)</a>
+            <a th:classappend="${dir == 'OUT'} ? 'active'" th:href="@{/faktura(hotel=${hotel.id}, dir='OUT', month=${month})}">Чиқувчи (меҳмонхона ёзган)</a>
+        </nav>
+
+        <form method="get" class="debt-filter reveal">
+            <select name="hotel" aria-label="Меҳмонхона" th:if="${hotels.size() > 1}" onchange="this.form.submit()">
+                <option th:each="h : ${hotels}" th:value="${h.id}" th:text="${h.name}" th:selected="${h.id == hotel.id}"></option>
+            </select>
+            <input type="hidden" name="hotel" th:value="${hotel.id}" th:unless="${hotels.size() > 1}">
+            <input type="hidden" name="dir" th:value="${dir}">
+            <input type="month" name="month" th:value="${month}" aria-label="Ой" onchange="this.form.submit()">
+            <div class="search-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="search" name="q" th:value="${q}" aria-label="Қидирув"
+                       th:placeholder="${dir == 'IN'} ? 'Етказиб берувчи, ИНН ёки рақам' : 'Харидор, ИНН, рақам ёки брон'">
+            </div>
+            <label class="check check-sm">
+                <input type="checkbox" name="open" value="true" th:checked="${open}" onchange="this.form.submit()">
+                <span th:text="${dir == 'IN'} ? 'Фақат моддаси белгиланмаганлар' : 'Фақат бронга боғланмаганлар'"></span>
+            </label>
+            <button type="submit" class="btn btn-primary">Қидириш</button>
+            <a class="btn btn-secondary" th:if="${month != null or (q != null and !q.isBlank()) or open}"
+               th:href="@{/faktura(hotel=${hotel.id}, dir=${dir})}">Тозалаш</a>
+        </form>
+
+        <p class="note reveal" th:if="${dir == 'IN'}">
+            USALI харажатларига фақат <b>имзоланган</b> ҳисоб-фактуралар ва акт-фактуралар <b>ҚҚСсиз</b> суммада, модда
+            белгилангандан кейин қўшилади. «Эслаб қолиш» белгиланса — шу етказиб берувчининг кейинги ҳужжатлари ҳам
+            автоматик шу моддага тушади.
+        </p>
+        <p class="note reveal" th:if="${dir == 'OUT'}">
+            Чиқувчи ҳисоб-фактуралар бронга тўловчи номи (ёки ИНН), сумма ва сана бўйича автоматик боғланади.
+            Боғланмаганини брон рақамини киритиб қўлда боғланг (масалан, 1264938911); бўш қолдирилса — ажратилади.
+        </p>
+
+        <div class="card table-wrap reveal" th:if="${docs != null and !docs.isEmpty()}">
+            <p class="table-caption">
+                <b th:text="${@fmt.number(docs.size())} + ' та ҳужжат'"></b>
+                <span class="muted" th:text="'· жами (ҚҚС билан, бекор қилинганларсиз): ' + ${@fmt.money(total, 'UZS')}"></span>
+            </p>
+            <table class="debt-table">
+                <thead>
+                <tr>
+                    <th>Сана</th>
+                    <th>Рақам</th>
+                    <th>Тури</th>
+                    <th th:text="${dir == 'IN'} ? 'Етказиб берувчи' : 'Харидор'"></th>
+                    <th class="num">Сумма (ҚҚС билан)</th>
+                    <th class="num">ҚҚСсиз</th>
+                    <th>Ҳолат</th>
+                    <th th:text="${dir == 'IN'} ? 'USALI моддаси' : 'Брон'"></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="d : ${docs}" th:classappend="${d.isVoid()} ? 'muted'">
+                    <td th:text="${d.date} != null ? ${#temporals.format(d.date, 'dd.MM.yyyy')} : '—'"></td>
+                    <td class="mono" th:text="${d.number} ?: '—'"></td>
+                    <td class="wrap" th:text="${d.typeLabel()}"></td>
+                    <td class="wrap">
+                        <strong th:text="${d.counterpartyName} ?: '—'"></strong>
+                        <div class="muted mono" th:if="${d.counterpartyInn != null}" th:text="'ИНН ' + ${d.counterpartyInn}"></div>
+                    </td>
+                    <td class="num" th:text="${d.gross()} != null ? ${@fmt.money(d.gross(), 'UZS')} : '—'"></td>
+                    <td class="num" th:text="${d.net()} != null ? ${@fmt.money(d.net(), 'UZS')} : '—'"></td>
+                    <td>
+                        <span class="badge" th:text="${d.statusLabel()}"
+                              th:classappend="${d.signed()} ? 'badge-ok' : (${d.isVoid()} ? 'badge-off' : 'badge-warn')"></span>
+                    </td>
+                    <!-- Kiruvchi: USALI moddasi -->
+                    <td th:if="${dir == 'IN'}">
+                        <form method="post" class="fk-form" th:action="@{/faktura/{id}/line(id=${d.id})}">
+                            <input type="hidden" name="hotel" th:value="${hotel.id}">
+                            <input type="hidden" name="back" th:value="${back}">
+                            <select name="line" aria-label="USALI моддаси">
+                                <option value="">— белгиланмаган —</option>
+                                <optgroup th:each="g : ${depts}" th:label="${g.label}">
+                                    <option th:each="l : ${lines}" th:if="${l.dept == g}" th:value="${l.name()}"
+                                            th:text="${l.label}" th:selected="${d.line == l}"></option>
+                                </optgroup>
+                            </select>
+                            <label class="check check-sm" th:if="${d.counterpartyInn != null}">
+                                <input type="checkbox" name="remember" value="true"
+                                       th:checked="${rules.containsKey(d.counterpartyInn)}"> эслаб қолиш
+                            </label>
+                            <button type="submit" class="btn btn-secondary btn-sm">Сақлаш</button>
+                        </form>
+                        <span class="muted" th:if="${d.lineSource == 'RULE'}">қоида бўйича</span>
+                        <span class="muted" th:if="${!d.expense() and !d.isVoid()}">· харажатга кирмайди (имзоланмаган ёки тури бошқа)</span>
+                    </td>
+                    <!-- Chiquvchi: bron -->
+                    <td th:if="${dir == 'OUT'}">
+                        <form method="post" class="fk-form" th:action="@{/faktura/{id}/booking(id=${d.id})}">
+                            <input type="hidden" name="hotel" th:value="${hotel.id}">
+                            <input type="hidden" name="back" th:value="${back}">
+                            <input type="text" name="booking" class="mono" maxlength="64" th:value="${d.bookingNumber}"
+                                   placeholder="брон рақами" aria-label="Брон рақами" size="14">
+                            <button type="submit" class="btn btn-secondary btn-sm">Сақлаш</button>
+                        </form>
+                        <span class="muted" th:if="${d.matchSource == 'AUTO'}">автоматик</span>
+                        <span class="muted" th:if="${d.matchSource == 'MANUAL' and d.bookingNumber != null}">қўлда</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card empty reveal" th:if="${docs != null and docs.isEmpty()}">
+            <p><strong>Ҳужжат топилмади</strong></p>
+            <p class="muted" th:if="${account != null and account.syncedAt == null}">«Ҳозир янгилаш» тугмасини босинг.</p>
+        </div>
+    </th:block>
+</main>
+</body>
+</html>

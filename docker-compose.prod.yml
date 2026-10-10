@@ -59,6 +59,8 @@ services:
       # Production uchun ALOHIDA bot (lokal bilan bir xil token — 409 konflikt).
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       EXELY_SCHEDULER_ENABLED: ${EXELY_SCHEDULER_ENABLED:-true}
+      # Didox hamkor tokeni (shartnoma bo'yicha); bo'sh — Didox o'chirilgan.
+      DIDOX_PARTNER_TOKEN: ${DIDOX_PARTNER_TOKEN:-}
       JAVA_OPTS: ${JAVA_OPTS:--Xms128m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -Xss512k -XX:+ExitOnOutOfMemoryError}
       TZ: Asia/Tashkent
       # nginx (HTTPS) orqasida: X-Forwarded-Proto'ni Tomcat darajasida tan oladi —

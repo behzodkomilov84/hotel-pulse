@@ -30,8 +30,12 @@
     <div class="alert alert-info reveal">
         <span>
             Бу ерда <b>қарздор яшашлар</b> ва уларнинг <b>Exely ҳисоблари</b> (folio) кўрсатилган. Exely ҳисоби —
-            расмий ҳисоб-фактура эмас: Exely уни ҳар бир брон учун автоматик очади. Расмий ҳисоб-фактура ёзилган-ёзилмаганлиги
-            манбаси (сайтда қўлда белгилаш ёки Didox/Faktura.uz) танлангач шу жадвалга қўшилади.
+            расмий ҳисоб-фактура эмас: Exely уни ҳар бир брон учун автоматик очади.
+            <th:block th:if="${fakturaOn}"><b>Расмий ҳисоб-фактура</b> устуни — ЭСФ операторидаги (Didox ёки Faktura.uz) чиқувчи ҳужжатлар
+                (тўловчи номи/ИНН, сумма ва сана бўйича автоматик боғланади; қолганини
+                <a th:href="@{/faktura(dir='OUT', hotel=${hotel})}">Электрон ҳисоб-фактуралар</a> саҳифасида қўлда боғланг).</th:block>
+            <th:block th:unless="${fakturaOn}">Расмий ҳисоб-фактура ёзилган-ёзилмаганини кўриш учун меҳмонхонага ЭСФ операторини (Didox ёки Faktura.uz) уланг
+                (Бошқарув → Меҳмонхоналар).</th:block>
         </span>
     </div>
 
@@ -73,6 +77,7 @@
                 <th>Exely ҳисоблари</th>
                 <th th:replace="~{:: sortable('payer', 'Тўловчи', 'col-total')}"></th>
                 <th th:replace="~{:: sortable('accountTotal', 'Ҳисоб суммаси', 'num col-total')}"></th>
+                <th th:if="${fakturaOn}">Расмий ҳисоб-фактура</th>
             </tr>
             </thead>
             <!-- Har bir bron — alohida tbody: bron qatori + (ko'p xonali bo'lsa) yashirin xonalar qatorlari. -->
@@ -107,6 +112,14 @@
                 </td>
                 <td class="wrap col-total" th:text="${b.payer.isEmpty()} ? '—' : ${b.payersShort()}"></td>
                 <td class="num col-total" th:text="${b.accountCount > 0} ? ${@fmt.money(b.accountTotal, b.currency)} : '—'"></td>
+                <td th:if="${fakturaOn}" class="wrap" th:with="docs=${official.get(b.hotelId + ':' + b.bookingNumber)}">
+                    <span th:if="${docs == null}" class="badge badge-warn">Ёзилмаган</span>
+                    <th:block th:if="${docs != null}" th:each="d : ${docs}">
+                        <span class="badge" th:classappend="${d.signed()} ? 'badge-ok' : 'badge-off'"
+                              th:text="'№ ' + (${d.number} ?: '—')"
+                              th:title="(${d.date} != null ? ${#temporals.format(d.date, 'dd.MM.yyyy')} + ' · ' : '') + ${d.statusLabel()} + (${d.gross()} != null ? ' · ' + ${@fmt.money(d.gross(), 'UZS')} : '')"></span>
+                    </th:block>
+                </td>
             </tr>
             <tr class="stay-row" th:each="r : ${b.stays}" th:if="${b.debtorRooms > 1}" hidden
                 th:attr="data-row-group=${b.key()}">
@@ -128,6 +141,7 @@
                 <td class="inv-numbers mono" th:text="${r.accountNumbers.isEmpty()} ? '—' : ${r.accountNumbers}"></td>
                 <td class="wrap col-total muted" th:text="${r.payer.isEmpty()} ? '' : ${r.payer}"></td>
                 <td class="num col-total muted" th:text="${r.accountCount > 0} ? ${@fmt.money(r.accountTotal, r.currency)} : ''"></td>
+                <td th:if="${fakturaOn}"></td>
             </tr>
             </tbody>
         </table>

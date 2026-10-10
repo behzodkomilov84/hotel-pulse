@@ -45,6 +45,11 @@ app:
     bot-token: ${TELEGRAM_BOT_TOKEN:}
     # Botdagi "Saytda batafsil" tugmasi uchun ommaviy manzil (localhost bo'lsa tugma chiqmaydi).
     site-url: ${APP_SITE_URL:http://localhost:8081}
+  didox:
+    # Didox hamkor API (api-partners.didox.uz). Hamkor tokeni Didox bilan shartnoma asosida beriladi —
+    # HotelPulse uchun bitta; mehmonxonalar faqat INN va Didox parolini kiritadi. Bo'sh bo'lsa — Didox o'chirilgan.
+    base-url: ${DIDOX_BASE_URL:https://api-partners.didox.uz}
+    partner-token: ${DIDOX_PARTNER_TOKEN:}
   exely:
     base-url: ${EXELY_BASE_URL:https://connect.hopenapi.com}
     # Exely PMS Universal API (mehmonxona extranet'idagi "Ключ интеграции" bilan).

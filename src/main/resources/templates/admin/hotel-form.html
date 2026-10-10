@@ -220,6 +220,125 @@
             </form>
         </div>
     </section>
+
+    <!-- ===== ЭСФ operatori: Didox yoki Faktura.uz (elektron hisob-fakturalar) ===== -->
+    <section class="card sync-card reveal" id="faktura" th:if="${hotel != null}" th:attr="data-running=${fakturaRunning}">
+        <div class="sync-head">
+            <div>
+                <h3 class="card-title">Электрон ҳисоб-фактуралар (ЭСФ)</h3>
+                <p class="subtitle">Меҳмонхона my.soliq.uz'да танлаган ЭСФ оператори орқали: кирувчи ҳисоб-фактуралар
+                    (етказиб берувчилардан) — USALI харажатларига; чиқувчилар — бронларга (расмий ҳисоб-фактура
+                    ёзилган-ёзилмагани). Ҳар куни 03:40 да автоматик янгиланади. Фақат ўқилади — ҳеч нарса имзоланмайди
+                    ва юборилмайди.</p>
+            </div>
+            <span th:if="${fakturaRunning}" class="badge badge-role"><span class="spinner"></span>Синхронланмоқда…</span>
+            <span th:if="${!fakturaRunning and faktura != null and faktura.syncOk == true}" class="badge badge-ok"
+                  th:text="${faktura.providerName} + ' · ишлаяпти'">Ишлаяпти</span>
+            <span th:if="${!fakturaRunning and faktura != null and faktura.syncOk == false}" class="badge badge-warn">Хатолик</span>
+            <span th:if="${!fakturaRunning and (faktura == null or faktura.syncOk == null)}" class="badge badge-off"
+                  th:text="${faktura == null} ? 'Уланмаган' : 'Ҳали синхронланмаган'"></span>
+        </div>
+
+        <form method="post" class="form fk-connect" th:action="@{/admin/hotels/{id}/faktura(id=${hotel.id})}"
+              th:with="prov=${faktura != null ? faktura.provider : 'DIDOX'}">
+            <div class="field">
+                <label>ЭСФ оператори</label>
+                <div class="fk-providers">
+                    <label class="check"><input type="radio" name="fakturaProvider" value="DIDOX"
+                                                th:checked="${prov == 'DIDOX'}"> Didox <span class="muted">(тавсия)</span></label>
+                    <label class="check"><input type="radio" name="fakturaProvider" value="FAKTURA"
+                                                th:checked="${prov == 'FAKTURA'}"> Faktura.uz</label>
+                </div>
+                <span class="hint">Қайси оператор эканини меҳмонхона бухгалтери билади (my.soliq.uz → «ЭДО операторини танлаш»).
+                    Кирувчи ҳисоб-фактуралар фақат шу операторда бўлади.</span>
+                <span class="hint text-danger" th:unless="${didoxConfigured}">Didox учун HotelPulse'нинг ҳамкор токени ҳали
+                    созланмаган (Didox билан шартнома) — Didox танланса, текшириш хато беради.</span>
+            </div>
+
+            <details class="howto">
+                <summary>Бу маълумотлар қаердан олинади?</summary>
+                <ul>
+                    <li><b>ИНН</b> — меҳмонхона (ташкилот) СТИРи, 9 рақам.</li>
+                    <li><b>Didox:</b> фақат ИНН ва Didox пароли (didox.uz'га ИНН + парол билан кириладиган парол;
+                        бўлмаса, Didox профилида ўрнатилади).</li>
+                    <li><b>Faktura.uz:</b> логин ва парол, ҳамда API учун Client ID ва Client Secret (Faktura.uz
+                        қўллаб-қувватлаш хизматидан сўралади).</li>
+                </ul>
+                <p>⚠️ ЭЦП калити (.pfx файли) ва унинг пароли <b>керак эмас</b> — уларни ҳеч кимга берманг.</p>
+            </details>
+
+            <div class="form-grid">
+                <div class="field">
+                    <label for="fakturaInn">ИНН (СТИР)</label>
+                    <input type="text" id="fakturaInn" name="fakturaInn" maxlength="11" inputmode="numeric"
+                           required th:value="${faktura?.companyInn}" placeholder="9 рақам">
+                </div>
+                <div class="field">
+                    <label for="fakturaPassword">Парол</label>
+                    <input type="password" id="fakturaPassword" name="fakturaPassword" autocomplete="new-password"
+                           th:placeholder="${faktura != null and faktura.password != null} ? 'Сақланган — алмаштириш учун янгисини киритинг' : ''">
+                </div>
+                <div class="field" data-provider="FAKTURA">
+                    <label for="fakturaUsername">Логин (Faktura.uz)</label>
+                    <input type="text" id="fakturaUsername" name="fakturaUsername" maxlength="128" autocomplete="off"
+                           th:value="${faktura?.username}">
+                </div>
+                <div class="field" data-provider="FAKTURA">
+                    <label for="fakturaClientId">Client ID (Faktura.uz)</label>
+                    <input type="text" id="fakturaClientId" name="fakturaClientId" maxlength="128" autocomplete="off"
+                           th:value="${faktura?.clientId}">
+                </div>
+                <div class="field field-wide" data-provider="FAKTURA">
+                    <label for="fakturaClientSecret">Client Secret (Faktura.uz)</label>
+                    <input type="password" id="fakturaClientSecret" name="fakturaClientSecret" autocomplete="new-password"
+                           th:placeholder="${faktura != null and faktura.clientSecret != null} ? 'Сақланган — алмаштириш учун янгисини киритинг' : ''">
+                </div>
+            </div>
+            <span class="hint">Парол ва Client Secret базада шифрланган ҳолда сақланади ва саҳифада ҳеч қачон кўрсатилмайди.</span>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Сақлаш</button>
+            </div>
+        </form>
+
+        <dl class="sync-meta" th:if="${faktura != null and faktura.syncedAt != null}">
+            <div>
+                <dt>Охирги синхронлаш</dt>
+                <dd th:text="${#temporals.format(faktura.syncedAt, 'dd.MM.yyyy HH:mm')}"></dd>
+            </div>
+            <div>
+                <dt>Натижа</dt>
+                <dd th:text="${faktura.syncMessage} ?: '—'" th:classappend="${faktura.syncOk == false} ? 'text-danger'"></dd>
+            </div>
+        </dl>
+
+        <div class="sync-actions" th:if="${faktura != null}">
+            <form method="post" th:action="@{/admin/hotels/{id}/faktura/test(id=${hotel.id})}">
+                <button type="submit" class="btn btn-secondary">Уланишни текшириш</button>
+            </form>
+            <form method="post" th:action="@{/admin/hotels/{id}/faktura/sync(id=${hotel.id})}">
+                <button type="submit" class="btn btn-primary" th:disabled="${fakturaRunning}">Ҳозир синхронлаш</button>
+            </form>
+            <a class="btn btn-secondary" th:href="@{/faktura(hotel=${hotel.id})}">Ҳужжатлар →</a>
+            <form method="post" class="push-right" th:action="@{/admin/hotels/{id}/faktura/disconnect(id=${hotel.id})}"
+                  onsubmit="return confirm('ЭСФ оператори уланишини ўчирасизми? Олинган ҳужжатлар сақланиб қолади.')">
+                <button type="submit" class="btn btn-danger">Уланишни ўчириш</button>
+            </form>
+        </div>
+    </section>
 </main>
+<script>
+    // Operator tanloviga qarab faqat kerakli maydonlar ko'rinadi.
+    (function () {
+        const form = document.querySelector('.fk-connect');
+        if (!form) return;
+        const sync = () => {
+            const checked = form.querySelector('input[name=fakturaProvider]:checked');
+            const p = checked ? checked.value : 'DIDOX';
+            form.querySelectorAll('[data-provider]').forEach(el => el.hidden = el.dataset.provider !== p);
+        };
+        form.querySelectorAll('input[name=fakturaProvider]').forEach(r => r.addEventListener('change', sync));
+        sync();
+    })();
+</script>
 </body>
 </html>

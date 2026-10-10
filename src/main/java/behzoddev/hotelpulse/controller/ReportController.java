@@ -53,6 +53,7 @@ public class ReportController {
     private final ReportService reportService;
     private final LayoutService layoutService;
     private final UsaliExpenseService expenseService;
+    private final behzoddev.hotelpulse.faktura.FakturaService fakturaService;
     private final HotelService hotelService;
     private final KpiService kpiService;
 
@@ -171,6 +172,10 @@ public class ReportController {
         model.addAttribute("lines", Arrays.asList(UsaliLine.values()));
         if (h != null) {
             model.addAttribute("values", expenseService.month(h.getId(), m));
+            model.addAttribute("fakturaValues", expenseService.fakturaMonth(h.getId(), m));
+            model.addAttribute("fakturaOn", fakturaService.enabled(h.getId()));
+            model.addAttribute("fakturaUzs", expenseService.uzs(h.getId()));
+            model.addAttribute("unassigned", fakturaService.unassigned(h.getId(), m, m));
         }
         return "reports/usali-expenses";
     }

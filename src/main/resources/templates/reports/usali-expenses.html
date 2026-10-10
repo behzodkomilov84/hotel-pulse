@@ -26,6 +26,18 @@
                 Summary Operating Statement →</a>
         </form>
 
+        <div class="alert alert-info reveal" th:if="${fakturaOn and fakturaUzs}">
+            <span>ЭСФ операторидаги (Didox / Faktura.uz) <b>имзоланган кирувчи ҳисоб-фактуралар</b> (ҚҚСсиз) моддаси белгилангач автоматик қўшилади —
+                уларни бу ерга қайта киритманг. Қуйида фақат ЭСФ'да йўқ харажатлар (иш ҳақи, нақд тўловлар ва ҳ.к.).
+                <th:block th:if="${unassigned.count > 0}"><br><b class="text-danger"
+                    th:text="'Моддаси белгиланмаган: ' + ${unassigned.count} + ' та, ' + ${@fmt.amount(unassigned.amount)}"></b>
+                    — <a th:href="@{/faktura(hotel=${hotel.id}, dir='IN', month=${month}, open=true)}">белгилаш →</a></th:block>
+            </span>
+        </div>
+        <div class="alert alert-info reveal" th:if="${fakturaOn and !fakturaUzs}">
+            <span>Меҳмонхона валютаси UZS эмас — ЭСФ суммалари (сўмда) USALI'га автоматик қўшилмайди.</span>
+        </div>
+
         <form method="post" class="card form reveal usali-form" th:action="@{/reports/usali/expenses}">
             <input type="hidden" name="hotel" th:value="${hotel.id}">
             <input type="hidden" name="month" th:value="${month}">
@@ -36,6 +48,8 @@
                     <label th:for="'line_' + ${l.name()}" th:text="${l.label}"></label>
                     <input type="text" inputmode="decimal" th:id="'line_' + ${l.name()}" th:name="'line_' + ${l.name()}"
                            th:value="${values.get(l)} ? ${@fmt.amount(values.get(l))} : ''" placeholder="0">
+                    <span class="hint usali-faktura" th:if="${fakturaValues.get(l) != null}"
+                          th:text="'+ ЭСФ: ' + ${@fmt.amount(fakturaValues.get(l))} + ' (автоматик)'"></span>
                 </div>
                 <p class="note" th:if="${d.name() == 'ROOMS'}">OTA комиссиялари Exely'дан автоматик қўшилади — бу ерга киритманг.</p>
             </fieldset>

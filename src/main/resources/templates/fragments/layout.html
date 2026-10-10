@@ -42,6 +42,8 @@
             <div class="nav-menu">
                 <a th:href="@{/services/invoices}" th:classappend="${active == 'svc-invoices'} ? 'active'">Ҳисоб-фактуралар</a>
                 <a th:href="@{/services/tasks}" th:classappend="${active == 'svc-tasks'} ? 'active'">Топшириқлар</a>
+                <a sec:authorize="hasAnyRole('OWNER', 'HOTEL_OWNER', 'MANAGEMENT_COMPANY')" th:href="@{/faktura(hotel=${currentHotelId})}"
+                   th:classappend="${active == 'svc-faktura'} ? 'active'">Электрон ҳисоб-фактуралар (ЭСФ)</a>
             </div>
         </div>
 

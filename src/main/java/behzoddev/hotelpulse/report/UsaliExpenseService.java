@@ -1,5 +1,6 @@
 package behzoddev.hotelpulse.report;
 
+import behzoddev.hotelpulse.faktura.FakturaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -13,8 +14,14 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 
-/** USALI xarajatlari: oy bo'yicha saqlash va davr bo'yicha yig'ish. Ruxsatni chaqiruvchi (controller) tekshiradi. */
+/**
+ * USALI xarajatlari: oy bo'yicha saqlash va davr bo'yicha yig'ish. Ruxsatni chaqiruvchi (controller) tekshiradi.
+ * Davr yig'indisi = qo'lda kiritilgan + Faktura.uz'dagi imzolangan kiruvchi hisob-fakturalar (QQSsiz; faqat UZS
+ * valyutasidagi mehmonxonalar uchun — Faktura.uz summalari so'mda).
+ */
 @Service
 @RequiredArgsConstructor
 public class UsaliExpenseService {
@@ -23,16 +30,36 @@ public class UsaliExpenseService {
 
     private final JdbcTemplate jdbc;
     private final Clock clock;
+    private final FakturaService faktura;
 
-    /** Bir oy: modda → summa (kiritilmagan moddalar yo'q). */
+    /** Bir oy: qo'lda kiritilgan summalar, modda → summa (kiritilmagan moddalar yo'q). */
     @Transactional(readOnly = true)
     public Map<UsaliLine, BigDecimal> month(Long hotelId, YearMonth month) {
-        return sum(hotelId, month, month);
+        return manual(hotelId, month, month);
     }
 
-    /** [from, to] oylar yig'indisi. */
+    /** Bir oy: Faktura.uz'dan kelgan summalar (UZS bo'lmasa — bo'sh). */
+    @Transactional(readOnly = true)
+    public Map<UsaliLine, BigDecimal> fakturaMonth(Long hotelId, YearMonth month) {
+        return uzs(hotelId) ? faktura.expenses(hotelId, month, month) : new EnumMap<>(UsaliLine.class);
+    }
+
+    /** [from, to] oylar yig'indisi: qo'lda + Faktura.uz. */
     @Transactional(readOnly = true)
     public Map<UsaliLine, BigDecimal> sum(Long hotelId, YearMonth from, YearMonth to) {
+        Map<UsaliLine, BigDecimal> result = manual(hotelId, from, to);
+        if (uzs(hotelId)) {
+            faktura.expenses(hotelId, from, to).forEach((l, v) -> result.merge(l, v, BigDecimal::add));
+        }
+        return result;
+    }
+
+    public boolean uzs(Long hotelId) {
+        return "UZS".equals(jdbc.queryForList("select currency from hotels where id = ?", String.class, hotelId)
+                .stream().findFirst().orElse(null));
+    }
+
+    private Map<UsaliLine, BigDecimal> manual(Long hotelId, YearMonth from, YearMonth to) {
         Map<UsaliLine, BigDecimal> result = new EnumMap<>(UsaliLine.class);
         jdbc.query("select line, sum(amount) from usali_expenses where hotel_id = ? and month >= ? and month <= ? group by line",
                 rs -> {
@@ -48,9 +75,15 @@ public class UsaliExpenseService {
     /** Nechta oy uchun xarajat kiritilgan ([from, to] ichida). */
     @Transactional(readOnly = true)
     public int monthsWithData(Long hotelId, YearMonth from, YearMonth to) {
-        Integer n = jdbc.queryForObject("select count(distinct month) from usali_expenses where hotel_id = ? and month >= ? and month <= ?",
-                Integer.class, hotelId, Date.valueOf(from.atDay(1)), Date.valueOf(to.atDay(1)));
-        return n == null ? 0 : n;
+        Set<YearMonth> months = new TreeSet<>();
+        jdbc.query("select distinct month from usali_expenses where hotel_id = ? and month >= ? and month <= ?",
+                rs -> {
+                    months.add(YearMonth.from(rs.getDate(1).toLocalDate()));
+                }, hotelId, Date.valueOf(from.atDay(1)), Date.valueOf(to.atDay(1)));
+        if (uzs(hotelId)) {
+            months.addAll(faktura.expenseMonths(hotelId, from, to));
+        }
+        return months.size();
     }
 
     /** Oy xarajatlarini saqlaydi: bo'sh/0 — o'chiriladi. */

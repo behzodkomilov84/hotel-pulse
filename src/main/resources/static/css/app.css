@@ -1085,3 +1085,12 @@ table.rt td.heat-4 { background: color-mix(in srgb, var(--primary) 50%, transpar
 
 /* hidden atributi har doim ustun (display beruvchi klasslar ham) */
 [hidden] { display: none !important; }
+
+/* Faktura.uz hujjatlari: qatordagi kichik forma (modda / bron) */
+.fk-form { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.fk-form select { max-width: 260px; font-size: 13px; padding: 6px 8px; }
+.fk-form input[type=text] { width: 140px; font-size: 13px; padding: 6px 8px; }
+.segmented.reveal { margin-bottom: 14px; }
+.usali-row .usali-faktura { grid-column: 1 / -1; text-align: right; margin-top: -2px; color: var(--primary); }
+.fk-providers { display: flex; flex-wrap: wrap; gap: 8px 20px; }
+.fk-connect .field[hidden] { display: none; }

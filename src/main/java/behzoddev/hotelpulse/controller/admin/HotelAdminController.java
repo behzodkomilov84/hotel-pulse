@@ -5,6 +5,8 @@ import behzoddev.hotelpulse.exely.ExelyException;
 import behzoddev.hotelpulse.exely.ExelyRawStore;
 import behzoddev.hotelpulse.exely.ExelySyncService;
 import behzoddev.hotelpulse.exely.ExelyVerifyService;
+import behzoddev.hotelpulse.faktura.FakturaException;
+import behzoddev.hotelpulse.faktura.FakturaService;
 import behzoddev.hotelpulse.service.HotelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -23,6 +25,8 @@ public class HotelAdminController {
     private final HotelService hotelService;
     private final ExelySyncService exelySyncService;
     private final ExelyRawStore exelyRawStore;
+    private final FakturaService fakturaService;
+    private final behzoddev.hotelpulse.faktura.DidoxClient didoxClient;
 
     @GetMapping
     public String list(Model model) {
@@ -46,6 +50,9 @@ public class HotelAdminController {
         model.addAttribute("archive", exelyRawStore.counts(id));
         model.addAttribute("verify", ExelyVerifyService.read(hotelService.getById(id)));
         model.addAttribute("archiveLabels", ARCHIVE_LABELS);
+        model.addAttribute("faktura", fakturaService.account(id).orElse(null));
+        model.addAttribute("fakturaRunning", fakturaService.isRunning(id));
+        model.addAttribute("didoxConfigured", didoxClient.configured());
         return "admin/hotel-form";
     }
 
@@ -147,6 +154,56 @@ public class HotelAdminController {
             java.util.Map.entry(ExelyRawStore.COMPANY, "Компаниялар"),
             java.util.Map.entry(ExelyRawStore.ROOM_TYPE, "Хона турлари"),
             java.util.Map.entry(ExelyRawStore.ROOM, "Хоналар"));
+
+    // ---------------------------------------------------------------- ЭСФ оператори (Didox / Faktura.uz)
+
+    @PostMapping("/{id}/faktura")
+    public String saveFaktura(@PathVariable Long id,
+                              @RequestParam(defaultValue = "DIDOX") String fakturaProvider,
+                              @RequestParam(required = false) String fakturaInn,
+                              @RequestParam(required = false) String fakturaUsername,
+                              @RequestParam(required = false) String fakturaPassword,
+                              @RequestParam(required = false) String fakturaClientId,
+                              @RequestParam(required = false) String fakturaClientSecret,
+                              RedirectAttributes ra) {
+        hotelService.getById(id);
+        try {
+            fakturaService.saveAccount(id, fakturaProvider, fakturaInn, fakturaUsername, fakturaPassword, fakturaClientId, fakturaClientSecret);
+            ra.addFlashAttribute("success", "ЭСФ оператори маълумотлари сақланди — «Уланишни текшириш»ни босинг");
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/hotels/" + id + "#faktura";
+    }
+
+    @PostMapping("/{id}/faktura/test")
+    public String testFaktura(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            ra.addFlashAttribute("success", fakturaService.test(id));
+        } catch (FakturaException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/hotels/" + id + "#faktura";
+    }
+
+    @PostMapping("/{id}/faktura/sync")
+    public String syncFaktura(@PathVariable Long id, RedirectAttributes ra) {
+        if (!fakturaService.enabled(id)) {
+            ra.addFlashAttribute("error", "ЭСФ оператори уланмаган");
+        } else if (fakturaService.startAsync(id)) {
+            ra.addFlashAttribute("success", "Ҳужжатлар олинмоқда — бир оздан сўнг саҳифани янгиланг");
+        } else {
+            ra.addFlashAttribute("error", "Синхронлаш аллақачон ишлаяпти");
+        }
+        return "redirect:/admin/hotels/" + id + "#faktura";
+    }
+
+    @PostMapping("/{id}/faktura/disconnect")
+    public String disconnectFaktura(@PathVariable Long id, RedirectAttributes ra) {
+        fakturaService.disconnect(id);
+        ra.addFlashAttribute("success", "ЭСФ оператори уланиши ўчирилди (олинган ҳужжатлар сақланиб қолди)");
+        return "redirect:/admin/hotels/" + id + "#faktura";
+    }
 
     @PostMapping("/{id}/exely/disconnect")
     public String disconnectExely(@PathVariable Long id, RedirectAttributes ra) {
