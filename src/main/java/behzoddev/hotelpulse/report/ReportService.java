@@ -147,7 +147,9 @@ public class ReportService {
         record Acc(int[] stays, long[] nights, BigDecimal[] sum, LocalDate[] last, java.util.Set<String> sources) {
         }
         Map<String, Acc> by = new LinkedHashMap<>();
-        for (Stay s : data.overlapping(hotel.getId(), p)) {
+        List<Stay> stays = data.overlapping(hotel.getId(), p);
+        Function<Stay, BigDecimal> rev = roomRevenueOf(hotel, p, stays);
+        for (Stay s : stays) {
             if (!s.active()) {
                 continue;
             }
@@ -155,8 +157,8 @@ public class ReportService {
             Acc a = by.computeIfAbsent(name, k -> new Acc(new int[1], new long[1], new BigDecimal[]{BigDecimal.ZERO},
                     new LocalDate[1], new java.util.TreeSet<>()));
             a.stays()[0]++;
-            a.nights()[0] += s.nightsIn(p);
-            a.sum()[0] = a.sum()[0].add(s.revenueIn(p));
+            a.nights()[0] += s.roomNightsIn(p);
+            a.sum()[0] = a.sum()[0].add(rev.apply(s));
             if (a.last()[0] == null || s.departure().isAfter(a.last()[0])) {
                 a.last()[0] = s.departure();
             }
@@ -300,13 +302,15 @@ public class ReportService {
         Map<String, Integer> perType = data.roomsPerType(hotel.getId());
         Map<String, long[]> nights = new LinkedHashMap<>();
         Map<String, BigDecimal> revenue = new LinkedHashMap<>();
-        for (Stay s : data.overlapping(hotel.getId(), p)) {
+        List<Stay> stays = data.overlapping(hotel.getId(), p);
+        Function<Stay, BigDecimal> rev = roomRevenueOf(hotel, p, stays);
+        for (Stay s : stays) {
             if (!s.active()) {
                 continue;
             }
             String type = s.roomTypeId() == null ? "?" : s.roomTypeId();
-            nights.computeIfAbsent(type, k -> new long[1])[0] += s.nightsIn(p);
-            revenue.merge(type, s.revenueIn(p), BigDecimal::add);
+            nights.computeIfAbsent(type, k -> new long[1])[0] += s.roomNightsIn(p);
+            revenue.merge(type, rev.apply(s), BigDecimal::add);
         }
         BigDecimal total = revenue.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
         ReportTable t = new ReportTable().col("Xona turi").num("Xonalar").num("Sotilgan kechalar").num("Bandlik")
@@ -326,7 +330,7 @@ public class ReportService {
         t.total("Jami", totalRooms, totalNights, totalRooms == 0 ? "" : fmt.pct(ratio(totalNights, (long) totalRooms * p.days())),
                 fmt.amount(div(total, totalNights)), "", fmt.amount(total), "100%");
         t.note("Exely API bronning tarif rejasini bermaydi — shuning uchun daromad xona turlari bo'yicha. "
-                + "Daromad — bron narxi davrga tushgan kechalarga bo'lingan (xizmatlarsiz taxmin).");
+                + "Daromad — yashash daromadi, bronlar ulushi bo'yicha taqsimlangan (asosiy ko'rsatkichlar bilan bir xil).");
         return t;
     }
 
@@ -420,13 +424,15 @@ public class ReportService {
     private ReportTable sources(Hotel hotel, Period p, String cur) {
         Map<String, long[]> stat = new LinkedHashMap<>();   // [yashashlar, kechalar, bekor]
         Map<String, BigDecimal> rev = new LinkedHashMap<>();
-        for (Stay s : data.overlapping(hotel.getId(), p)) {
+        List<Stay> stays = data.overlapping(hotel.getId(), p);
+        Function<Stay, BigDecimal> roomRev = roomRevenueOf(hotel, p, stays);
+        for (Stay s : stays) {
             String src = src(s);
             long[] a = stat.computeIfAbsent(src, k -> new long[3]);
             if (s.active()) {
                 a[0]++;
-                a[1] += s.nightsIn(p);
-                rev.merge(src, s.revenueIn(p), BigDecimal::add);
+                a[1] += s.roomNightsIn(p);
+                rev.merge(src, roomRev.apply(s), BigDecimal::add);
             }
         }
         for (Stay s : data.arrivingIn(hotel.getId(), p)) {
@@ -448,24 +454,26 @@ public class ReportService {
             tc += a[2];
         }
         t.total("Jami", ts, tn, fmt.amount(total), "100%", fmt.amount(div(total, tn)), tc, fmt.pct(ratio(tc, ts + tc)));
-        t.note("Daromad — bron narxi davrga tushgan kechalarga bo'lingan. Bekor qilingan — kelish sanasi shu davrda bo'lganlari.");
+        t.note("Daromad — yashash daromadi, bronlar ulushi bo'yicha taqsimlangan. Bekor qilingan — kelish sanasi shu davrda bo'lganlari.");
         return t;
     }
 
     private ReportTable sourcesDetail(Hotel hotel, Period p, String cur) {
-        Map<String, List<Stay>> by = data.overlapping(hotel.getId(), p).stream().filter(Stay::active)
+        List<Stay> stays = data.overlapping(hotel.getId(), p);
+        Function<Stay, BigDecimal> rev = roomRevenueOf(hotel, p, stays);
+        Map<String, List<Stay>> by = stays.stream().filter(Stay::active)
                 .collect(Collectors.groupingBy(this::src, TreeMap::new, Collectors.toList()));
         ReportTable t = new ReportTable().col("Manba / bron").col("Mehmon").col("Kelish").col("Ketish")
                 .num("Kechalar (davrda)").num("Daromad (davrda), " + cur).col("Holat");
         BigDecimal total = BigDecimal.ZERO;
         long nights = 0;
         for (Map.Entry<String, List<Stay>> e : by.entrySet()) {
-            BigDecimal sr = e.getValue().stream().map(s -> s.revenueIn(p)).reduce(BigDecimal.ZERO, BigDecimal::add);
-            long sn = e.getValue().stream().mapToLong(s -> s.nightsIn(p)).sum();
+            BigDecimal sr = e.getValue().stream().map(s -> rev.apply(s)).reduce(BigDecimal.ZERO, BigDecimal::add);
+            long sn = e.getValue().stream().mapToLong(s -> s.roomNightsIn(p)).sum();
             t.rowOf("section", e.getKey() + " — " + e.getValue().size() + " ta", "", "", "", sn, fmt.amount(sr), "");
             for (Stay s : e.getValue().stream().sorted(Comparator.comparing(Stay::arrival)).toList()) {
-                t.row(s.number(), nz(s.guest()), s.arrival().format(DAY), s.departure().format(DAY), s.nightsIn(p),
-                        fmt.amount(s.revenueIn(p)), status(s.status()));
+                t.row(s.number(), nz(s.guest()), s.arrival().format(DAY), s.departure().format(DAY), s.roomNightsIn(p),
+                        fmt.amount(rev.apply(s)), status(s.status()));
             }
             total = total.add(sr);
             nights += sn;
@@ -478,13 +486,15 @@ public class ReportService {
         Map<String, BigDecimal[]> by = new LinkedHashMap<>();   // [daromad, qarz]
         Map<String, Integer> count = new LinkedHashMap<>();
         Map<String, String> source = new LinkedHashMap<>();
-        for (Stay s : data.overlapping(hotel.getId(), p)) {
+        List<Stay> stays = data.overlapping(hotel.getId(), p);
+        Function<Stay, BigDecimal> rev = roomRevenueOf(hotel, p, stays);
+        for (Stay s : stays) {
             if (!s.active()) {
                 continue;
             }
             String name = s.guest() == null || s.guest().isBlank() ? "—" : s.guest().strip();
             BigDecimal[] a = by.computeIfAbsent(name, k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
-            a[0] = a[0].add(s.revenueIn(p));
+            a[0] = a[0].add(rev.apply(s));
             a[1] = a[1].add(s.balance());
             count.merge(name, 1, Integer::sum);
             source.putIfAbsent(name, src(s));
@@ -948,6 +958,20 @@ public class ReportService {
     }
 
     // ================================================================ yordamchilar
+
+    /**
+     * Yashashning davrdagi yashash daromadi: bron narxi (ichida nonushta va boshqa xizmatlar ham bo'lishi mumkin)
+     * davr kechalariga bo'linadi va jami mehmonxona sahifasidagi yashash daromadiga moslanadi —
+     * shunda manba/xona turi bo'yicha ADR asosiy ko'rsatkichlardagi ADR bilan bir xil chiqadi.
+     */
+    private Function<Stay, BigDecimal> roomRevenueOf(Hotel hotel, Period p, List<Stay> stays) {
+        BigDecimal booked = stays.stream().filter(Stay::active).map(s -> s.revenueIn(p)).reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (booked.signum() == 0) {
+            return s -> BigDecimal.ZERO;
+        }
+        BigDecimal factor = kpiService.metrics(hotel, p).roomRevenue().divide(booked, 12, RoundingMode.HALF_UP);
+        return s -> s.revenueIn(p).multiply(factor).setScale(0, RoundingMode.HALF_UP);
+    }
 
     private LocalDate clampToday(Period p) {
         LocalDate today = kpiService.today();

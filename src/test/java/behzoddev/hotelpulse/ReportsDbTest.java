@@ -131,6 +131,17 @@ class ReportsDbTest {
         assertTrue(agents.getRows().stream().anyMatch(r -> r.cells().get(0).text().equals("Booking.com")
                 && r.cells().get(4).text().replaceAll("\\D", "").equals("135000")), "agent komissiyasi");
 
+        // Xona turlari va manbalar: jami daromad va ADR — asosiy ko'rsatkichlardagi bilan bir xil (bron narxi emas).
+        var metrics = kpiService.metrics(hotel, month);
+        for (String key : List.of("room-types", "sources")) {
+            ReportTable rt = reportService.build(key, hotel, month);
+            int revCol = key.equals("room-types") ? 6 : 3, adrCol = key.equals("room-types") ? 4 : 5;
+            long total = Long.parseLong(rt.getTotal().cells().get(revCol).text().replaceAll("\\D", ""));
+            assertTrue(Math.abs(total - metrics.roomRevenue().longValue()) <= rt.getRows().size(), key + " daromad: " + total);
+            long adr = Long.parseLong(rt.getTotal().cells().get(adrCol).text().replaceAll("\\D", ""));
+            assertTrue(Math.abs(adr - metrics.adr().longValue()) <= 1, key + " ADR: " + adr + " vs " + metrics.adr());
+        }
+
         // Katalog: barcha hisobotlar, Exely bermaydiganlari belgilangan.
         String catalog = html("/reports", owner);
         assertTrue(catalog.contains("Xonalarni tozalash") && catalog.contains("Exely bermaydi"));

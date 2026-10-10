@@ -28,7 +28,7 @@ public class ReportData {
 
     /** Bitta yashash (roomStay). */
     public record Stay(String externalId, String source, BookingStatus status, String guest, LocalDate arrival,
-                       LocalDate departure, int guests, BigDecimal total, BigDecimal balance, LocalDateTime bookedAt,
+                       LocalDate departure, int rooms, int guests, BigDecimal total, BigDecimal balance, LocalDateTime bookedAt,
                        LocalDateTime cancelledAt, String roomTypeId, String roomId, BigDecimal commission) {
 
         public String number() {
@@ -51,6 +51,11 @@ public class ReportData {
             return end.isBefore(start) ? 0 : ChronoUnit.DAYS.between(start, end) + 1;
         }
 
+        /** Davrdagi xona-kechalar (bronda bir nechta xona bo'lsa — xonalar soniga ko'paytiriladi). */
+        public long roomNightsIn(Period p) {
+            return nightsIn(p) * Math.max(1, rooms);
+        }
+
         /** Davrga tushadigan daromad (bron narxi kechalarga teng bo'lingan). */
         public BigDecimal revenueIn(Period p) {
             return nightly().multiply(BigDecimal.valueOf(nightsIn(p)));
@@ -66,21 +71,21 @@ public class ReportData {
     }
 
     private static final String STAY_COLUMNS = """
-            select external_id, source, status, guest_name, arrival_date, departure_date, guests, total_amount,
+            select external_id, source, status, guest_name, arrival_date, departure_date, rooms, guests, total_amount,
                    balance_due, booked_at, cancelled_at, room_type_id, room_id, agent_commission
             from bookings where hotel_id = ?
             """;
 
     private List<Stay> stays(String where, Object... args) {
         return jdbc.query(STAY_COLUMNS + " and " + where, (rs, i) -> {
-            Timestamp booked = rs.getTimestamp(10);
-            Timestamp cancelled = rs.getTimestamp(11);
-            BigDecimal balance = rs.getBigDecimal(9);
+            Timestamp booked = rs.getTimestamp(11);
+            Timestamp cancelled = rs.getTimestamp(12);
+            BigDecimal balance = rs.getBigDecimal(10);
             return new Stay(rs.getString(1), rs.getString(2), BookingStatus.valueOf(rs.getString(3)), rs.getString(4),
-                    rs.getDate(5).toLocalDate(), rs.getDate(6).toLocalDate(), rs.getInt(7), rs.getBigDecimal(8),
+                    rs.getDate(5).toLocalDate(), rs.getDate(6).toLocalDate(), rs.getInt(7), rs.getInt(8), rs.getBigDecimal(9),
                     balance == null ? BigDecimal.ZERO : balance, booked == null ? null : booked.toLocalDateTime(),
-                    cancelled == null ? null : cancelled.toLocalDateTime(), rs.getString(12), rs.getString(13),
-                    rs.getBigDecimal(14));
+                    cancelled == null ? null : cancelled.toLocalDateTime(), rs.getString(13), rs.getString(14),
+                    rs.getBigDecimal(15));
         }, args);
     }
 
