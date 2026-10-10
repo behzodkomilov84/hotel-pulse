@@ -29,13 +29,16 @@
             </div>
         </div>
 
-        <div class="nav-group" sec:authorize="hasRole('OWNER')" th:classappend="${active.startsWith('admin-')} ? 'active'">
+        <div class="nav-group" sec:authorize="hasAnyRole('OWNER', 'HOTEL_OWNER', 'MANAGEMENT_COMPANY')"
+             th:classappend="${active.startsWith('admin-') or active.startsWith('team-')} ? 'active'">
             <button type="button" class="nav-toggle" aria-haspopup="true" aria-expanded="false">
                 Boshqaruv <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <div class="nav-menu">
-                <a th:href="@{/admin/hotels}" th:classappend="${active == 'admin-hotels'} ? 'active'">Mehmonxonalar</a>
-                <a th:href="@{/admin/users}" th:classappend="${active == 'admin-users'} ? 'active'">Foydalanuvchilar</a>
+                <a th:href="@{/team/departments}" th:classappend="${active == 'team-departments'} ? 'active'">Bo'limlar</a>
+                <a th:href="@{/team/staff}" th:classappend="${active == 'team-staff'} ? 'active'">Xodimlar</a>
+                <a sec:authorize="hasRole('OWNER')" th:href="@{/admin/hotels}" th:classappend="${active == 'admin-hotels'} ? 'active'">Mehmonxonalar</a>
+                <a sec:authorize="hasRole('OWNER')" th:href="@{/admin/users}" th:classappend="${active == 'admin-users'} ? 'active'">Foydalanuvchilar</a>
             </div>
         </div>
     </nav>

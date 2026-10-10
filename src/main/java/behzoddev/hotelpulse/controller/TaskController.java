@@ -60,7 +60,7 @@ public class TaskController {
     private final HotelService hotelService;
 
     /** Bajaruvchi tanlovi: mehmonxona bo'yicha guruhlangan xodimlar ("hotelId:userId"). */
-    public record StaffGroup(Hotel hotel, List<User> staff) {
+    public record StaffGroup(Hotel hotel, List<User> staff, List<behzoddev.hotelpulse.entity.Department> departments) {
     }
 
     @GetMapping
@@ -126,6 +126,7 @@ public class TaskController {
                          @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueDate,
                          @RequestParam(required = false) String source,
                          @RequestParam(required = false) String listKey,
+                         @RequestParam(required = false) Long departmentId,
                          @RequestParam(required = false) String back,
                          RedirectAttributes ra) {
         String[] parts = target.split(":");
@@ -135,7 +136,7 @@ public class TaskController {
             }
             String src = Task.SOURCE_DEBT_ANALYSIS.equals(source) ? source : Task.SOURCE_MANUAL;
             Task task = taskService.create(user, new TaskService.NewTask(Long.parseLong(parts[0]), Long.parseLong(parts[1]),
-                    title, description, department, bookingNumber, dueDate, src, listKey), TaskEvent.SITE);
+                    title, description, department, bookingNumber, dueDate, src, listKey, departmentId), TaskEvent.SITE);
             String tg = task.getAssignee().getTelegramChatId() != null ? " Xodimga Telegram'da xabar yuborildi."
                     : " Xodim Telegram'ni ulamagan — topshiriqni saytda ko'radi.";
             ra.addFlashAttribute("success", "Topshiriq #" + task.getId() + " berildi: " + TaskNotifier.name(task.getAssignee()) + "." + tg);
@@ -278,7 +279,7 @@ public class TaskController {
         List<StaffGroup> groups = new ArrayList<>();
         for (Hotel h : hotels) {
             if (h.isActive()) {
-                groups.add(new StaffGroup(h, taskService.staff(h.getId())));
+                groups.add(new StaffGroup(h, taskService.staff(h.getId()), taskService.departments(h.getId())));
             }
         }
         return groups;

@@ -52,8 +52,17 @@
                 : '📎 Ilova: shu bron yashashlari topshiriqqa qo\'shiladi.';
         }
         if (b.dataset.taskDue) set('taskDue', b.dataset.taskDue);
+        // Tavsiyadagi bo'lim (Buxgalteriya, Resepshn, ...) — mehmonxonada shu nomli bo'lim bo'lsa, o'zi tanlanadi.
+        const dept = taskModal.querySelector('#taskDept');
+        if (dept) {
+            const want = (b.dataset.taskDept || '').trim().toLowerCase();
+            const match = [...dept.options].find(o => o.value && o.textContent.trim().toLowerCase() === want);
+            dept.value = match ? match.value : '';
+        }
         const target = taskModal.querySelector('#taskTarget');
-        if (target && target.options.length === 2) target.selectedIndex = 1;   // bitta xodim — darhol tanlangan
+        if (target) target.value = '';
+        taskModal.querySelector('form').dispatchEvent(new Event('task:prefill'));
+        set('taskDepartment', b.dataset.taskDept);
         taskModal.showModal();
         (target || taskModal.querySelector('button')).focus();
     });

@@ -90,6 +90,8 @@ public class UserService {
             user.setRole(role);
             user.setEnabled(enabled);
             user.setHotels(loadHotels(hotelIds));
+            // Mehmonxonadan chiqarilgan xodim o'sha mehmonxona bo'limlaridan ham chiqadi.
+            user.getDepartments().removeIf(d -> user.getHotels().stream().noneMatch(h -> h.getId().equals(d.getHotel().getId())));
         }
         if (newPassword != null && !newPassword.isBlank()) {
             validatePassword(newPassword);

@@ -52,6 +52,7 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final TaskEventRepository eventRepository;
     private final TaskItemRepository itemRepository;
+    private final behzoddev.hotelpulse.repository.DepartmentRepository departmentRepository;
     private final DebtService debtService;
     private final UserRepository userRepository;
     private final HotelRepository hotelRepository;
@@ -65,10 +66,15 @@ public class TaskService {
      * @param listKey ilova qilinadigan bronlar ro'yxati (DebtAnalyzer.LIST_*); yo'q — null
      */
     public record NewTask(Long hotelId, Long assigneeId, String title, String description, String department,
-                          String bookingNumber, LocalDate dueDate, String source, String listKey) {
+                          String bookingNumber, LocalDate dueDate, String source, String listKey, Long departmentId) {
         public NewTask(Long hotelId, Long assigneeId, String title, String description, String department,
                        String bookingNumber, LocalDate dueDate, String source) {
-            this(hotelId, assigneeId, title, description, department, bookingNumber, dueDate, source, null);
+            this(hotelId, assigneeId, title, description, department, bookingNumber, dueDate, source, null, null);
+        }
+
+        public NewTask(Long hotelId, Long assigneeId, String title, String description, String department,
+                       String bookingNumber, LocalDate dueDate, String source, String listKey) {
+            this(hotelId, assigneeId, title, description, department, bookingNumber, dueDate, source, listKey, null);
         }
     }
 
@@ -116,7 +122,9 @@ public class TaskService {
         task.setHotel(hotel);
         task.setTitle(title);
         task.setDescription(blankToNull(n.description()));
-        task.setDepartment(blankToNull(n.department()));
+        behzoddev.hotelpulse.entity.Department dept = department(hotel, assignee, n);
+        task.setDepartment(dept != null ? dept.getName() : blankToNull(n.department()));
+        task.setDepartmentRef(dept);
         task.setBookingNumber(blankToNull(n.bookingNumber()));
         task.setSource(n.source() == null ? Task.SOURCE_MANUAL : n.source());
         task.setAssignedBy(userRepository.getReferenceById(by.getId()));
@@ -133,6 +141,35 @@ public class TaskService {
         Task full = taskRepository.findFull(task.getId()).orElseThrow();
         notifier.created(full, itemRepository.findAllByTaskIdOrderByPositionAsc(full.getId()));
         return full;
+    }
+
+    /**
+     * Topshiriq bo'limi: aniq tanlangan bo'lsa — shu mehmonxonaniki bo'lishi va xodim unda bo'lishi shart;
+     * faqat nomi berilgan bo'lsa (tahlil tavsiyasi) — xodim shu nomli bo'limda bo'lsagina bog'lanadi.
+     */
+    private behzoddev.hotelpulse.entity.Department department(Hotel hotel, User assignee, NewTask n) {
+        if (n.departmentId() != null) {
+            behzoddev.hotelpulse.entity.Department d = departmentRepository.findFull(n.departmentId())
+                    .filter(x -> x.getHotel().getId().equals(hotel.getId()))
+                    .orElseThrow(() -> new TaskException("Bo'lim shu mehmonxonaga tegishli emas."));
+            if (assignee.getDepartments().stream().noneMatch(x -> x.getId().equals(d.getId()))) {
+                throw new TaskException(TaskNotifier.name(assignee) + " «" + d.getName() + "» bo'limida emas.");
+            }
+            return d;
+        }
+        String name = blankToNull(n.department());
+        if (name == null) {
+            return null;
+        }
+        return departmentRepository.findByHotelAndName(hotel.getId(), name)
+                .filter(d -> assignee.getDepartments().stream().anyMatch(x -> x.getId().equals(d.getId())))
+                .orElse(null);
+    }
+
+    /** Mehmonxona bo'limlari (topshiriq formasi va bot uchun). */
+    @Transactional(readOnly = true)
+    public List<behzoddev.hotelpulse.entity.Department> departments(Long hotelId) {
+        return departmentRepository.findAllByHotelIds(List.of(hotelId));
     }
 
     /** Tahlil tavsiyasiga tegishli bronlar ro'yxati — joriy qarzdorlik hisobotidan, topshiriq berilgan paytdagi holat. */

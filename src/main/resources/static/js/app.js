@@ -105,6 +105,37 @@
         if (dlg.dataset.openOnLoad === 'true') openModal(dlg);
     });
 
+    // Topshiriq formasi: bo'lim tanlansa — bajaruvchi ro'yxatida faqat shu bo'lim xodimlari qoladi.
+    document.querySelectorAll('[data-task-form]').forEach(form => {
+        const dept = form.querySelector('#taskDept');
+        const target = form.querySelector('#taskTarget');
+        if (!dept || !target) return;
+        const noStaff = form.querySelector('[data-no-staff]');
+        const staffHint = form.querySelector('[data-staff-hint]');
+        const apply = () => {
+            const id = dept.value;
+            const opt = dept.selectedOptions[0];
+            const name = form.querySelector('#taskDepartment');
+            if (name && id) name.value = opt.textContent.trim();
+            let visible = [];
+            target.querySelectorAll('option').forEach(o => {
+                if (!o.value) return;
+                const ok = !id || (' ' + (o.dataset.depts || '') + ' ').includes(' ' + id + ' ');
+                o.hidden = !ok;
+                o.disabled = !ok;
+                if (ok) visible.push(o);
+            });
+            target.querySelectorAll('optgroup').forEach(g => { g.hidden = ![...g.children].some(o => !o.hidden); });
+            if (target.selectedOptions[0] && target.selectedOptions[0].disabled) target.value = '';
+            if (visible.length === 1) visible[0].selected = true;
+            if (noStaff) noStaff.hidden = visible.length > 0;
+            if (staffHint) staffHint.hidden = visible.length === 0;
+        };
+        dept.addEventListener('change', apply);
+        form.addEventListener('task:prefill', apply);
+        apply();
+    });
+
     // Tafsilot oynasi: [data-detail-url] bosilsa — serverdan HTML parcha olinib, data-detail-target oynasida ko'rsatiladi.
     document.querySelectorAll('[data-detail-url]').forEach(btn => {
         btn.addEventListener('click', async () => {

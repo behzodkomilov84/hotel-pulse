@@ -24,9 +24,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByTelegramChatId(Long chatId);
 
     /** Mehmonxonaga biriktirilgan, faol, berilgan roldagi foydalanuvchilar (topshiriq beriladigan xodimlar). */
+    @EntityGraph(attributePaths = "departments")
     @Query("select u from User u join u.hotels h where h.id = :hotelId and u.role = :role and u.enabled = true "
             + "order by coalesce(u.fullName, u.username)")
     List<User> findActiveByHotelAndRole(@Param("hotelId") Long hotelId, @Param("role") Role role);
+
+    /** Mehmonxonalardan biriga biriktirilgan xodimlar (bo'limlari va mehmonxonalari bilan). */
+    @EntityGraph(attributePaths = {"hotels", "departments", "departments.hotel"})
+    @Query("select distinct u from User u join u.hotels h where u.role = :role and h.id in :hotelIds")
+    List<User> findAllByRoleAndHotelIds(@Param("role") Role role, @Param("hotelIds") java.util.Collection<Long> hotelIds);
+
+    @EntityGraph(attributePaths = {"hotels", "departments", "departments.hotel"})
+    @Query("select u from User u where u.id = :id")
+    Optional<User> findWithTeam(@Param("id") Long id);
 
     /** Kunlik hisobot oladiganlar: ulangan, faol va hisobotni o'chirmaganlar. */
     List<User> findAllByTelegramChatIdIsNotNullAndTelegramDailyReportTrueAndEnabledTrue();

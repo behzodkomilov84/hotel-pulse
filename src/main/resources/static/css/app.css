@@ -939,3 +939,18 @@ code { font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--
 .tick-static { font-size: 18px; color: var(--muted); }
 .task-items-badge { display: inline-block; margin-left: 4px; font-size: 12px; font-weight: 700; color: var(--primary); }
 .items-table .items-paid { justify-content: flex-end; white-space: nowrap; }
+
+/* ---------- Bo'limlar va xodimlar ---------- */
+.btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 9px; }
+.dept-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
+.dept-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); }
+.dept-rename { display: flex; gap: 8px; flex: 1 1 260px; min-width: 0; }
+.dept-rename input, .dept-add input { flex: 1; min-width: 0; font: inherit; padding: 8px 12px; border: 1px solid var(--border); border-radius: 9px; background: var(--surface); color: var(--text); }
+.dept-count { font-size: 13px; white-space: nowrap; }
+.dept-add { display: flex; gap: 8px; flex-wrap: wrap; }
+.dept-add input { flex: 1 1 220px; }
+.dept-pick { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin: 0 0 10px; }
+.dept-pick legend { font-weight: 700; padding: 0 6px; }
+.dept-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.dept-chip { display: inline-flex; padding: 2px 9px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 12px; font-weight: 700; }
+.dept-intro { margin: 4px 0 0; max-width: 620px; }

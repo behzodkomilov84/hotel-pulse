@@ -158,17 +158,29 @@ public class TelegramTaskHandler {
         List<User> staff = taskService.staff(hotel.getId());
         if (staff.isEmpty()) {
             send(chatId, "👥 " + esc(hotel.getName()) + " ga hali <b>xodim</b> biriktirilmagan.\n\n"
-                    + "Saytda <b>Boshqaruv → Foydalanuvchilar</b> bo'limida \"Mehmonxona xodimi\" roldagi foydalanuvchi qo'shib, "
-                    + "mehmonxonaga biriktiring — keyin topshiriq berish mumkin.", null);
+                    + "Saytda <b>Boshqaruv → Bo'limlar</b>da bo'lim yarating, keyin <b>Boshqaruv → Xodimlar</b>da "
+                    + "xodim qo'shib, bo'limga biriktiring — keyin topshiriq berish mumkin.", null);
             return;
         }
+        // Tavsiyadagi bo'lim (Buxgalteriya, Resepshn, ...) mehmonxonada bo'lsa — avval shu bo'lim xodimlari.
+        var dept = s.department() == null ? java.util.Optional.<behzoddev.hotelpulse.entity.Department>empty()
+                : taskService.departments(hotel.getId()).stream()
+                .filter(d -> d.getName().equalsIgnoreCase(s.department())).findFirst();
+        List<User> inDept = dept.map(d -> staff.stream()
+                .filter(x -> x.getDepartments().stream().anyMatch(y -> y.getId().equals(d.getId()))).toList())
+                .orElse(List.of());
+        List<User> shown = inDept.isEmpty() ? staff : inDept;
+        String deptLine = dept.isEmpty() ? ""
+                : inDept.isEmpty() ? "\n🏷 «" + esc(dept.get().getName()) + "» bo'limida xodim yo'q — barcha xodimlar:"
+                : "\n🏷 Bo'lim: <b>" + esc(dept.get().getName()) + "</b>";
         List<List<Map<String, Object>>> rows = new ArrayList<>();
-        for (User st : staff) {
+        for (User st : shown) {
             rows.add(List.of(button("👤 " + TaskNotifier.name(st) + (st.getTelegramChatId() != null ? "" : " (Telegram yo'q)"),
                     "tb:" + kind + ":" + hotel.getId() + ":" + index + ":" + st.getId())));
         }
         send(chatId, "📌 <b>Topshiriq:</b> " + esc(s.title())
-                + (s.listSize() > 0 ? "\n📎 Ilova: " + s.listSize() + " ta yashash ro'yxati" : "") + "\n\nKimga beramiz?", Map.of("inline_keyboard", rows));
+                + (s.listSize() > 0 ? "\n📎 Ilova: " + s.listSize() + " ta yashash ro'yxati" : "") + deptLine
+                + "\n\nKimga beramiz?", Map.of("inline_keyboard", rows));
     }
 
     /** tb:… → muddat tanlash. */

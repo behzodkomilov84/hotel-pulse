@@ -82,7 +82,7 @@ public class PageController {
         model.addAttribute("canAssign", canAssign);
         model.addAttribute("today", taskService.today());
         if (canAssign) {
-            model.addAttribute("staffGroups", List.of(new TaskController.StaffGroup(hotel, taskService.staff(hotel.getId()))));
+            model.addAttribute("staffGroups", List.of(new TaskController.StaffGroup(hotel, taskService.staff(hotel.getId()), taskService.departments(hotel.getId()))));
         }
         return "debts";
     }

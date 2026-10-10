@@ -38,6 +38,11 @@ public class Task {
     @Column(length = 64)
     private String department;
 
+    /** Bo'lim (o'chirilsa — null, nomi department maydonida qoladi). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private Department departmentRef;
+
     /** Tahlildagi "birinchi navbatda tekshirish" bronidan berilgan bo'lsa — bron raqami. */
     @Column(name = "booking_number", length = 64)
     private String bookingNumber;

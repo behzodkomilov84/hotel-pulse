@@ -28,6 +28,7 @@ public class SecurityConfig {
                         .requestMatchers("/dev-login").permitAll()
                         // Mehmonxona/foydalanuvchi boshqaruvi — faqat platforma egasi.
                         .requestMatchers("/admin/**").hasRole("OWNER")
+                        .requestMatchers("/team/**").hasAnyRole("OWNER", "HOTEL_OWNER", "MANAGEMENT_COMPANY")
                         .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")

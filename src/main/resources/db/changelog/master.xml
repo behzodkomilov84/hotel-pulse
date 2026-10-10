@@ -12,4 +12,5 @@
     <include file="/db/changelog/telegram.sql"/>
     <include file="/db/changelog/pms.sql"/>
     <include file="/db/changelog/tasks.sql"/>
+    <include file="/db/changelog/team.sql"/>
 </databaseChangeLog>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Bo\'limlar')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('team-departments')}"></header>
+<main class="container container-narrow">
+    <div class="page-head reveal">
+        <div>
+            <h1>Bo'limlar</h1>
+            <p class="muted dept-intro">Avval bo'limlarni yarating, keyin <a th:href="@{/team/staff}">Xodimlar</a> sahifasida xodimni bo'limga biriktiring.
+                Topshiriq berishda bo'lim tanlanadi va shu bo'lim xodimlari ko'rinadi.</p>
+        </div>
+        <a class="btn btn-primary" th:href="@{/team/staff/new}">+ Xodim qo'shish</a>
+    </div>
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="card empty reveal" th:if="${groups.isEmpty()}">
+        <p><strong>Sizga hali mehmonxona biriktirilmagan</strong></p>
+    </div>
+
+    <section class="card reveal dept-card" th:each="g : ${groups}">
+        <h3 class="card-title" th:text="${g.hotel.name}">Mehmonxona</h3>
+
+        <ul class="dept-list" th:if="${!g.departments.isEmpty()}">
+            <li th:each="d : ${g.departments}" class="dept-row">
+                <form method="post" class="dept-rename" th:action="@{/team/departments/{id}/rename(id=${d.id})}">
+                    <input type="text" name="name" required maxlength="64" th:value="${d.name}"
+                           th:attr="aria-label='Bo\'lim nomi: ' + ${d.name}">
+                    <button type="submit" class="btn btn-secondary btn-sm">Saqlash</button>
+                </form>
+                <span class="dept-count muted"
+                      th:text="${g.members[d.id] != null} ? ${g.members[d.id]} + ' ta xodim' : 'xodim yo\'q'"></span>
+                <form method="post" th:action="@{/team/departments/{id}/delete(id=${d.id})}"
+                      onsubmit="return confirm('Bo\'lim o\'chirilsinmi? Xodimlar bo\'limdan chiqadi, o\'zlari qoladi.')">
+                    <button type="submit" class="btn btn-danger btn-sm" aria-label="O'chirish">O'chirish</button>
+                </form>
+            </li>
+        </ul>
+        <p class="muted" th:if="${g.departments.isEmpty()}">Bo'lim yo'q — pastda qo'shing.</p>
+
+        <form method="post" class="dept-add" th:action="@{/team/departments}">
+            <input type="hidden" name="hotelId" th:value="${g.hotel.id}">
+            <input type="text" name="name" required maxlength="64" placeholder="Yangi bo'lim nomi (masalan: Housekeeping)"
+                   aria-label="Yangi bo'lim nomi">
+            <button type="submit" class="btn btn-primary btn-sm">+ Bo'lim qo'shish</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>

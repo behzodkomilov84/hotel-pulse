@@ -19,6 +19,7 @@ public class HotelService {
     public static final List<String> SUPPORTED_CURRENCIES = List.of("UZS", "USD", "EUR");
 
     private final HotelRepository hotelRepository;
+    private final behzoddev.hotelpulse.repository.DepartmentRepository departmentRepository;
 
     /** OWNER — hamma mehmonxonalar; qolganlar — faqat o'ziga biriktirilganlari. */
     @Transactional(readOnly = true)
@@ -122,7 +123,19 @@ public class HotelService {
         if (dailyReportTime != null) {
             hotel.setDailyReportTime(dailyReportTime.withSecond(0).withNano(0));
         }
-        return hotelRepository.save(hotel);
+        boolean created = hotel.getId() == null;
+        Hotel saved = hotelRepository.save(hotel);
+        if (created) {
+            // Tayyor bo'limlar (tahlil tavsiyalaridagi nomlar) — egasi keyin o'zgartiradi.
+            for (String deptName : behzoddev.hotelpulse.entity.Department.DEFAULTS) {
+                behzoddev.hotelpulse.entity.Department d = new behzoddev.hotelpulse.entity.Department();
+                d.setHotel(saved);
+                d.setName(deptName);
+                d.setCreatedAt(java.time.LocalDateTime.now());
+                departmentRepository.save(d);
+            }
+        }
+        return saved;
     }
 
     /** Exely ulanishini butunlay o'chiradi (allaqachon olingan bronlar qoladi). */

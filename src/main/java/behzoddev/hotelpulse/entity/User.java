@@ -58,4 +58,12 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "hotel_id"))
     @OrderBy("name")
     private Set<Hotel> hotels = new LinkedHashSet<>();
+
+    /** Bo'limlar (mehmonxona xodimi uchun; bir nechta bo'lishi mumkin). */
+    @ManyToMany
+    @JoinTable(name = "user_departments",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "department_id"))
+    @OrderBy("name")
+    private Set<Department> departments = new LinkedHashSet<>();
 }
