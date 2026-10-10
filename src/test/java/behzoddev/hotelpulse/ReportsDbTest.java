@@ -154,6 +154,8 @@ class ReportsDbTest {
     void workspaceLayoutIsPerUserAddReorderReset() throws Exception {
         assertEquals(ReportCatalog.DEFAULT_LAYOUT, layoutService.get(owner.getId()));
         String page = html("/hotels/" + hotel.getId(), owner);
+        // Menyudagi hisobotlar — joriy mehmonxona bilan (boshqa mehmonxonaga o'tib ketmasin).
+        assertTrue(page.contains("/reports/kpi?hotel=" + hotel.getId()), "menyu joriy mehmonxonaga");
         assertTrue(page.contains("id=\"block-kpi\"") && page.contains("data-ws-edit"));
         assertFalse(page.contains("id=\"block-arrivals\""));
         // Standart: davr paneli "Bugun"dan keyin (avvalgi sahifa kabi).

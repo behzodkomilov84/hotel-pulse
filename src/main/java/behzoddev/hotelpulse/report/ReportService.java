@@ -104,18 +104,20 @@ public class ReportService {
         Map<String, String> rooms = data.rooms(hotel.getId());
         ReportTable t = new ReportTable().col("Келиш").col("Кетиш").num("Кеча").col("Брон").col("Меҳмон")
                 .col("Хона тури").col("Хона").num("Меҳмонлар").col("Манба").col("Ҳолат")
-                .num("Сумма, " + cur).num("Қолдиқ, " + cur);
+                .num("Яшаш нархи, " + cur).num("Тўланган, " + cur).num("Тўланмаган, " + cur);
         int guests = 0;
-        BigDecimal total = BigDecimal.ZERO, balance = BigDecimal.ZERO;
+        BigDecimal total = BigDecimal.ZERO, paid = BigDecimal.ZERO, balance = BigDecimal.ZERO;
         for (Stay s : stays) {
             t.row(s.arrival().format(DAY), s.departure().format(DAY), s.nights(), s.number(), nz(s.guest()),
                     nz(types.get(s.roomTypeId())), nz(rooms.get(s.roomId())), s.guests(), nz(s.source()), status(s.status()),
-                    fmt.amount(s.total()), debtCell(s.balance()));
+                    fmt.amount(s.total()), fmt.amount(paidOf(s)), debtCell(s.balance()));
             guests += s.guests();
             total = total.add(s.total());
+            paid = paid.add(paidOf(s));
             balance = balance.add(s.balance());
         }
-        t.total("Жами", "", "", stays.size() + " та", "", "", "", guests, "", "", fmt.amount(total), fmt.amount(balance));
+        t.total("Жами", "", "", stays.size() + " та", "", "", "", guests, "", "", fmt.amount(total), fmt.amount(paid), fmt.amount(balance));
+        t.note(PRICE_NOTE);
         return t;
     }
 
@@ -128,16 +130,21 @@ public class ReportService {
                 .sorted(Comparator.comparing((Stay s) -> nz(rooms.get(s.roomId())), roomOrder()))
                 .toList();
         ReportTable t = new ReportTable().col("Хона").col("Хона тури").col("Брон").col("Меҳмон").num("Меҳмонлар")
-                .col("Келиш").col("Кетиш").col("Манба").num("Сумма, " + cur).num("Қолдиқ, " + cur);
+                .col("Келиш").col("Кетиш").col("Манба")
+                .num("Яшаш нархи, " + cur).num("Тўланган, " + cur).num("Тўланмаган, " + cur);
         int guests = 0;
-        BigDecimal balance = BigDecimal.ZERO;
+        BigDecimal total = BigDecimal.ZERO, paid = BigDecimal.ZERO, balance = BigDecimal.ZERO;
         for (Stay s : list) {
             t.row(nz(rooms.get(s.roomId())), nz(types.get(s.roomTypeId())), s.number(), nz(s.guest()), s.guests(),
-                    s.arrival().format(DAY), s.departure().format(DAY), nz(s.source()), fmt.amount(s.total()), debtCell(s.balance()));
+                    s.arrival().format(DAY), s.departure().format(DAY), nz(s.source()),
+                    fmt.amount(s.total()), fmt.amount(paidOf(s)), debtCell(s.balance()));
             guests += s.guests();
+            total = total.add(s.total());
+            paid = paid.add(paidOf(s));
             balance = balance.add(s.balance());
         }
-        t.total("Жами", "", list.size() + " та яшаш", "", guests, "", "", "", "", fmt.amount(balance));
+        t.total("Жами", "", list.size() + " та яшаш", "", guests, "", "", "", fmt.amount(total), fmt.amount(paid), fmt.amount(balance));
+        t.note(PRICE_NOTE);
         t.note("Сана: " + d.format(DAY) + " · банд хоналар: " + list.size() + " / " + hotel.getRoomsCount()
                 + " (" + fmt.pct(ratio(list.size(), hotel.getRoomsCount())) + ")");
         return t;
@@ -971,6 +978,15 @@ public class ReportService {
         }
         BigDecimal factor = kpiService.metrics(hotel, p).roomRevenue().divide(booked, 12, RoundingMode.HALF_UP);
         return s -> s.revenueIn(p).multiply(factor).setScale(0, RoundingMode.HALF_UP);
+    }
+
+    static final String PRICE_NOTE = "Яшаш нархи — бутун яшаш даври (барча кечалар) учун Exely'даги брон нархи, "
+            + "бронга қўшилган хизматлар (масалан, нонушта) билан. Тўланмаган — шу нархдан ҳали тўланмаган қисм, "
+            + "тўланган = яшаш нархи − тўланмаган.";
+
+    /** Яшаш нархидан тўланган қисм (Exely қолдиғи бўйича). */
+    private static BigDecimal paidOf(Stay s) {
+        return s.total().subtract(s.balance()).max(BigDecimal.ZERO);
     }
 
     private LocalDate clampToday(Period p) {

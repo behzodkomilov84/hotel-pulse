@@ -26,11 +26,11 @@
             <div class="nav-menu mega-menu">
                 <div class="mega-col" th:each="g : ${reportMenu}">
                     <div class="mega-head" th:text="${g.key}"></div>
-                    <a th:each="d : ${g.value}" th:href="@{/reports/{k}(k=${d.key})}" th:text="${d.title}"></a>
+                    <a th:each="d : ${g.value}" th:href="@{/reports/{k}(k=${d.key}, hotel=${currentHotelId})}" th:text="${d.title}"></a>
                 </div>
                 <div class="mega-foot">
-                    <a th:href="@{/reports}">Барча ҳисоботлар →</a>
-                    <a sec:authorize="hasAnyRole('OWNER', 'HOTEL_OWNER', 'MANAGEMENT_COMPANY')" th:href="@{/reports/usali/expenses}">USALI харажатлари</a>
+                    <a th:href="@{/reports(hotel=${currentHotelId})}">Барча ҳисоботлар →</a>
+                    <a sec:authorize="hasAnyRole('OWNER', 'HOTEL_OWNER', 'MANAGEMENT_COMPANY')" th:href="@{/reports/usali/expenses(hotel=${currentHotelId})}">USALI харажатлари</a>
                 </div>
             </div>
         </div>
