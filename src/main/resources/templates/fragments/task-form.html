@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Topshiriq berish oynasi. groups — mehmonxona bo'yicha xodimlar (TaskController.StaffGroup), back — saqlangach qaytiladigan sahifa.
+  Tahlil tavsiyasidagi "Topshiriq berish" tugmasi (data-task-*) maydonlarni oldindan to'ldiradi (analysis.js / app.js).
+-->
+<dialog class="modal" id="taskModal" aria-labelledby="taskModalTitle" th:fragment="modal(groups, back)"
+        th:with="hasStaff=${!groups.?[!staff.isEmpty()].isEmpty()}">
+    <form class="form" method="post" th:action="@{/services/tasks}">
+        <div class="modal-head">
+            <h3 id="taskModalTitle">Topshiriq berish</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Yopish">×</button>
+        </div>
+
+        <div class="alert alert-info" th:unless="${hasStaff}">
+            Mehmonxonaga hali <b>xodim</b> biriktirilmagan. Topshiriq faqat "Mehmonxona xodimi" roldagi foydalanuvchiga beriladi —
+            <b>Boshqaruv → Foydalanuvchilar</b> bo'limida xodim qo'shib, mehmonxonaga biriktiring.
+        </div>
+
+        <th:block th:if="${hasStaff}">
+            <div class="field">
+                <label for="taskTarget">Bajaruvchi</label>
+                <select id="taskTarget" name="target" required>
+                    <option value="">— xodimni tanlang —</option>
+                    <optgroup th:each="g : ${groups}" th:if="${!g.staff.isEmpty()}" th:label="${g.hotel.name}">
+                        <option th:each="u : ${g.staff}" th:value="${g.hotel.id} + ':' + ${u.id}"
+                                th:attr="data-hotel=${g.hotel.id}"
+                                th:text="(${u.fullName} ?: ${u.username}) + (${u.telegramChatId != null} ? ' · Telegram ✓' : '')"></option>
+                    </optgroup>
+                </select>
+                <span class="hint">«Telegram ✓» — xodim topshiriqni botda ham oladi.</span>
+            </div>
+            <div class="field">
+                <label for="taskTitle">Topshiriq</label>
+                <textarea id="taskTitle" name="title" rows="3" maxlength="255" required
+                          placeholder="Nima qilish kerak?"></textarea>
+            </div>
+            <div class="field">
+                <label for="taskDescription">Izoh <span class="muted">(ixtiyoriy)</span></label>
+                <textarea id="taskDescription" name="description" rows="3" maxlength="4000"
+                          placeholder="Qo'shimcha ma'lumot"></textarea>
+            </div>
+            <div class="form-grid">
+                <div class="field">
+                    <label for="taskDepartment">Bo'lim</label>
+                    <input type="text" id="taskDepartment" name="department" maxlength="64" list="taskDepartments"
+                           placeholder="Resepshn, Buxgalteriya…">
+                    <datalist id="taskDepartments">
+                        <option value="Resepshn"></option>
+                        <option value="Buxgalteriya"></option>
+                        <option value="Rahbariyat"></option>
+                    </datalist>
+                </div>
+                <div class="field">
+                    <label for="taskDue">Muddat</label>
+                    <input type="date" id="taskDue" name="dueDate" th:attr="min=${#temporals.format(today, 'yyyy-MM-dd')}"
+                           th:value="${#temporals.format(today.plusDays(3), 'yyyy-MM-dd')}">
+                    <span class="hint">Muddat kuni va o'tgach — botda eslatma (09:00).</span>
+                </div>
+            </div>
+            <p class="task-attach" id="taskListNote" hidden></p>
+            <input type="hidden" id="taskBooking" name="bookingNumber">
+            <input type="hidden" id="taskList" name="listKey">
+            <input type="hidden" id="taskSource" name="source" value="MANUAL">
+            <input type="hidden" name="back" th:value="${back}">
+        </th:block>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" data-modal-close>Bekor qilish</button>
+            <button type="submit" class="btn btn-primary" th:if="${hasStaff}">Topshiriq berish</button>
+        </div>
+    </form>
+</dialog>
+
+<!-- Topshiriq holati belgisi (ro'yxat va tafsilot sahifalari). -->
+<span th:fragment="status(s)" class="badge"
+      th:classappend="${s.name() == 'DONE'} ? 'badge-ok' : (${s.name() == 'REVIEW'} ? 'badge-role' : (${s.name() == 'RETURNED'} ? 'badge-danger' : (${s.name() == 'CANCELLED'} ? 'badge-off' : 'badge-warn')))"
+      th:text="${s.label}">Holat</span>
+</body>
+</html>

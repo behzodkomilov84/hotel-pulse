@@ -24,6 +24,9 @@
             <li th:each="p : ${a.actions}">
                 <span class="ai-who" th:text="${p.title}"></span>
                 <span th:text="${p.text}"></span>
+                <button type="button" class="btn-task" th:if="${canAssign}"
+                        th:attr="data-task-title=${p.text}, data-task-dept=${p.title}, data-task-list=${p.listKey}, data-task-list-size=${p.listSize},
+                                 data-task-due=${#temporals.format(today.plusDays(p.level.name() == 'HIGH' ? 1 : (p.level.name() == 'MEDIUM' ? 3 : 7)), 'yyyy-MM-dd')}">📌 Topshiriq berish<span class="btn-task-list" th:if="${p.listSize > 0}" th:text="'· 📎 ' + ${p.listSize} + ' ta ro\'yxat'"></span></button>
             </li>
         </ol>
     </th:block>
@@ -40,6 +43,12 @@
                         <span class="muted" th:if="${r.source != null}" th:text="'· ' + ${r.source}"></span>
                     </div>
                     <div class="muted ai-prio-reason" th:text="${r.reason}"></div>
+                    <button type="button" class="btn-task" th:if="${canAssign}"
+                            th:attr="data-task-title='Bron ' + ${r.bookingNumber} + (${r.guestName} != null ? ' (' + ${r.guestName} + ')' : '') + ': qarzni tekshirish va undirish',
+                                     data-task-desc=${r.reason} + '. Qarz: ' + ${@fmt.money(r.debt, cur)} + ', to\'langan ' + ${@fmt.moneyShort(r.paid, cur)} + ' / ' + ${@fmt.moneyShort(r.total, cur)} + '.',
+                                     data-task-booking=${r.bookingNumber},
+                                     data-task-list='BOOKING:' + ${r.bookingNumber},
+                                     data-task-due=${#temporals.format(today.plusDays(2), 'yyyy-MM-dd')}">📌 Topshiriq berish</button>
                 </div>
                 <div class="ai-prio-sum">
                     <b class="debt-cell" th:text="${@fmt.money(r.debt, cur)}"></b>

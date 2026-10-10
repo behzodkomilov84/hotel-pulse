@@ -136,35 +136,75 @@ public class DebtAnalyzer {
         DebtReport.Summary s = st.s;
         List<Point> actions = new ArrayList<>();
         if (s.notCheckedOutCount() > 0) {
-            actions.add(new Point(level(st.notCheckedOutShare), "Resepshn",
+            actions.add(withList(level(st.notCheckedOutShare), "Resepshn",
                     "PMS'da " + s.notCheckedOutCount() + " ta yashashni tekshirib, vyselenie qiling — qarz ko'rsatkichi "
-                            + st.catMoney.get(2) + " gacha aniqlashadi. Haqiqatan to'lamay ketganlarni alohida belgilang."));
+                            + st.catMoney.get(2) + " gacha aniqlashadi. Haqiqatan to'lamay ketganlarni alohida belgilang.",
+                    LIST_NOT_CHECKED_OUT, st.rows));
         }
         if (s.checkedOutCount() > 0) {
-            actions.add(new Point(level(st.checkedOutShare), "Buxgalteriya",
+            actions.add(withList(level(st.checkedOutShare), "Buxgalteriya",
                     "Ketgan " + s.checkedOutCount() + " ta mehmon bilan bog'lanib, qarzni undiring — eng kattalaridan boshlang "
-                            + "(pastdagi ro'yxat)."));
+                            + "(ro'yxat qarz bo'yicha saralangan).", LIST_CHECKED_OUT, st.rows));
         }
         if (st.topSourceIsOta && st.topSourceShare >= 0.4) {
-            actions.add(new Point(Level.MEDIUM, "Buxgalteriya",
-                    st.topSource + " bilan hisob-kitobni solishtiring: tushgan to'lovlar PMS'da belgilanganmi."));
+            actions.add(withList(Level.MEDIUM, "Buxgalteriya",
+                    st.topSource + " bilan hisob-kitobni solishtiring: tushgan to'lovlar PMS'da belgilanganmi.",
+                    LIST_SOURCE + st.topSource, st.rows));
         }
         if (st.old60.signum() > 0) {
-            actions.add(new Point(Level.MEDIUM, "Rahbariyat",
+            actions.add(withList(Level.MEDIUM, "Rahbariyat",
                     "60 kundan eski qarzlarni alohida ko'rib chiqing: undirib bo'lmaydiganlarini hisobdan chiqaring, "
-                            + "kompaniya/agentlarga rasmiy talabnoma yuboring."));
+                            + "kompaniya/agentlarga rasmiy talabnoma yuboring.", LIST_OLD60, st.rows));
         }
         if (s.inHouseCount() > 0) {
-            actions.add(new Point(Level.LOW, "Resepshn",
+            actions.add(withList(Level.LOW, "Resepshn",
                     "Hozir yashayotgan " + s.inHouseCount() + " ta mehmondan (" + st.catMoney.get(0)
-                            + ") check-out paytida to'liq to'lovni nazorat qiling; uzoq yashaydiganlardan oraliq to'lov oling."));
+                            + ") check-out paytida to'liq to'lovni nazorat qiling; uzoq yashaydiganlardan oraliq to'lov oling.",
+                    LIST_IN_HOUSE, st.rows));
         }
         if (st.unpaidCount * 4 >= st.rows.size() && st.unpaidCount > 0) {
-            actions.add(new Point(Level.LOW, "Rahbariyat",
-                    "Oldindan to'lov (prepayment) talabini kuchaytiring — " + st.unpaidCount + " ta yashash umuman to'lovsiz."));
+            actions.add(withList(Level.LOW, "Rahbariyat",
+                    "Oldindan to'lov (prepayment) talabini kuchaytiring — " + st.unpaidCount + " ta yashash umuman to'lovsiz.",
+                    LIST_UNPAID, st.rows));
         }
         actions.sort(Comparator.comparing(Point::level));
         return actions;
+    }
+
+    // ---------------------------------------------------------------- Ilova ro'yxatlari
+
+    /** Tavsiyaga ilova qilinadigan ro'yxat turlari (topshiriqqa bronlar ro'yxati bo'lib qo'shiladi). */
+    public static final String LIST_CHECKED_OUT = "CHECKED_OUT", LIST_NOT_CHECKED_OUT = "NOT_CHECKED_OUT",
+            LIST_IN_HOUSE = "IN_HOUSE", LIST_OLD60 = "OLD60", LIST_UNPAID = "UNPAID",
+            LIST_SOURCE = "SOURCE:", LIST_BOOKING = "BOOKING:";
+
+    private static Point withList(Level level, String title, String text, String listKey, List<Row> rows) {
+        return new Point(level, title, text, listKey, listRows(rows, listKey).size());
+    }
+
+    /** Ro'yxat qatorlari (qarz bo'yicha kamayish tartibida). Noma'lum kalit — bo'sh ro'yxat. */
+    public static List<Row> listRows(List<Row> rows, String listKey) {
+        if (listKey == null || listKey.isBlank()) {
+            return List.of();
+        }
+        java.util.function.Predicate<Row> p;
+        if (listKey.startsWith(LIST_SOURCE)) {
+            String src = listKey.substring(LIST_SOURCE.length());
+            p = r -> src.equals(r.source() == null || r.source().isBlank() ? "Noma'lum" : r.source());
+        } else if (listKey.startsWith(LIST_BOOKING)) {
+            String number = listKey.substring(LIST_BOOKING.length());
+            p = r -> number.equals(r.bookingNumber());
+        } else {
+            p = switch (listKey) {
+                case LIST_CHECKED_OUT -> r -> r.category() == Category.CHECKED_OUT;
+                case LIST_NOT_CHECKED_OUT -> r -> r.category() == Category.NOT_CHECKED_OUT;
+                case LIST_IN_HOUSE -> r -> r.category() == Category.IN_HOUSE;
+                case LIST_OLD60 -> r -> r.category() != Category.IN_HOUSE && r.ageDays() > 60;
+                case LIST_UNPAID -> r -> r.paid().signum() == 0;
+                default -> r -> false;
+            };
+        }
+        return rows.stream().filter(p).sorted(Comparator.comparing(Row::debt).reversed()).toList();
     }
 
     // ---------------------------------------------------------------- Birinchi navbat

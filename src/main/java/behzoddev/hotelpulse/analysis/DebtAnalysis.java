@@ -17,8 +17,15 @@ public record DebtAnalysis(String warning, String summary, List<Point> risks, Li
 
     public enum Level { HIGH, MEDIUM, LOW }
 
-    /** @param title qisqa sarlavha (qalin), text — izoh */
-    public record Point(Level level, String title, String text) {
+    /**
+     * @param title    qisqa sarlavha (qalin), text — izoh
+     * @param listKey  tavsiyaga tegishli bronlar ro'yxati (DebtAnalyzer.listRows) — topshiriqqa ilova qilinadi; yo'q — null
+     * @param listSize shu ro'yxatdagi yashashlar soni
+     */
+    public record Point(Level level, String title, String text, String listKey, int listSize) {
+        public Point(Level level, String title, String text) {
+            this(level, title, text, null, 0);
+        }
     }
 
     public record Priority(String bookingNumber, String guestName, String source,

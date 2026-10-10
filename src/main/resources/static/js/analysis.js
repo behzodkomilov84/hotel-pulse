@@ -30,6 +30,34 @@
         body.replaceChildren(p);
     }
 
+    // Tavsiya yoki bron yonidagi "Topshiriq berish": oyna maydonlari tavsiya matni bilan to'ldiriladi.
+    const taskModal = document.getElementById('taskModal');
+    body.addEventListener('click', e => {
+        const b = e.target.closest('[data-task-title]');
+        if (!b || !taskModal) return;
+        const set = (id, value) => { const el = taskModal.querySelector('#' + id); if (el) el.value = value || ''; };
+        set('taskTitle', b.dataset.taskTitle);
+        set('taskDescription', b.dataset.taskDesc);
+        set('taskDepartment', b.dataset.taskDept);
+        set('taskBooking', b.dataset.taskBooking);
+        set('taskSource', 'DEBT_ANALYSIS');
+        // Tavsiyaga tegishli bronlar ro'yxati topshiriqqa ilova qilinadi (server o'zi joriy hisobotdan oladi).
+        set('taskList', b.dataset.taskList);
+        const note = taskModal.querySelector('#taskListNote');
+        if (note) {
+            const n = parseInt(b.dataset.taskListSize || '0', 10);
+            note.hidden = !b.dataset.taskList;
+            note.textContent = n > 0
+                ? '📎 Ilova: ' + n + ' ta qarzdor yashash ro\'yxati (qarz bo\'yicha saralangan) topshiriqqa qo\'shiladi.'
+                : '📎 Ilova: shu bron yashashlari topshiriqqa qo\'shiladi.';
+        }
+        if (b.dataset.taskDue) set('taskDue', b.dataset.taskDue);
+        const target = taskModal.querySelector('#taskTarget');
+        if (target && target.options.length === 2) target.selectedIndex = 1;   // bitta xodim — darhol tanlangan
+        taskModal.showModal();
+        (target || taskModal.querySelector('button')).focus();
+    });
+
     btn.addEventListener('click', async () => {
         setBusy(true);
         showLoading();

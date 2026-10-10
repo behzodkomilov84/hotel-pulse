@@ -115,4 +115,33 @@ class DebtAnalyzerTest {
         // Ketgan mehmon summasi kichik bo'lsa ham — ustuvor (ketgan — undirish qiyinroq).
         assertThat(a.priorities()).extracting(DebtAnalysis.Priority::bookingNumber).contains("X");
     }
+
+    @Test
+    void actionsCarryAttachableListsSortedByDebt() {
+        List<Row> rows = List.of(
+                row("A", "Booking.com", Category.NOT_CHECKED_OUT, 5_000_000, 0, 100, -100),
+                row("D1", "Direct", Category.CHECKED_OUT, 1_000_000, 200_000, 10, -10),
+                row("D2", "Direct", Category.CHECKED_OUT, 3_000_000, 0, 70, -70),
+                row("C", "", Category.IN_HOUSE, 1_000_000, 0, 0, 4));
+        DebtAnalysis a = analyzer.analyze(report(rows), "UZS", true);
+
+        Point checkedOut = a.actions().stream().filter(p -> DebtAnalyzer.LIST_CHECKED_OUT.equals(p.listKey())).findFirst().orElseThrow();
+        assertThat(checkedOut.listSize()).isEqualTo(2);
+        assertThat(checkedOut.text()).doesNotContain("pastdagi");
+        // Ro'yxat — qarz bo'yicha kamayish tartibida.
+        assertThat(DebtAnalyzer.listRows(rows, DebtAnalyzer.LIST_CHECKED_OUT)).extracting(Row::bookingNumber)
+                .containsExactly("D2", "D1");
+        assertThat(DebtAnalyzer.listRows(rows, DebtAnalyzer.LIST_OLD60)).extracting(Row::bookingNumber)
+                .containsExactly("A", "D2");
+        assertThat(DebtAnalyzer.listRows(rows, DebtAnalyzer.LIST_UNPAID)).extracting(Row::bookingNumber)
+                .containsExactly("A", "D2", "C");
+        assertThat(DebtAnalyzer.listRows(rows, DebtAnalyzer.LIST_SOURCE + "Noma'lum")).extracting(Row::bookingNumber)
+                .containsExactly("C");
+        assertThat(DebtAnalyzer.listRows(rows, DebtAnalyzer.LIST_BOOKING + "D1")).hasSize(1);
+        assertThat(DebtAnalyzer.listRows(rows, "NONSENSE")).isEmpty();
+        assertThat(DebtAnalyzer.listRows(rows, null)).isEmpty();
+        // Har bir ro'yxatli tavsiyada soni haqiqiy ro'yxatga teng.
+        a.actions().stream().filter(p -> p.listKey() != null)
+                .forEach(p -> assertThat(DebtAnalyzer.listRows(rows, p.listKey())).hasSize(p.listSize()));
+    }
 }

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Topshiriqlar')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('svc-tasks')}"></header>
+<main class="container">
+    <div class="page-head reveal">
+        <div>
+            <h1>Topshiriqlar</h1>
+            <p class="subtitle" th:if="${canAssign}">Xodimlarga berilgan topshiriqlar: bajarilishi, tekshiruv va tarix</p>
+            <p class="subtitle" th:unless="${canAssign}">Sizga berilgan topshiriqlar</p>
+        </div>
+        <div class="head-actions">
+            <a class="btn btn-secondary" th:href="@{/services/tasks/export.csv(view=${view}, hotel=${hotel})}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+                Excel'ga yuklash
+            </a>
+            <button type="button" class="btn btn-primary" th:if="${canAssign}" data-modal-open="taskModal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                Topshiriq berish
+            </button>
+        </div>
+    </div>
+
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="alert alert-info reveal" th:if="${canAssign}">
+        <span>Topshiriqni <b>qarzdorlik tahlilidan</b> bering: mehmonxona → Qarzdorlik → <b>Tahlil qilish</b> → tavsiya yonidagi
+            <b>📌 Topshiriq berish</b>. Xodim bajargach, topshiriq <b>Tekshiruvda</b> bo'limiga tushadi — tasdiqlang yoki qaytaring.</span>
+    </div>
+
+    <!-- ===== Bo'limlar va filtr ===== -->
+    <div class="task-toolbar reveal">
+        <nav class="kind-tabs" aria-label="Topshiriq holati">
+            <a th:each="e : ${views}" class="kind-tab" th:classappend="${view == e.key} ? 'active'"
+               th:href="@{/services/tasks(view=${e.key}, hotel=${hotel})}">
+                <span th:text="${e.value}"></span>
+                <b th:text="${counts[e.key]}" th:classappend="${e.key == 'overdue' and counts[e.key] > 0} ? 'tab-alert'">0</b>
+            </a>
+        </nav>
+        <form method="get" th:action="@{/services/tasks}" th:if="${hotels.size() > 1}">
+            <input type="hidden" name="view" th:value="${view}">
+            <select name="hotel" aria-label="Mehmonxona" onchange="this.form.submit()">
+                <option value="">Barcha mehmonxonalar</option>
+                <option th:each="h : ${hotels}" th:value="${h.id}" th:text="${h.name}" th:selected="${hotel == h.id}"></option>
+            </select>
+        </form>
+    </div>
+
+    <!-- ===== Jadval ===== -->
+    <div class="card table-wrap reveal" th:if="${!rows.isEmpty()}">
+        <table class="task-table">
+            <thead>
+            <tr>
+                <th class="num">№</th>
+                <th>Topshiriq</th>
+                <th th:if="${showHotel}">Mehmonxona</th>
+                <th>Bajaruvchi</th>
+                <th>Berdi</th>
+                <th>Muddat</th>
+                <th>Holat</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="t : ${rows}" class="task-row" th:classappend="${t.isOverdue(today)} ? 'overdue'">
+                <td class="num muted" th:text="${t.id}"></td>
+                <td class="wrap">
+                    <a class="task-link" th:href="@{/services/tasks/{id}(id=${t.id})}" th:text="${t.title}"></a>
+                    <div class="task-meta muted">
+                        <span th:if="${t.department}" th:text="${t.department}"></span>
+                        <span th:if="${t.bookingNumber}" th:text="'bron ' + ${t.bookingNumber}"></span>
+                        <span th:text="${#temporals.format(t.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+                        <span class="task-items-badge" th:if="${itemSummaries[t.id] != null}" th:with="is=${itemSummaries[t.id]}"
+                              th:text="'📎 ' + ${is.count} + ' ta' + (${is.done > 0} ? ' · ☑ ' + ${is.done} : '')"></span>
+                    </div>
+                </td>
+                <td th:if="${showHotel}" class="wrap" th:text="${t.hotel.name}"></td>
+                <td class="wrap" th:text="${t.assignee.fullName} ?: ${t.assignee.username}"></td>
+                <td class="wrap muted" th:text="${t.assignedBy} ? (${t.assignedBy.fullName} ?: ${t.assignedBy.username}) : '—'"></td>
+                <td th:with="d=${t.dueDate}">
+                    <span th:if="${d == null}" class="muted">—</span>
+                    <th:block th:if="${d != null}">
+                        <span th:text="${#temporals.format(d, 'dd.MM.yyyy')}"></span>
+                        <div class="task-due" th:if="${t.isOverdue(today)}"
+                             th:text="${t.daysOverdue(today)} + ' kun o\'tdi'"></div>
+                        <div class="task-due soon" th:if="${t.isDueToday(today)}">bugun</div>
+                    </th:block>
+                </td>
+                <td><span th:replace="~{fragments/task-form :: status(${t.status})}"></span></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card empty reveal" th:if="${rows.isEmpty()}">
+        <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <p><strong th:text="${counts['all'] == 0} ? 'Hali topshiriq yo\'q' : 'Bu bo\'limda topshiriq yo\'q'"></strong></p>
+    </div>
+
+    <nav class="pager reveal" th:if="${pages > 1}" aria-label="Sahifalar">
+        <a class="btn btn-secondary" th:classappend="${page <= 1} ? 'disabled'" th:attr="aria-disabled=${page <= 1}"
+           th:href="@{/services/tasks(view=${view}, hotel=${hotel}, page=${page - 1})}">← Oldingi</a>
+        <span class="pager-info" th:text="${page} + ' / ' + ${pages}"></span>
+        <a class="btn btn-secondary" th:classappend="${page >= pages} ? 'disabled'" th:attr="aria-disabled=${page >= pages}"
+           th:href="@{/services/tasks(view=${view}, hotel=${hotel}, page=${page + 1})}">Keyingi →</a>
+    </nav>
+
+    <th:block th:if="${canAssign}">
+        <dialog th:replace="~{fragments/task-form :: modal(${staffGroups}, '/services/tasks')}"></dialog>
+    </th:block>
+</main>
+</body>
+</html>

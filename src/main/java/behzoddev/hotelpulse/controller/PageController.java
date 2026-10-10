@@ -10,6 +10,7 @@ import behzoddev.hotelpulse.security.CustomUserDetails;
 import behzoddev.hotelpulse.service.DebtService;
 import behzoddev.hotelpulse.service.HotelService;
 import behzoddev.hotelpulse.service.KpiService;
+import behzoddev.hotelpulse.service.TaskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ContentDisposition;
@@ -42,6 +43,7 @@ public class PageController {
     private final KpiService kpiService;
     private final DebtService debtService;
     private final DebtAnalyzer debtAnalyzer;
+    private final TaskService taskService;
 
     @GetMapping("/login")
     public String login() {
@@ -75,6 +77,13 @@ public class PageController {
         model.addAttribute("q", q);
         model.addAttribute("sort", sort);
         model.addAttribute("paymentsComplete", kpiService.paymentsComplete(hotel));
+        // Tahlil tavsiyalaridan topshiriq berish — faqat egasi / boshqaruv kompaniyasi / platforma egasi.
+        boolean canAssign = TaskService.canAssign(user);
+        model.addAttribute("canAssign", canAssign);
+        model.addAttribute("today", taskService.today());
+        if (canAssign) {
+            model.addAttribute("staffGroups", List.of(new TaskController.StaffGroup(hotel, taskService.staff(hotel.getId()))));
+        }
         return "debts";
     }
 
@@ -88,6 +97,8 @@ public class PageController {
         DebtReport report = debtService.report(hotel, null, null, "debt");
         model.addAttribute("hotel", hotel);
         model.addAttribute("analysis", debtAnalyzer.analyze(report, hotel.getCurrency(), kpiService.paymentsComplete(hotel)));
+        model.addAttribute("canAssign", TaskService.canAssign(user));
+        model.addAttribute("today", taskService.today());
         return "fragments/analysis :: analysis";
     }
 

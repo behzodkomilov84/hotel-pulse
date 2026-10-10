@@ -28,6 +28,13 @@ public class TelegramBotService {
     static final String BTN_MONTH = "🗓 Shu oy";
     static final String BTN_DEBT = "⚠️ Qarzlar";
     static final String BTN_HELP = "ℹ️ Yordam";
+    static final String BTN_ANALYSIS = "🧠 Tahlil";
+    static final String BTN_TASKS = "📌 Topshiriqlar";
+    static final String BTN_HIDE = "🔽 Menyuni yopish";
+
+    /** Buyruq va tugmalar — ular bosilganda kutilayotgan matn (qaytarish sababi, izoh) bekor bo'ladi. */
+    static final java.util.Set<String> KNOWN = java.util.Set.of("/bugun", "/hafta", "/oy", "/qarzlar", "/hisobot", "/uzish",
+            "/yordam", "/tahlil", "/topshiriqlar", "/menyu", BTN_HIDE, BTN_TODAY, BTN_WEEK, BTN_MONTH, BTN_DEBT, BTN_HELP, BTN_ANALYSIS, BTN_TASKS);
 
     /** Bot menyusidagi buyruqlar (setMyCommands). */
     static final List<Map<String, String>> COMMANDS = List.of(
@@ -35,8 +42,11 @@ public class TelegramBotService {
             Map.of("command", "hafta", "description", "Oxirgi 7 kun"),
             Map.of("command", "oy", "description", "Shu oy"),
             Map.of("command", "qarzlar", "description", "Qarzdorlik"),
+            Map.of("command", "tahlil", "description", "Qarzdorlik tahlili va tavsiyalar"),
+            Map.of("command", "topshiriqlar", "description", "Topshiriqlar"),
             Map.of("command", "hisobot", "description", "Kunlik hisobotni yoqish/o'chirish"),
             Map.of("command", "uzish", "description", "Telegram'ni hisobdan uzish"),
+            Map.of("command", "menyu", "description", "Tugmalar menyusini ochish"),
             Map.of("command", "yordam", "description", "Yordam"));
 
     private final TelegramGateway gateway;
@@ -44,6 +54,7 @@ public class TelegramBotService {
     private final TelegramReportService reports;
     private final HotelService hotelService;
     private final TelegramProperties props;
+    private final TelegramTaskHandler taskHandler;
 
     public void handle(TelegramModels.Update update) {
         try {
@@ -87,18 +98,29 @@ public class TelegramBotService {
             send(chatId, "⛔ Hisobingiz bloklangan. Administrator bilan bog'laning.", null);
             return;
         }
+        // Qaytarish sababi yoki "bajarildi" izohi kutilayotgan bo'lsa — oddiy matn shunga ketadi.
+        if (KNOWN.contains(command)) {
+            taskHandler.clearPending(chatId);
+        } else if (taskHandler.handleText(chatId, user, text)) {
+            return;
+        }
 
         switch (command) {
             case "/bugun", BTN_TODAY -> askOrReport(chatId, user, "today");
             case "/hafta", BTN_WEEK -> askOrReport(chatId, user, "7d");
             case "/oy", BTN_MONTH -> askOrReport(chatId, user, "month");
             case "/qarzlar", BTN_DEBT -> send(chatId, reports.debtReport(hotels(user)), null);
+            case "/tahlil", BTN_ANALYSIS -> taskHandler.askAnalysis(chatId, user, hotels(user));
+            case "/topshiriqlar", BTN_TASKS -> taskHandler.sendTasks(chatId, user);
             case "/hisobot" -> sendDailyToggle(chatId, user);
             case "/uzish" -> {
                 linkService.unlinkChat(chatId);
                 send(chatId, "🔌 Telegram hisobingizdan uzildi. Qayta ulash uchun saytda <b>Profil → Telegram</b> bo'limiga kiring.",
                         Map.of("remove_keyboard", true));
             }
+            case "/menyu" -> send(chatId, "⌨️ Menyu ochildi. Yopish uchun — <b>" + BTN_HIDE + "</b>.", mainKeyboard());
+            case BTN_HIDE -> send(chatId, "Menyu yopildi. Qayta ochish: /menyu buyrug'i yoki pastdagi <b>☰ Menu</b> tugmasi.",
+                    Map.of("remove_keyboard", true));
             default -> send(chatId, helpText(user), mainKeyboard());
         }
     }
@@ -174,6 +196,9 @@ public class TelegramBotService {
         }
         User user = linked.get();
         String[] parts = cb.data().split(":");
+        if (taskHandler.handleCallback(chatId, user, cb.id(), parts)) {
+            return;
+        }
 
         if (parts[0].equals("r") && parts.length == 3) {
             gateway.answerCallback(cb.id(), null);
@@ -236,9 +261,11 @@ public class TelegramBotService {
                 "keyboard", List.of(
                         List.of(Map.of("text", BTN_TODAY), Map.of("text", BTN_WEEK)),
                         List.of(Map.of("text", BTN_MONTH), Map.of("text", BTN_DEBT)),
-                        List.of(Map.of("text", BTN_HELP))),
+                        List.of(Map.of("text", BTN_ANALYSIS), Map.of("text", BTN_TASKS)),
+                        List.of(Map.of("text", BTN_HELP), Map.of("text", BTN_HIDE))),
                 "resize_keyboard", true,
-                "is_persistent", true);
+                // false — Telegram'da klaviatura belgisi bilan yig'ish/ochish ham mumkin.
+                "is_persistent", false);
     }
 
     private static Map<String, Object> button(String text, String data) {
@@ -266,6 +293,9 @@ public class TelegramBotService {
                 + "/hafta — oxirgi 7 kun\n"
                 + "/oy — shu oy\n"
                 + "/qarzlar — qarzdorlik\n"
+                + "/tahlil — qarzdorlik tahlili va tavsiyalar (📌 — xodimga topshiriq)\n"
+                + "/topshiriqlar — topshiriqlar: bajarish va tekshirish\n"
+                + "/menyu — tugmalar menyusini ochish (yopish — «" + BTN_HIDE + "»)\n"
                 + "/hisobot — kunlik hisobot (" + (user.isTelegramDailyReport() ? "yoqilgan" : "o'chirilgan") + ")\n"
                 + "/uzish — Telegram'ni hisobdan uzish";
     }

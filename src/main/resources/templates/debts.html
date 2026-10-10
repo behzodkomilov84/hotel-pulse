@@ -24,6 +24,8 @@
         </a>
     </div>
 
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
     <div class="alert alert-info reveal" th:unless="${paymentsComplete}">
         Bu mehmonxona Exely Connect orqali ulangan — u faqat oldindan to'lovlarni beradi, shuning uchun qarz to'liq emas.
         Aniq qarzdorlik uchun admin sahifasida <b>Exely PMS kaliti</b>ni kiriting.
@@ -167,6 +169,11 @@
         </div>
         <p><strong th:text="${s.count == 0} ? 'Qarzdorlik yo\'q' : 'Bu filtr bo\'yicha qarz topilmadi'">Qarzdorlik yo'q</strong></p>
     </div>
+
+    <!-- Tahlil tavsiyasidan topshiriq berish -->
+    <th:block th:if="${canAssign}">
+        <dialog th:replace="~{fragments/task-form :: modal(${staffGroups}, '/hotels/' + ${hotel.id} + '/debts')}"></dialog>
+    </th:block>
 </main>
 <script th:src="@{/js/analysis.js}" defer></script>
 </body>
