@@ -54,6 +54,8 @@ public class PageController {
         List<Hotel> hotels = hotelService.accessibleHotels(user);
         model.addAttribute("hotels", hotels);
         model.addAttribute("summaries", kpiService.monthSummaries(hotels));
+        // Jami va o'rtacha ADR — faqat foydalanuvchiga ochiq mehmonxonalar bo'yicha.
+        model.addAttribute("portfolio", kpiService.portfolio(hotels, Period.resolve("month", null, null, kpiService.today())));
         return "dashboard";
     }
 

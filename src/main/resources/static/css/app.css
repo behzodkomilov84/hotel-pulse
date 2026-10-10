@@ -853,3 +853,21 @@ code { font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
     .reveal, .stagger > * { opacity: 1; transform: none; }
 }
+
+/* ---------- Daromad va tushum / jami ---------- */
+.flow-card { margin-bottom: 28px; }
+.flow-card .card-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.flow-card .card-title .muted { font-weight: 600; font-size: 13px; }
+.flow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px 0; }
+.flow-item { min-width: 0; padding: 0 16px; border-left: 1px solid var(--border); }
+.flow-item:first-child { border-left: 0; padding-left: 0; }
+.flow-item .k { color: var(--muted); font-size: 13px; font-weight: 600; }
+.flow-item .v { font-size: 21px; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.flow-item .sub { color: var(--muted); font-size: 12.5px; }
+.flow-item.gap-pos .v { color: var(--warning); }
+.flow-item.gap-neg .v { color: var(--success); }
+@media (max-width: 720px) {
+    .flow-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .flow-item { border-left: 0; padding: 0; }
+    .flow-item .v { font-size: 18px; }
+}

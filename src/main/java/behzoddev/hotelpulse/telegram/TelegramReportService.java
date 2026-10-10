@@ -4,6 +4,7 @@ import behzoddev.hotelpulse.controller.Formats;
 import behzoddev.hotelpulse.entity.Hotel;
 import behzoddev.hotelpulse.kpi.HotelKpi;
 import behzoddev.hotelpulse.kpi.Period;
+import behzoddev.hotelpulse.kpi.PortfolioSummary;
 import behzoddev.hotelpulse.kpi.StayMetrics;
 import behzoddev.hotelpulse.kpi.TodaySnapshot;
 import behzoddev.hotelpulse.service.KpiService;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 /** Telegram uchun hisobot matnlari (HTML parse_mode). */
 @Service
@@ -59,12 +59,17 @@ public class TelegramReportService {
         if (hasExtras) {
             sb.append("🍳 Nonushta: ").append(fmt.moneyShort(s.mealsRevenue(), cur))
                     .append(" · boshqa xizmatlar: ").append(fmt.moneyShort(s.extrasRevenue().subtract(s.mealsRevenue()), cur))
-                    .append("\n💵 Jami daromad: <b>").append(fmt.moneyShort(s.totalRevenue(), cur)).append("</b>\n");
+                    .append("\n");
         }
         sb.append("🏷 ADR: ").append(fmt.money(s.adr(), cur)).append(paren(fmt.change(s.adr(), ps.adr()))).append("\n");
         sb.append("📈 RevPAR: ").append(fmt.money(s.revpar(), cur)).append("\n");
-        sb.append("💳 Tushgan to'lovlar: ").append(fmt.moneyShort(kpi.paymentsReceived(), cur))
+        sb.append("\n<b>Daromad va tushum</b>\n");
+        sb.append("💵 Daromad: <b>").append(fmt.moneyShort(s.totalRevenue(), cur)).append("</b>\n");
+        sb.append("💳 Tushum (to'lovlar): <b>").append(fmt.moneyShort(kpi.paymentsReceived(), cur)).append("</b>")
                 .append(paymentsComplete ? "" : " <i>(faqat oldindan)</i>").append("\n");
+        BigDecimal gap = s.totalRevenue().subtract(kpi.paymentsReceived());
+        sb.append("↔️ Farq: <b>").append(fmt.signedMoneyShort(gap, cur)).append("</b> — ")
+                .append(fmt.gapNote(gap)).append("\n\n");
         sb.append("🆕 Yangi bronlar: ").append(kpi.newBookings())
                 .append(" · ❌ Bekor: ").append(kpi.cancellations()).append("\n");
 
@@ -87,26 +92,32 @@ public class TelegramReportService {
         sb.append("📅 ").append(PERIOD_TITLES.getOrDefault(period.key(), "Davr"))
                 .append(": ").append(period.label()).append("\n\n");
 
-        Map<String, BigDecimal> totals = new TreeMap<>();
-        long sold = 0;
-        long available = 0;
         for (Hotel h : hotels) {
             if (!kpiService.hasData(h)) {
                 sb.append("• ").append(esc(h.getName())).append(" — <i>ma'lumot yo'q</i>\n");
                 continue;
             }
-            StayMetrics s = kpiService.report(h, period).stays();
-            sold += s.soldRoomNights();
-            available += s.availableRoomNights();
-            totals.merge(h.getCurrency(), s.totalRevenue(), BigDecimal::add);
+            HotelKpi kpi = kpiService.report(h, period);
+            StayMetrics s = kpi.stays();
+            String cur = h.getCurrency();
             sb.append("• <b>").append(esc(h.getName())).append("</b> — ")
-                    .append(fmt.pct(s.occupancy())).append(" · ")
-                    .append(fmt.moneyShort(s.totalRevenue(), h.getCurrency())).append("\n");
+                    .append(fmt.pct(s.occupancy())).append(" · ADR ").append(fmt.moneyShort(s.adr(), cur)).append("\n")
+                    .append("   daromad ").append(fmt.moneyShort(s.totalRevenue(), cur))
+                    .append(" · tushum ").append(fmt.moneyShort(kpi.paymentsReceived(), cur))
+                    .append(" · farq ").append(fmt.signedMoneyShort(s.totalRevenue().subtract(kpi.paymentsReceived()), cur))
+                    .append("\n");
         }
-        if (available > 0) {
-            sb.append("\n<b>Jami</b>: bandlik ").append(fmt.pct((double) sold / available));
-            totals.forEach((cur, sum) -> sb.append(" · ").append(fmt.moneyShort(sum, cur)));
-            sb.append("\n");
+        // Jami — faqat shu foydalanuvchiga ochiq mehmonxonalar bo'yicha (ro'yxat ruxsatlar bo'yicha keladi).
+        for (PortfolioSummary p : kpiService.portfolio(hotels, period)) {
+            String cur = p.currency();
+            sb.append("\n<b>Jami</b> (").append(p.hotels()).append(" ta mehmonxona):\n")
+                    .append("🛏 Bandlik: <b>").append(fmt.pct(p.occupancy())).append("</b>\n")
+                    .append("🏷 O'rtacha ADR: <b>").append(fmt.money(p.adr(), cur)).append("</b>\n")
+                    .append("📈 RevPAR: ").append(fmt.money(p.revpar(), cur)).append("\n")
+                    .append("💵 Daromad: <b>").append(fmt.moneyShort(p.revenue(), cur)).append("</b>\n")
+                    .append("💳 Tushum: <b>").append(fmt.moneyShort(p.payments(), cur)).append("</b>\n")
+                    .append("↔️ Farq: <b>").append(fmt.signedMoneyShort(p.gap(), cur)).append("</b> — ")
+                    .append(fmt.gapNote(p.gap())).append("\n");
         }
         return sb.toString();
     }

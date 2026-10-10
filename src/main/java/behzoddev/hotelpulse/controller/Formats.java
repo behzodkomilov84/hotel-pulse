@@ -47,6 +47,22 @@ public class Formats {
         return money(amount, currency);
     }
 
+    /** Ishorali qisqa summa: "+12,3 mln so'm" / "−4,1 mln so'm" (daromad va tushum farqi uchun). */
+    public String signedMoneyShort(BigDecimal amount, String currency) {
+        if (amount == null || amount.signum() == 0) {
+            return moneyShort(BigDecimal.ZERO, currency);
+        }
+        return (amount.signum() > 0 ? "+" : "−") + moneyShort(amount.abs(), currency);
+    }
+
+    /** Farq izohi: musbat — to'lanmagan qism, manfiy — oldindan to'langan. */
+    public String gapNote(BigDecimal gap) {
+        if (gap == null || gap.signum() == 0) {
+            return "daromad to'liq to'langan";
+        }
+        return gap.signum() > 0 ? "hali to'lanmagan qism" : "oldindan to'lovlar ko'proq";
+    }
+
     public String pct(double ratio) {
         return new DecimalFormat("0.0", SYMBOLS).format(ratio * 100) + "%";
     }

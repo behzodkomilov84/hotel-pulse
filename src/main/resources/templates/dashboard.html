@@ -16,6 +16,38 @@
         </a>
     </div>
 
+    <!-- Jami — faqat shu foydalanuvchiga ochiq mehmonxonalar bo'yicha -->
+    <div class="card flow-card reveal" th:each="p : ${portfolio}" th:if="${p.hotels > 1}">
+        <h3 class="card-title">Jami — shu oy
+            <span class="muted" th:text="'(' + ${p.hotels} + ' ta mehmonxona)'"></span>
+            <span th:replace="~{fragments/layout :: tip(#{tip.home.portfolio})}"></span></h3>
+        <div class="flow-grid">
+            <div class="flow-item">
+                <div class="k">Bandlik</div>
+                <div class="v" th:text="${@fmt.pct(p.occupancy())}">0%</div>
+                <div class="sub" th:text="${p.soldRoomNights} + ' / ' + ${p.availableRoomNights} + ' xona-kecha'"></div>
+            </div>
+            <div class="flow-item">
+                <div class="k">O'rtacha ADR<span th:replace="~{fragments/layout :: tip(#{tip.adr})}"></span></div>
+                <div class="v" th:text="${@fmt.money(p.adr(), p.currency)}">0</div>
+                <div class="sub" th:text="'RevPAR ' + ${@fmt.money(p.revpar(), p.currency)}"></div>
+            </div>
+            <div class="flow-item">
+                <div class="k">Daromad<span th:replace="~{fragments/layout :: tip(#{tip.flow.revenue})}"></span></div>
+                <div class="v" th:text="${@fmt.moneyShort(p.revenue, p.currency)}">0</div>
+            </div>
+            <div class="flow-item">
+                <div class="k">Tushum<span th:replace="~{fragments/layout :: tip(#{tip.flow.payments})}"></span></div>
+                <div class="v" th:text="${@fmt.moneyShort(p.payments, p.currency)}">0</div>
+            </div>
+            <div class="flow-item" th:classappend="${p.gap.signum() > 0} ? 'gap-pos' : (${p.gap.signum() < 0} ? 'gap-neg' : '')">
+                <div class="k">Farq<span th:replace="~{fragments/layout :: tip(#{tip.flow.gap})}"></span></div>
+                <div class="v" th:text="${@fmt.signedMoneyShort(p.gap, p.currency)}">0</div>
+                <div class="sub" th:text="${@fmt.gapNote(p.gap)}"></div>
+            </div>
+        </div>
+    </div>
+
     <div class="hotel-grid stagger" th:if="${!hotels.isEmpty()}">
         <a class="card hotel-card" th:each="h : ${hotels}" th:href="@{/hotels/{id}(id=${h.id})}">
             <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>

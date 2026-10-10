@@ -196,6 +196,28 @@
             </div>
         </div>
 
+        <!-- ===== Daromad va tushum ===== -->
+        <div class="card flow-card reveal" th:with="gap=${s.totalRevenue().subtract(kpi.paymentsReceived)}">
+            <h3 class="card-title">Daromad va tushum</h3>
+            <div class="flow-grid">
+                <div class="flow-item">
+                    <div class="k">Daromad<span th:replace="~{fragments/layout :: tip(#{tip.flow.revenue})}"></span></div>
+                    <div class="v" th:text="${@fmt.moneyShort(s.totalRevenue(), cur)}">0</div>
+                    <div class="sub" th:text="${@fmt.money(s.totalRevenue(), cur)}"></div>
+                </div>
+                <div class="flow-item">
+                    <div class="k">Tushum (to'lovlar)<span th:replace="~{fragments/layout :: tip(${paymentsComplete} ? #{tip.flow.payments} : #{tip.payments.partial})}"></span></div>
+                    <div class="v" th:text="${@fmt.moneyShort(kpi.paymentsReceived, cur)}">0</div>
+                    <div class="sub" th:text="${paymentsComplete} ? ${@fmt.money(kpi.paymentsReceived, cur)} : 'faqat oldindan to\'lovlar (Exely)'"></div>
+                </div>
+                <div class="flow-item" th:classappend="${gap.signum() > 0} ? 'gap-pos' : (${gap.signum() < 0} ? 'gap-neg' : '')">
+                    <div class="k">Farq<span th:replace="~{fragments/layout :: tip(#{tip.flow.gap})}"></span></div>
+                    <div class="v" th:text="${@fmt.signedMoneyShort(gap, cur)}">0</div>
+                    <div class="sub" th:text="${@fmt.gapNote(gap)}"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- ===== Grafiklar ===== -->
         <div class="chart-grid stagger">
             <div class="card">

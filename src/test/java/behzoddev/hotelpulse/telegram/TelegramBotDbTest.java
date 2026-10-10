@@ -84,6 +84,12 @@ class TelegramBotDbTest {
     private HotelRepository hotelRepository;
     @Autowired
     private DemoDataService demoDataService;
+    @Autowired
+    private TelegramReportService reports;
+    @Autowired
+    private behzoddev.hotelpulse.service.KpiService kpiService;
+    @Autowired
+    private behzoddev.hotelpulse.controller.Formats fmtBean;
 
     private Hotel hotelA;
     private Hotel hotelB;
@@ -163,6 +169,36 @@ class TelegramBotDbTest {
         // single foydalanuvchi Beta'ga biriktirilmagan — soxta callback bilan ham ko'ra olmaydi.
         bot.handle(cb(2002, "r:month:" + hotelB.getId()));
         assertTrue(gateway.last().html().contains("ruxsat yo'q"));
+    }
+
+    @Test
+    void reportsShowRevenueVsPaymentsAndPortfolioOnlyForOwnHotels() {
+        demoDataService.generate(hotelB);
+        Hotel foreign = hotel("Gamma Foreign", 50);
+        demoDataService.generate(foreign);
+        link(single, 2002);
+        link(multi, 1001);
+
+        bot.handle(msg(2002, TelegramBotService.BTN_TODAY));
+        String one = gateway.last().html();
+        assertTrue(one.contains("Daromad va tushum"));
+        assertTrue(one.contains("Tushum (to'lovlar)"));
+        assertTrue(one.contains("Farq"));
+
+        bot.handle(cb(1001, "r:month:all"));
+        String all = gateway.last().html();
+        assertTrue(all.contains("<b>Jami</b> (2 ta mehmonxona)"), all);
+        assertTrue(all.contains("O'rtacha ADR"));
+        assertFalse(all.contains("Gamma"), "biriktirilmagan mehmonxona jamiga kirmaydi");
+
+        // O'rtacha ADR og'irlikli: jami yashash daromadi / jami sotilgan xona-kechalar (faqat A va B).
+        var period = reports.period("month");
+        var p = kpiService.portfolio(List.of(hotelA, hotelB), period).get(0);
+        var a = kpiService.report(hotelA, period).stays();
+        var b = kpiService.report(hotelB, period).stays();
+        assertEquals(a.soldRoomNights() + b.soldRoomNights(), p.soldRoomNights());
+        assertEquals(0, a.roomRevenue().add(b.roomRevenue()).compareTo(p.roomRevenue()));
+        assertTrue(all.contains(fmtBean.money(p.adr(), p.currency())), all);
     }
 
     @Test

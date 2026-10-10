@@ -85,6 +85,35 @@ public class KpiService {
         return new TodaySnapshot(arrivals, departures, inHouse, occupancy, debt, debtors);
     }
 
+    /**
+     * Mehmonxonalar bo'yicha jami — valyuta bo'yicha alohida (odatda bitta: UZS).
+     * Ma'lumoti yo'q mehmonxonalar hisobga olinmaydi.
+     */
+    @Transactional(readOnly = true)
+    public List<PortfolioSummary> portfolio(List<Hotel> hotels, Period period) {
+        Map<String, Object[]> acc = new LinkedHashMap<>();
+        for (Hotel hotel : hotels) {
+            if (!hasData(hotel)) {
+                continue;
+            }
+            StayMetrics s = stays(hotel, period);
+            BigDecimal paid = paymentRepository.sumPaidBetween(hotel.getId(),
+                    period.from().atStartOfDay(), period.toExclusive().atStartOfDay());
+            Object[] a = acc.computeIfAbsent(hotel.getCurrency(),
+                    c -> new Object[]{0, 0L, 0L, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO});
+            a[0] = (int) a[0] + 1;
+            a[1] = (long) a[1] + s.soldRoomNights();
+            a[2] = (long) a[2] + s.availableRoomNights();
+            a[3] = ((BigDecimal) a[3]).add(s.roomRevenue());
+            a[4] = ((BigDecimal) a[4]).add(s.totalRevenue());
+            a[5] = ((BigDecimal) a[5]).add(paid);
+        }
+        List<PortfolioSummary> result = new java.util.ArrayList<>();
+        acc.forEach((cur, a) -> result.add(new PortfolioSummary(cur, (int) a[0], (long) a[1], (long) a[2],
+                (BigDecimal) a[3], (BigDecimal) a[4], (BigDecimal) a[5], ((BigDecimal) a[4]).subtract((BigDecimal) a[5]))));
+        return result;
+    }
+
     /** Bosh sahifadagi kartochkalar uchun: har bir mehmonxonaning shu oydagi qisqa ko'rsatkichlari. */
     @Transactional(readOnly = true)
     public Map<Long, StayMetrics> monthSummaries(List<Hotel> hotels) {
