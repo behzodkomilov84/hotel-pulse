@@ -119,25 +119,26 @@ public class Formats {
      */
     public List<String> moneyShortParts(BigDecimal total, List<BigDecimal> parts, String currency) {
         BigDecimal abs = total == null ? BigDecimal.ZERO : total.abs();
-        BigDecimal unit;
-        String suffix;
-        if (abs.compareTo(BigDecimal.valueOf(1_000_000_000)) >= 0) {
-            unit = BigDecimal.valueOf(1_000_000_000);
-            suffix = " mlrd ";
-        } else if (abs.compareTo(BigDecimal.valueOf(1_000_000)) >= 0) {
-            unit = BigDecimal.valueOf(1_000_000);
-            suffix = " mln ";
-        } else {
+        if (abs.compareTo(BigDecimal.valueOf(1_000_000)) < 0) {
             return parts.stream().map(p -> money(p, currency)).toList();
         }
+        // Jami 1 mlrd'dan oshsa ham qismlar mln aniqligida (0,1 mln): "0,1 mlrd" emas, "118,4 mln".
+        BigDecimal unit = BigDecimal.valueOf(1_000_000);
         long target = total.divide(unit, 1, RoundingMode.HALF_UP).movePointRight(1).longValueExact();
         double[] exact = parts.stream().mapToDouble(p -> p.divide(unit, MathContext.DECIMAL64).doubleValue() * 10).toArray();
         long[] tenths = allocate(exact, target);
         List<String> result = new ArrayList<>();
         for (int i = 0; i < tenths.length; i++) {
-            result.add(tenths[i] == 0 && parts.get(i).signum() == 0
-                    ? money(BigDecimal.ZERO, currency)
-                    : decimal(BigDecimal.valueOf(tenths[i], 1)) + suffix + currencyLabel(currency));
+            BigDecimal mln = BigDecimal.valueOf(tenths[i], 1);
+            if (tenths[i] == 0 && parts.get(i).signum() == 0) {
+                result.add(money(BigDecimal.ZERO, currency));
+            } else if (mln.abs().compareTo(BigDecimal.valueOf(1000)) >= 0) {
+                // 1 mlrd va undan katta qism — mlrd'da, 2 xona aniqlikda ("1,23 mlrd").
+                result.add(new DecimalFormat("#,##0.00", SYMBOLS).format(mln.divide(BigDecimal.valueOf(1000), 2, RoundingMode.HALF_UP))
+                        + " mlrd " + currencyLabel(currency));
+            } else {
+                result.add(decimal(mln) + " mln " + currencyLabel(currency));
+            }
         }
         return result;
     }

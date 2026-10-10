@@ -43,6 +43,23 @@ class FormatsPartsTest {
     }
 
     @Test
+    void billionTotalKeepsMillionPrecisionInParts() {
+        // Jami ~1 mlrd: qismlar "0,1 mlrd" emas — mln aniqligida; yig'indisi jamiga teng (mln'da).
+        BigDecimal out = new BigDecimal("829100000"), not = new BigDecimal("118400000"), in = new BigDecimal("52500000");
+        BigDecimal total = out.add(not).add(in);
+        List<String> parts = fmt.moneyShortParts(total, List.of(in, out, not), "UZS");
+        assertThat(parts.get(1)).startsWith("829,1").contains("mln");
+        assertThat(parts.get(2)).startsWith("118,4").contains("mln");
+        assertThat(Math.round(parts.stream().mapToDouble(FormatsPartsTest::number).sum() * 10)).isEqualTo(10000);
+
+        // 1 mlrd'dan katta qism — mlrd'da.
+        List<String> big = fmt.moneyShortParts(new BigDecimal("1500000000"),
+                List.of(new BigDecimal("1234000000"), new BigDecimal("266000000")), "UZS");
+        assertThat(big.get(0)).startsWith("1,23").contains("mlrd");
+        assertThat(big.get(1)).startsWith("266").contains("mln");
+    }
+
+    @Test
     void percentPartsAddUpTo100() {
         // Alohida: 53,1 + 3,4 + 0,6 + 43,0 = 100,1%
         List<String> parts = fmt.pctParts(List.of(0.53055, 0.03385, 0.00565, 0.42995));
