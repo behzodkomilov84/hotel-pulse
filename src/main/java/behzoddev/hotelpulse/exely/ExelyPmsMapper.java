@@ -240,7 +240,7 @@ public final class ExelyPmsMapper {
         if (src.source() != null && notBlank(src.source().value())) {
             return trim(src.source().value(), 64);
         }
-        return "Noma'lum";
+        return "Номаълум";
     }
 
     private static String method(ExelyPmsApi.Payment p) {

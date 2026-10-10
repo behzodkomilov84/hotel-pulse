@@ -64,6 +64,6 @@ class CurrencyRatesTest {
 
         ExelyException e = assertThrows(ExelyException.class,
                 () -> rates.convert(BigDecimal.TEN, "USD", "UZS", LocalDate.of(2026, 10, 1)));
-        assertTrue(e.isRateLimited(), "keyingi siklda qayta urinish kerak — kursorni siljitmaslik");
+        assertTrue(e.isRateLimited(), "кейинги сиклда қайта уриниш керак — курсорни силжитмаслик");
     }
 }

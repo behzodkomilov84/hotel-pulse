@@ -12,7 +12,7 @@
     function setBusy(busy) {
         btn.disabled = busy;
         card.classList.toggle('busy', busy);
-        label.textContent = busy ? 'Tahlil qilinmoqda…' : 'Qayta tahlil';
+        label.textContent = busy ? 'Таҳлил қилинмоқда…' : 'Қайта таҳлил';
     }
 
     function showLoading() {
@@ -48,8 +48,8 @@
             const n = parseInt(b.dataset.taskListSize || '0', 10);
             note.hidden = !b.dataset.taskList;
             note.textContent = n > 0
-                ? '📎 Ilova: ' + n + ' ta qarzdor yashash ro\'yxati (qarz bo\'yicha saralangan) topshiriqqa qo\'shiladi.'
-                : '📎 Ilova: shu bron yashashlari topshiriqqa qo\'shiladi.';
+                ? '📎 Илова: ' + n + ' та қарздор яшаш рўйхати (қарз бўйича сараланган) топшириққа қўшилади.'
+                : '📎 Илова: шу брон яшашлари топшириққа қўшилади.';
         }
         if (b.dataset.taskDue) set('taskDue', b.dataset.taskDue);
         // Tavsiyadagi bo'lim (Buxgalteriya, Resepshn, ...) — mehmonxonada shu nomli bo'lim bo'lsa, o'zi tanlanadi.
@@ -74,14 +74,14 @@
         try {
             const res = await fetch(card.dataset.url, { credentials: 'same-origin', headers: { 'Accept': 'text/html' } });
             if (res.redirected || res.status === 401) {
-                throw new Error('Sessiya tugagan — sahifani yangilang va qayta kiring.');
+                throw new Error('Сессия тугаган — саҳифани янгиланг ва қайта киринг.');
             }
-            if (!res.ok) throw new Error('Server xatosi (' + res.status + '). Qayta urinib ko\'ring.');
+            if (!res.ok) throw new Error('Сервер хатоси (' + res.status + '). Қайта уриниб кўринг.');
             const html = await res.text(); // server shabloni — barcha matnlar escape qilingan
             await new Promise(r => setTimeout(r, Math.max(0, MIN_LOADING_MS - (Date.now() - started))));
             body.innerHTML = html;
             const now = new Date();
-            sub.textContent = 'Tahlil: ' + now.toLocaleDateString('ru-RU') + ' '
+            sub.textContent = 'Таҳлил: ' + now.toLocaleDateString('ru-RU') + ' '
                 + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
         } catch (e) {
             showError(e.message);

@@ -84,8 +84,8 @@ public class ServicesController {
         boolean rooms = "rooms".equals(level);
         if (!rooms) {
             // Bron bo'yicha: bitta qator — bitta bron (guruh hisoblari takrorlanmaydi).
-            sb.append("Mehmonxona;Bron raqami;Mehmon;Manba;Kelish;Ketish;Holat;Qarzdor xonalar;Jami xonalar;Qarz;"
-                    + "Qarz yoshi (kun);Exely hisoblari soni;Exely hisob raqamlari;To'lovchi;Exely hisob summasi;Valyuta\n");
+            sb.append("Меҳмонхона;Брон рақами;Меҳмон;Манба;Келиш;Кетиш;Ҳолат;Қарздор хоналар;Жами хоналар;Қарз;"
+                    + "Қарз ёши (кун);Exely ҳисоблари сони;Exely ҳисоб рақамлари;Тўловчи;Exely ҳисоб суммаси;Валюта\n");
             for (BookingRow b : result.rows()) {
                 sb.append(csv(b.hotelName())).append(';')
                         .append(csv(b.bookingNumber())).append(';')
@@ -107,8 +107,8 @@ public class ServicesController {
             return csvResponse(sb, "hisob-fakturalar-bronlar-" + LocalDate.now(clock) + ".csv");
         }
         // Xonalar bo'yicha: hisob — faqat shu xonaga bog'langanlari.
-        sb.append("Mehmonxona;Bron raqami;Mehmon;Manba;Kelish;Ketish;Holat;Yashash narxi;Qarz;Qarz yoshi (kun);"
-                + "Xona hisoblari soni;Xona hisob raqamlari;To'lovchi;Xona hisob summasi;Valyuta\n");
+        sb.append("Меҳмонхона;Брон рақами;Меҳмон;Манба;Келиш;Кетиш;Ҳолат;Яшаш нархи;Қарз;Қарз ёши (кун);"
+                + "Хона ҳисоблари сони;Хона ҳисоб рақамлари;Тўловчи;Хона ҳисоб суммаси;Валюта\n");
         for (Row r : result.stays()) {
             sb.append(csv(r.hotelName())).append(';')
                     .append(csv(r.bookingNumber())).append(';')

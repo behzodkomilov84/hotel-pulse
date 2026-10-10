@@ -44,7 +44,7 @@ class DebtAnalyzerTest {
     @Test
     void noDebt() {
         DebtAnalysis a = analyzer.analyze(report(List.of()), "UZS", true);
-        assertThat(a.summary()).contains("Qarzdorlik yo'q");
+        assertThat(a.summary()).contains("Қарздорлик йўқ");
         assertThat(a.risks()).isEmpty();
         assertThat(a.priorities()).isEmpty();
         assertThat(a.warning()).isNull();
@@ -60,16 +60,16 @@ class DebtAnalyzerTest {
         DebtAnalysis a = analyzer.analyze(report(rows), "UZS", false);
 
         assertThat(a.warning()).contains("Exely Connect");
-        assertThat(a.summary()).contains("Jami qarz 10", "4 ta yashash", "ma'lumot tozaligi");
+        assertThat(a.summary()).contains("Жами қарз 10", "4 та яшаш", "маълумот тозалиги");
         Point first = a.risks().get(0);
         assertThat(first.level()).isEqualTo(Level.HIGH);
-        assertThat(first.title()).startsWith("Vyselenie qilinmagan");
-        assertThat(a.risks()).anyMatch(p -> p.title().startsWith("Eski qarz"));
-        assertThat(a.actions().get(0).title()).isEqualTo("Resepshn");
+        assertThat(first.title()).startsWith("Выселение қилинмаган");
+        assertThat(a.risks()).anyMatch(p -> p.title().startsWith("Эски қарз"));
+        assertThat(a.actions().get(0).title()).isEqualTo("Ресепшн");
         // Eng eski va katta "vyselenie qilinmagan" — birinchi; uzoq yashaydigan mehmon — oxirida.
         assertThat(a.priorities().get(0).bookingNumber()).isEqualTo("A");
         assertThat(a.priorities().get(a.priorities().size() - 1).bookingNumber()).isEqualTo("C");
-        assertThat(a.priorities().get(0).reason()).contains("100 kun");
+        assertThat(a.priorities().get(0).reason()).contains("100 кун");
     }
 
     @Test
@@ -86,7 +86,7 @@ class DebtAnalyzerTest {
         assertThat(a.priorities()).extracting(DebtAnalysis.Priority::bookingNumber).containsExactly("BIG", "NEW");
         DebtAnalysis.Priority big = a.priorities().get(0);
         assertThat(big.debt()).isEqualByComparingTo("16000000");
-        assertThat(big.reason()).startsWith("4 ta xona");
+        assertThat(big.reason()).startsWith("4 та хона");
         assertThat(big.guestName()).isNull();
     }
 
@@ -109,9 +109,9 @@ class DebtAnalyzerTest {
         DebtAnalysis a = analyzer.analyze(report(rows), "UZS", true);
 
         assertThat(a.warning()).isNull();
-        assertThat(a.summary()).contains("me'yorida");
-        assertThat(a.risks()).anyMatch(p -> p.title().startsWith("Manba: Booking.com") && p.text().contains("OTA"));
-        assertThat(a.actions()).anyMatch(p -> p.text().contains("Booking.com bilan hisob-kitob"));
+        assertThat(a.summary()).contains("меъёрида");
+        assertThat(a.risks()).anyMatch(p -> p.title().startsWith("Манба: Booking.com") && p.text().contains("OTA"));
+        assertThat(a.actions()).anyMatch(p -> p.text().contains("Booking.com билан ҳисоб-китоб"));
         // Ketgan mehmon summasi kichik bo'lsa ham — ustuvor (ketgan — undirish qiyinroq).
         assertThat(a.priorities()).extracting(DebtAnalysis.Priority::bookingNumber).contains("X");
     }
@@ -135,7 +135,7 @@ class DebtAnalyzerTest {
                 .containsExactly("A", "D2");
         assertThat(DebtAnalyzer.listRows(rows, DebtAnalyzer.LIST_UNPAID)).extracting(Row::bookingNumber)
                 .containsExactly("A", "D2", "C");
-        assertThat(DebtAnalyzer.listRows(rows, DebtAnalyzer.LIST_SOURCE + "Noma'lum")).extracting(Row::bookingNumber)
+        assertThat(DebtAnalyzer.listRows(rows, DebtAnalyzer.LIST_SOURCE + "Номаълум")).extracting(Row::bookingNumber)
                 .containsExactly("C");
         assertThat(DebtAnalyzer.listRows(rows, DebtAnalyzer.LIST_BOOKING + "D1")).hasSize(1);
         assertThat(DebtAnalyzer.listRows(rows, "NONSENSE")).isEmpty();

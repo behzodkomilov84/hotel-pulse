@@ -63,7 +63,7 @@ public class ExelyVerifyService {
         LocalDateTime now = LocalDateTime.now(clock).withSecond(0).withNano(0);
         Report report;
         if (!hotel.hasPmsKey()) {
-            report = new Report(now, false, List.of(), "Exely PMS kaliti kiritilmagan");
+            report = new Report(now, false, List.of(), "Exely PMS калити киритилмаган");
         } else {
             try {
                 String key = hotel.getExelyPmsKey().trim();
@@ -99,11 +99,11 @@ public class ExelyVerifyService {
         missing.removeAll(ours);
         Set<String> extra = new LinkedHashSet<>(ours);
         extra.removeAll(exely);
-        missing.stream().limit(MAX_DETAILS).forEach(n -> details.add("Saytda yo'q: " + n));
-        extra.stream().limit(MAX_DETAILS).forEach(n -> details.add("Exely'da yo'q: " + n));
+        missing.stream().limit(MAX_DETAILS).forEach(n -> details.add("Сайтда йўқ: " + n));
+        extra.stream().limit(MAX_DETAILS).forEach(n -> details.add("Exely'да йўқ: " + n));
         boolean ok = missing.isEmpty() && extra.isEmpty();
-        return new Check("Bronlar", ok, "Exely: " + exely.size() + " ta, saytda: " + ours.size() + " ta"
-                + (ok ? "" : " (yetishmaydi: " + missing.size() + ", ortiqcha: " + extra.size() + ")"), details);
+        return new Check("Бронлар", ok, "Exely: " + exely.size() + " та, сайтда: " + ours.size() + " та"
+                + (ok ? "" : " (етишмайди: " + missing.size() + ", ортиқча: " + extra.size() + ")"), details);
     }
 
     /** Bazaning ichki yaxlitligi: xom bronlardagi yashashlar soni = bookings jadvalidagi PMS qatorlari. */
@@ -111,14 +111,14 @@ public class ExelyVerifyService {
         long rawStays = raw.bookingRoomStays(hotel.getId());
         long rows = bookingRepository.countByHotelIdAndOrigin(hotel.getId(), DataOrigin.EXELY_PMS);
         boolean ok = rawStays == rows;
-        return new Check("Yashashlar (ichki)", ok, "Exely bronlarida: " + rawStays + " ta, hisob jadvalida: " + rows + " ta",
+        return new Check("Яшашлар (ички)", ok, "Exely бронларида: " + rawStays + " та, ҳисоб жадвалида: " + rows + " та",
                 List.of());
     }
 
     /** Kunlik xizmatlar: Exely'dagi har kunning qatorlari soni va summasi (so'mda) = saytdagi. */
     private Check services(Hotel hotel, String key) {
         if (hotel.getPmsServicesFrom() == null || hotel.getPmsServicesUntil() == null) {
-            return new Check("Xizmatlar (daromad)", false, "Xizmatlar hali olinmagan", List.of());
+            return new Check("Хизматлар (даромад)", false, "Хизматлар ҳали олинмаган", List.of());
         }
         MoneyConverter money = (amount, currency, date) -> rates.convert(amount, currency, hotel.getCurrency(), date);
         Map<LocalDate, BigDecimal[]> exely = new TreeMap<>();
@@ -161,13 +161,13 @@ public class ExelyVerifyService {
             if (e[0].compareTo(o[0]) != 0 || e[1].subtract(o[1]).abs().compareTo(BigDecimal.ONE) > 0) {
                 bad++;
                 if (details.size() < MAX_DETAILS) {
-                    details.add(d + ": Exely " + e[0] + " ta / " + money(e[1]) + ", saytda " + o[0] + " ta / " + money(o[1]));
+                    details.add(d + ": Exely " + e[0] + " та / " + money(e[1]) + ", сайтда " + o[0] + " та / " + money(o[1]));
                 }
             }
         }
         boolean ok = bad == 0;
-        return new Check("Xizmatlar (daromad)", ok, hotel.getPmsServicesFrom() + " — " + until + ": Exely " + money(exelyTotal)
-                + ", saytda " + money(ourTotal) + (ok ? ", har kun mos" : ", " + bad + " kunda farq"), details);
+        return new Check("Хизматлар (даромад)", ok, hotel.getPmsServicesFrom() + " — " + until + ": Exely " + money(exelyTotal)
+                + ", сайтда " + money(ourTotal) + (ok ? ", ҳар кун мос" : ", " + bad + " кунда фарқ"), details);
     }
 
     /** To'lovlar: oylik oynalarda soni va summasi (bekor qilinganlarsiz, qaytarishlar manfiy). */
@@ -198,15 +198,15 @@ public class ExelyVerifyService {
             if (eCount != oCount || eSum.subtract(oSum).abs().compareTo(BigDecimal.ONE) > 0) {
                 bad++;
                 if (details.size() < MAX_DETAILS) {
-                    details.add(from.toLocalDate() + " — " + to.toLocalDate() + ": Exely " + eCount + " ta / " + money(eSum)
-                            + ", saytda " + oCount + " ta / " + money(oSum));
+                    details.add(from.toLocalDate() + " — " + to.toLocalDate() + ": Exely " + eCount + " та / " + money(eSum)
+                            + ", сайтда " + oCount + " та / " + money(oSum));
                 }
             }
             from = to;
         }
         boolean ok = bad == 0;
-        return new Check("To'lovlar", ok, "Exely: " + exelyCount + " ta, saytda: " + ourCount + " ta"
-                + (ok ? ", har oy mos" : ", " + bad + " oyda farq"), details);
+        return new Check("Тўловлар", ok, "Exely: " + exelyCount + " та, сайтда: " + ourCount + " та"
+                + (ok ? ", ҳар ой мос" : ", " + bad + " ойда фарқ"), details);
     }
 
     @Transactional

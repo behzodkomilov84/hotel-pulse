@@ -99,23 +99,23 @@ public class TaskService {
     @Transactional
     public Task create(CustomUserDetails by, NewTask n, String channel) {
         if (!canAssign(by)) {
-            throw new AccessDeniedException("Topshiriq berishga ruxsat yo'q");
+            throw new AccessDeniedException("Топшириқ беришга рухсат йўқ");
         }
         Hotel hotel = hotelService.getAccessible(by, n.hotelId());
         String title = n.title() == null ? "" : n.title().strip();
         if (title.isEmpty()) {
-            throw new TaskException("Topshiriq matnini kiriting.");
+            throw new TaskException("Топшириқ матнини киритинг.");
         }
         if (title.length() > TITLE_MAX) {
             title = title.substring(0, TITLE_MAX - 1) + "…";
         }
         if (n.dueDate() != null && n.dueDate().isBefore(today())) {
-            throw new TaskException("Muddat o'tgan sana bo'lishi mumkin emas.");
+            throw new TaskException("Муддат ўтган сана бўлиши мумкин эмас.");
         }
         User assignee = staff(hotel.getId()).stream()
                 .filter(u -> u.getId().equals(n.assigneeId()))
                 .findFirst()
-                .orElseThrow(() -> new TaskException("Bajaruvchi shu mehmonxona xodimlaridan tanlanishi kerak."));
+                .orElseThrow(() -> new TaskException("Бажарувчи шу меҳмонхона ходимларидан танланиши керак."));
 
         LocalDateTime now = LocalDateTime.now(clock);
         Task task = new Task();
@@ -136,7 +136,7 @@ public class TaskService {
         taskRepository.save(task);
         int attached = attachList(task, hotel, n.listKey());
         log(task, by.getId(), TaskAction.CREATED, channel,
-                attached > 0 ? "Ilova: " + attached + " ta qarzdor yashash ro'yxati" : null);
+                attached > 0 ? "Илова: " + attached + " та қарздор яшаш рўйхати" : null);
 
         Task full = taskRepository.findFull(task.getId()).orElseThrow();
         notifier.created(full, itemRepository.findAllByTaskIdOrderByPositionAsc(full.getId()));
@@ -151,9 +151,9 @@ public class TaskService {
         if (n.departmentId() != null) {
             behzoddev.hotelpulse.entity.Department d = departmentRepository.findFull(n.departmentId())
                     .filter(x -> x.getHotel().getId().equals(hotel.getId()))
-                    .orElseThrow(() -> new TaskException("Bo'lim shu mehmonxonaga tegishli emas."));
+                    .orElseThrow(() -> new TaskException("Бўлим шу меҳмонхонага тегишли эмас."));
             if (assignee.getDepartments().stream().noneMatch(x -> x.getId().equals(d.getId()))) {
-                throw new TaskException(TaskNotifier.name(assignee) + " «" + d.getName() + "» bo'limida emas.");
+                throw new TaskException(TaskNotifier.name(assignee) + " «" + d.getName() + "» бўлимида эмас.");
             }
             return d;
         }
@@ -224,11 +224,11 @@ public class TaskService {
     public TaskItem toggleItem(CustomUserDetails user, Long taskId, Long itemId) {
         Task task = forAssignee(user, taskId);
         if (!task.getStatus().isOpen()) {
-            throw new TaskException("Topshiriq holati: " + task.getStatus().getLabel() + " — ro'yxatni o'zgartirib bo'lmaydi.");
+            throw new TaskException("Топшириқ ҳолати: " + task.getStatus().getLabel() + " — рўйхатни ўзгартириб бўлмайди.");
         }
         TaskItem item = itemRepository.findById(itemId)
                 .filter(i -> i.getTask().getId().equals(taskId))
-                .orElseThrow(() -> new NotFoundException("Ro'yxat qatori topilmadi"));
+                .orElseThrow(() -> new NotFoundException("Рўйхат қатори топилмади"));
         item.setDone(!item.isDone());
         item.setDoneAt(item.isDone() ? LocalDateTime.now(clock) : null);
         task.setUpdatedAt(LocalDateTime.now(clock));
@@ -250,9 +250,9 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public Task get(CustomUserDetails user, Long id) {
-        Task task = taskRepository.findFull(id).orElseThrow(() -> new NotFoundException("Topshiriq topilmadi"));
+        Task task = taskRepository.findFull(id).orElseThrow(() -> new NotFoundException("Топшириқ топилмади"));
         if (!isAssignee(user, task) && !canReview(user, task)) {
-            throw new AccessDeniedException("Bu topshiriqqa ruxsat yo'q");
+            throw new AccessDeniedException("Бу топшириққа рухсат йўқ");
         }
         return task;
     }
@@ -279,7 +279,7 @@ public class TaskService {
     public Task start(CustomUserDetails user, Long id, String channel) {
         Task task = forAssignee(user, id);
         if (task.getStatus() != TaskStatus.NEW && task.getStatus() != TaskStatus.RETURNED) {
-            throw new TaskException("Topshiriq holati: " + task.getStatus().getLabel() + " — boshlab bo'lmaydi.");
+            throw new TaskException("Топшириқ ҳолати: " + task.getStatus().getLabel() + " — бошлаб бўлмайди.");
         }
         change(task, TaskStatus.IN_PROGRESS);
         log(task, user.getId(), TaskAction.STARTED, channel, null);
@@ -290,14 +290,14 @@ public class TaskService {
     public Task complete(CustomUserDetails user, Long id, String comment, String channel) {
         Task task = forAssignee(user, id);
         if (!task.getStatus().isOpen()) {
-            throw new TaskException("Topshiriq holati: " + task.getStatus().getLabel() + ".");
+            throw new TaskException("Топшириқ ҳолати: " + task.getStatus().getLabel() + ".");
         }
         change(task, TaskStatus.REVIEW);
         task.setCompletedAt(LocalDateTime.now(clock));
         // Ilova bo'lsa — nechta qator belgilangani tekshiruvchiga ham ko'rinsin.
         List<TaskItem> items = itemRepository.findAllByTaskIdOrderByPositionAsc(id);
         String progress = items.isEmpty() ? null
-                : "Ro'yxat: " + items.stream().filter(TaskItem::isDone).count() + " / " + items.size() + " ta belgilangan";
+                : "Рўйхат: " + items.stream().filter(TaskItem::isDone).count() + " / " + items.size() + " та белгиланган";
         String text = progress == null ? blankToNull(comment)
                 : blankToNull(comment) == null ? progress : comment.strip() + "\n" + progress;
         log(task, user.getId(), TaskAction.COMPLETED, channel, text);
@@ -311,7 +311,7 @@ public class TaskService {
     public Task accept(CustomUserDetails user, Long id, String comment, String channel) {
         Task task = forReviewer(user, id);
         if (task.getStatus() != TaskStatus.REVIEW) {
-            throw new TaskException("Faqat \"Tekshiruvda\" turgan topshiriqni tasdiqlash mumkin.");
+            throw new TaskException("Фақат \"Текширувда\" турган топшириқни тасдиқлаш мумкин.");
         }
         change(task, TaskStatus.DONE);
         task.setReviewedAt(LocalDateTime.now(clock));
@@ -324,10 +324,10 @@ public class TaskService {
     public Task returnTask(CustomUserDetails user, Long id, String comment, String channel) {
         Task task = forReviewer(user, id);
         if (task.getStatus() != TaskStatus.REVIEW) {
-            throw new TaskException("Faqat \"Tekshiruvda\" turgan topshiriqni qaytarish mumkin.");
+            throw new TaskException("Фақат \"Текширувда\" турган топшириқни қайтариш мумкин.");
         }
         if (blankToNull(comment) == null) {
-            throw new TaskException("Qaytarish sababini yozing — xodim nimani tuzatishini bilishi kerak.");
+            throw new TaskException("Қайтариш сабабини ёзинг — ходим нимани тузатишини билиши керак.");
         }
         change(task, TaskStatus.RETURNED);
         task.setReviewedAt(LocalDateTime.now(clock));
@@ -340,7 +340,7 @@ public class TaskService {
     public Task cancel(CustomUserDetails user, Long id, String comment, String channel) {
         Task task = forReviewer(user, id);
         if (task.getStatus().isFinished()) {
-            throw new TaskException("Topshiriq allaqachon yakunlangan.");
+            throw new TaskException("Топшириқ аллақачон якунланган.");
         }
         change(task, TaskStatus.CANCELLED);
         log(task, user.getId(), TaskAction.CANCELLED, channel, comment);
@@ -353,7 +353,7 @@ public class TaskService {
     public Task comment(CustomUserDetails user, Long id, String text, String channel) {
         Task task = get(user, id);
         if (blankToNull(text) == null) {
-            throw new TaskException("Izoh bo'sh.");
+            throw new TaskException("Изоҳ бўш.");
         }
         task.setUpdatedAt(LocalDateTime.now(clock));
         log(task, user.getId(), TaskAction.COMMENT, channel, text);
@@ -375,7 +375,7 @@ public class TaskService {
                 .toList();
         for (Task t : due) {
             t.setLastRemindedOn(today);
-            log(t, null, TaskAction.REMINDED, TaskEvent.SYSTEM, t.isOverdue(today) ? "Muddati o'tgan" : "Muddat — bugun");
+            log(t, null, TaskAction.REMINDED, TaskEvent.SYSTEM, t.isOverdue(today) ? "Муддати ўтган" : "Муддат — бугун");
         }
         if (!due.isEmpty()) {
             notifier.reminders(due, today);
@@ -386,17 +386,17 @@ public class TaskService {
     // ---------------------------------------------------------------- yordamchilar
 
     private Task forAssignee(CustomUserDetails user, Long id) {
-        Task task = taskRepository.findFull(id).orElseThrow(() -> new NotFoundException("Topshiriq topilmadi"));
+        Task task = taskRepository.findFull(id).orElseThrow(() -> new NotFoundException("Топшириқ топилмади"));
         if (!isAssignee(user, task)) {
-            throw new AccessDeniedException("Bu amalni faqat bajaruvchi qiladi");
+            throw new AccessDeniedException("Бу амални фақат бажарувчи қилади");
         }
         return task;
     }
 
     private Task forReviewer(CustomUserDetails user, Long id) {
-        Task task = taskRepository.findFull(id).orElseThrow(() -> new NotFoundException("Topshiriq topilmadi"));
+        Task task = taskRepository.findFull(id).orElseThrow(() -> new NotFoundException("Топшириқ топилмади"));
         if (!canReview(user, task)) {
-            throw new AccessDeniedException("Bu amalni topshiriq beruvchi qiladi");
+            throw new AccessDeniedException("Бу амални топшириқ берувчи қилади");
         }
         return task;
     }

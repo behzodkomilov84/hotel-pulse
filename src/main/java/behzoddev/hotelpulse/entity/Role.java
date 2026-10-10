@@ -2,13 +2,13 @@ package behzoddev.hotelpulse.entity;
 
 public enum Role {
     /** Platforma egasi — barcha mehmonxonalarni ko'radi va boshqaradi. */
-    OWNER("Platforma egasi"),
+    OWNER("Платформа эгаси"),
     /** Mehmonxona egasi — faqat o'ziga biriktirilgan mehmonxonalarni ko'radi. */
-    HOTEL_OWNER("Mehmonxona egasi"),
+    HOTEL_OWNER("Меҳмонхона эгаси"),
     /** Boshqaruv kompaniyasi — bir nechta mehmonxonani boshqaradi, biriktirilganlarini ko'radi. */
-    MANAGEMENT_COMPANY("Boshqaruv kompaniyasi"),
+    MANAGEMENT_COMPANY("Бошқарув компанияси"),
     /** Mehmonxona xodimi (boshqaruvchi, buxgalter) — faqat ko'rish. */
-    HOTEL_STAFF("Mehmonxona xodimi");
+    HOTEL_STAFF("Меҳмонхона ходими");
 
     private final String label;
 

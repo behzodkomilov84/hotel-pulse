@@ -90,19 +90,19 @@ class PageRenderingDbTest {
                 .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
         int cards = html.split("class=\"card stat", -1).length - 1;
         int tips = html.split("class=\"tip\" role=\"button\"", -1).length - 1;
-        assertEquals(12, cards, "bugun — 4, davr — 8 karta");
-        assertTrue(tips >= cards, "har bir kartada izoh: " + tips + " / " + cards);
+        assertEquals(12, cards, "бугун — 4, давр — 8 карта");
+        assertTrue(tips >= cards, "ҳар бир картада изоҳ: " + tips + " / " + cards);
         assertTrue(html.contains("ADR (Average Daily Rate)"), "izoh matni messages.properties'dan");
         assertTrue(html.contains("no-show"));
-        assertFalse(html.contains("??tip."), "topilmagan kalit yo'q");
+        assertFalse(html.contains("??tip."), "топилмаган калит йўқ");
     }
 
     @Test
     void hotelWithoutDataShowsEmptyStateWithoutDemoButtons() throws Exception {
         mvc.perform(get("/hotels/{id}", hotelB.getId()).with(user(owner)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Hali ma'lumot yo'q")))
-                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Sinov ma'lumotlari"))))
+                .andExpect(content().string(containsString("Ҳали маълумот йўқ")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Синов маълумотлари"))))
                 .andExpect(content().string(org.hamcrest.Matchers.not(containsString("demo-data"))));
     }
 
@@ -123,7 +123,7 @@ class PageRenderingDbTest {
         mvc.perform(get("/").with(user(owner)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Test Hotel B")))
-                .andExpect(content().string(containsString("Bandlik (shu oy)")));
+                .andExpect(content().string(containsString("Бандлик (шу ой)")));
         mvc.perform(get("/admin/hotels").with(user(owner))).andExpect(status().isOk());
         mvc.perform(get("/admin/hotels/new").with(user(owner))).andExpect(status().isOk());
         mvc.perform(get("/admin/hotels/{id}", hotelA.getId()).with(user(owner))).andExpect(status().isOk());

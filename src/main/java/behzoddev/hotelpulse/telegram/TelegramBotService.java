@@ -23,14 +23,14 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class TelegramBotService {
 
-    static final String BTN_TODAY = "📊 Bugun";
-    static final String BTN_WEEK = "📅 7 kun";
-    static final String BTN_MONTH = "🗓 Shu oy";
-    static final String BTN_DEBT = "⚠️ Qarzlar";
-    static final String BTN_HELP = "ℹ️ Yordam";
-    static final String BTN_ANALYSIS = "🧠 Tahlil";
-    static final String BTN_TASKS = "📌 Topshiriqlar";
-    static final String BTN_HIDE = "🔽 Menyuni yopish";
+    static final String BTN_TODAY = "📊 Бугун";
+    static final String BTN_WEEK = "📅 7 кун";
+    static final String BTN_MONTH = "🗓 Шу ой";
+    static final String BTN_DEBT = "⚠️ Қарзлар";
+    static final String BTN_HELP = "ℹ️ Ёрдам";
+    static final String BTN_ANALYSIS = "🧠 Таҳлил";
+    static final String BTN_TASKS = "📌 Топшириқлар";
+    static final String BTN_HIDE = "🔽 Менюни ёпиш";
 
     /** Buyruq va tugmalar — ular bosilganda kutilayotgan matn (qaytarish sababi, izoh) bekor bo'ladi. */
     static final java.util.Set<String> KNOWN = java.util.Set.of("/bugun", "/hafta", "/oy", "/qarzlar", "/hisobot", "/uzish",
@@ -38,16 +38,16 @@ public class TelegramBotService {
 
     /** Bot menyusidagi buyruqlar (setMyCommands). */
     static final List<Map<String, String>> COMMANDS = List.of(
-            Map.of("command", "bugun", "description", "Bugungi ko'rsatkichlar"),
-            Map.of("command", "hafta", "description", "Oxirgi 7 kun"),
-            Map.of("command", "oy", "description", "Shu oy"),
-            Map.of("command", "qarzlar", "description", "Qarzdorlik"),
-            Map.of("command", "tahlil", "description", "Qarzdorlik tahlili va tavsiyalar"),
-            Map.of("command", "topshiriqlar", "description", "Topshiriqlar"),
-            Map.of("command", "hisobot", "description", "Kunlik hisobotni yoqish/o'chirish"),
-            Map.of("command", "uzish", "description", "Telegram'ni hisobdan uzish"),
-            Map.of("command", "menyu", "description", "Tugmalar menyusini ochish"),
-            Map.of("command", "yordam", "description", "Yordam"));
+            Map.of("command", "bugun", "description", "Бугунги кўрсаткичлар"),
+            Map.of("command", "hafta", "description", "Охирги 7 кун"),
+            Map.of("command", "oy", "description", "Шу ой"),
+            Map.of("command", "qarzlar", "description", "Қарздорлик"),
+            Map.of("command", "tahlil", "description", "Қарздорлик таҳлили ва тавсиялар"),
+            Map.of("command", "topshiriqlar", "description", "Топшириқлар"),
+            Map.of("command", "hisobot", "description", "Кунлик ҳисоботни ёқиш/ўчириш"),
+            Map.of("command", "uzish", "description", "Telegram'ни ҳисобдан узиш"),
+            Map.of("command", "menyu", "description", "Тугмалар менюсини очиш"),
+            Map.of("command", "yordam", "description", "Ёрдам"));
 
     private final TelegramGateway gateway;
     private final TelegramLinkService linkService;
@@ -67,7 +67,7 @@ public class TelegramBotService {
             log.error("Telegram update {} ni qayta ishlashda xato", update.updateId(), e);
             Long chatId = chatIdOf(update);
             if (chatId != null) {
-                safeSend(chatId, "😕 Xatolik yuz berdi. Birozdan keyin qayta urinib ko'ring.", null);
+                safeSend(chatId, "😕 Хатолик юз берди. Бироздан кейин қайта уриниб кўринг.", null);
             }
         }
     }
@@ -95,7 +95,7 @@ public class TelegramBotService {
         }
         User user = linked.get();
         if (!user.isEnabled()) {
-            send(chatId, "⛔ Hisobingiz bloklangan. Administrator bilan bog'laning.", null);
+            send(chatId, "⛔ Ҳисобингиз блокланган. Администратор билан боғланинг.", null);
             return;
         }
         // Qaytarish sababi yoki "bajarildi" izohi kutilayotgan bo'lsa — oddiy matn shunga ketadi.
@@ -115,11 +115,11 @@ public class TelegramBotService {
             case "/hisobot" -> sendDailyToggle(chatId, user);
             case "/uzish" -> {
                 linkService.unlinkChat(chatId);
-                send(chatId, "🔌 Telegram hisobingizdan uzildi. Qayta ulash uchun saytda <b>Profil → Telegram</b> bo'limiga kiring.",
+                send(chatId, "🔌 Telegram ҳисобингиздан узилди. Қайта улаш учун сайтда <b>Профил → Telegram</b> бўлимига киринг.",
                         Map.of("remove_keyboard", true));
             }
-            case "/menyu" -> send(chatId, "⌨️ Menyu ochildi. Yopish uchun — <b>" + BTN_HIDE + "</b>.", mainKeyboard());
-            case BTN_HIDE -> send(chatId, "Menyu yopildi. Qayta ochish: /menyu buyrug'i yoki pastdagi <b>☰ Menu</b> tugmasi.",
+            case "/menyu" -> send(chatId, "⌨️ Меню очилди. Ёпиш учун — <b>" + BTN_HIDE + "</b>.", mainKeyboard());
+            case BTN_HIDE -> send(chatId, "Меню ёпилди. Қайта очиш: /menyu буйруғи ёки пастдаги <b>☰ Menu</b> тугмаси.",
                     Map.of("remove_keyboard", true));
             default -> send(chatId, helpText(user), mainKeyboard());
         }
@@ -129,17 +129,17 @@ public class TelegramBotService {
         if (!token.isEmpty()) {
             Optional<User> user = linkService.link(token, chatId);
             if (user.isEmpty()) {
-                send(chatId, "⚠️ Havola eskirgan yoki noto'g'ri.\n\nSaytda <b>Profil → Telegram'ni ulash</b> tugmasini bosib, yangi havola oling.", null);
+                send(chatId, "⚠️ Ҳавола эскирган ёки нотўғри.\n\nСайтда <b>Профил → Telegram'ни улаш</b> тугмасини босиб, янги ҳавола олинг.", null);
                 return;
             }
-            send(chatId, "✅ <b>Ulandi!</b> Xush kelibsiz, " + TelegramReportService.esc(displayName(user.get())) + ".\n\n"
-                    + "Endi mehmonxona ko'rsatkichlarini shu yerda ko'rasiz. Kechagi kun hisoboti " + dailyReportWhen(user.get()) + " keladi "
-                    + "(/hisobot bilan o'chirish mumkin).", mainKeyboard());
+            send(chatId, "✅ <b>Уланди!</b> Хуш келибсиз, " + TelegramReportService.esc(displayName(user.get())) + ".\n\n"
+                    + "Энди меҳмонхона кўрсаткичларини шу ерда кўрасиз. Кечаги кун ҳисоботи " + dailyReportWhen(user.get()) + " келади "
+                    + "(/hisobot билан ўчириш мумкин).", mainKeyboard());
             return;
         }
         Optional<User> linked = linkService.findByChat(chatId);
         if (linked.isPresent()) {
-            send(chatId, "👋 Qaytganingiz bilan, " + TelegramReportService.esc(displayName(linked.get())) + "!", mainKeyboard());
+            send(chatId, "👋 Қайтганингиз билан, " + TelegramReportService.esc(displayName(linked.get())) + "!", mainKeyboard());
         } else {
             send(chatId, notLinkedText(), null);
         }
@@ -149,7 +149,7 @@ public class TelegramBotService {
     private void askOrReport(long chatId, User user, String period) {
         List<Hotel> hotels = hotels(user);
         if (hotels.isEmpty()) {
-            send(chatId, "Sizga hali mehmonxona biriktirilmagan. Administrator bilan bog'laning.", null);
+            send(chatId, "Сизга ҳали меҳмонхона бириктирилмаган. Администратор билан боғланинг.", null);
             return;
         }
         if (hotels.size() == 1) {
@@ -157,27 +157,27 @@ public class TelegramBotService {
             return;
         }
         List<List<Map<String, Object>>> rows = new ArrayList<>();
-        rows.add(List.of(button("📊 Hammasi", "r:" + period + ":all")));
+        rows.add(List.of(button("📊 Ҳаммаси", "r:" + period + ":all")));
         for (Hotel h : hotels) {
             rows.add(List.of(button("🏨 " + h.getName(), "r:" + period + ":" + h.getId())));
         }
-        send(chatId, "Qaysi mehmonxona bo'yicha?", Map.of("inline_keyboard", rows));
+        send(chatId, "Қайси меҳмонхона бўйича?", Map.of("inline_keyboard", rows));
     }
 
     private void sendHotelReport(long chatId, Hotel hotel, String period) {
         Map<String, Object> markup = null;
         if (props.hasPublicSiteUrl()) {
             String url = props.siteUrl().replaceAll("/+$", "") + "/hotels/" + hotel.getId();
-            markup = Map.of("inline_keyboard", List.of(List.of(Map.of("text", "🌐 Saytda batafsil", "url", url))));
+            markup = Map.of("inline_keyboard", List.of(List.of(Map.of("text", "🌐 Сайтда батафсил", "url", url))));
         }
         send(chatId, reports.hotelReport(hotel, period), markup);
     }
 
     private void sendDailyToggle(long chatId, User user) {
         boolean on = user.isTelegramDailyReport();
-        String text = "🕘 Kunlik hisobot — kechagi kun, " + dailyReportWhen(user) + ": <b>" + (on ? "yoqilgan" : "o'chirilgan") + "</b>";
+        String text = "🕘 Кунлик ҳисобот — кечаги кун, " + dailyReportWhen(user) + ": <b>" + (on ? "ёқилган" : "ўчирилган") + "</b>";
         Map<String, Object> markup = Map.of("inline_keyboard", List.of(List.of(
-                on ? button("🔕 O'chirish", "d:off") : button("🔔 Yoqish", "d:on"))));
+                on ? button("🔕 Ўчириш", "d:off") : button("🔔 Ёқиш", "d:on"))));
         send(chatId, text, markup);
     }
 
@@ -191,7 +191,7 @@ public class TelegramBotService {
         long chatId = cb.message().chat().id();
         Optional<User> linked = linkService.findByChat(chatId);
         if (linked.isEmpty() || !linked.get().isEnabled()) {
-            gateway.answerCallback(cb.id(), "Avval hisobingizni ulang");
+            gateway.answerCallback(cb.id(), "Аввал ҳисобингизни уланг");
             return;
         }
         User user = linked.get();
@@ -211,13 +211,13 @@ public class TelegramBotService {
             try {
                 hotel = hotelService.getAccessible(new CustomUserDetails(user), Long.parseLong(parts[2]));
             } catch (AccessDeniedException | NumberFormatException e) {
-                send(chatId, "⛔ Bu mehmonxonaga ruxsat yo'q.", null);
+                send(chatId, "⛔ Бу меҳмонхонага рухсат йўқ.", null);
                 return;
             }
             sendHotelReport(chatId, hotel, period);
         } else if (parts[0].equals("d") && parts.length == 2) {
             boolean on = linkService.setDailyReport(user.getId(), parts[1].equals("on"));
-            gateway.answerCallback(cb.id(), on ? "Kunlik hisobot yoqildi" : "Kunlik hisobot o'chirildi");
+            gateway.answerCallback(cb.id(), on ? "Кунлик ҳисобот ёқилди" : "Кунлик ҳисобот ўчирилди");
             user.setTelegramDailyReport(on);
             sendDailyToggle(chatId, user);
         } else {
@@ -242,13 +242,13 @@ public class TelegramBotService {
     /** Oddiy matn (escape qilinmagan) — Telegram'da esc() bilan, saytda Thymeleaf o'zi escape qiladi. */
     public static String dailyReportWhen(List<Hotel> hotels) {
         if (hotels.isEmpty()) {
-            return "har kuni ertalab";
+            return "ҳар куни эрталаб";
         }
         List<java.time.LocalTime> times = hotels.stream().map(Hotel::getDailyReportTime).distinct().toList();
         if (times.size() == 1) {
-            return "har kuni soat " + time(times.get(0)) + " da";
+            return "ҳар куни соат " + time(times.get(0)) + " да";
         }
-        return "har kuni (" + String.join(", ", hotels.stream()
+        return "ҳар куни (" + String.join(", ", hotels.stream()
                 .map(h -> h.getName() + " — " + time(h.getDailyReportTime())).toList()) + ")";
     }
 
@@ -283,21 +283,21 @@ public class TelegramBotService {
     }
 
     private String notLinkedText() {
-        return "👋 Salom! Bu — <b>HotelPulse</b> boti: mehmonxonangiz ko'rsatkichlari Telegram'da.\n\n"
-                + "Ulash uchun saytga kiring → <b>Profil</b> → <b>Telegram'ni ulash</b> tugmasini bosing.";
+        return "👋 Салом! Бу — <b>HotelPulse</b> боти: меҳмонхонангиз кўрсаткичлари Telegram'да.\n\n"
+                + "Улаш учун сайтга киринг → <b>Профил</b> → <b>Telegram'ни улаш</b> тугмасини босинг.";
     }
 
     private static String helpText(User user) {
-        return "ℹ️ <b>Buyruqlar</b>\n\n"
-                + "/bugun — bugungi ko'rsatkichlar\n"
-                + "/hafta — oxirgi 7 kun\n"
-                + "/oy — shu oy\n"
-                + "/qarzlar — qarzdorlik\n"
-                + "/tahlil — qarzdorlik tahlili va tavsiyalar (📌 — xodimga topshiriq)\n"
-                + "/topshiriqlar — topshiriqlar: bajarish va tekshirish\n"
-                + "/menyu — tugmalar menyusini ochish (yopish — «" + BTN_HIDE + "»)\n"
-                + "/hisobot — kunlik hisobot (" + (user.isTelegramDailyReport() ? "yoqilgan" : "o'chirilgan") + ")\n"
-                + "/uzish — Telegram'ni hisobdan uzish";
+        return "ℹ️ <b>Буйруқлар</b>\n\n"
+                + "/bugun — бугунги кўрсаткичлар\n"
+                + "/hafta — охирги 7 кун\n"
+                + "/oy — шу ой\n"
+                + "/qarzlar — қарздорлик\n"
+                + "/tahlil — қарздорлик таҳлили ва тавсиялар (📌 — ходимга топшириқ)\n"
+                + "/topshiriqlar — топшириқлар: бажариш ва текшириш\n"
+                + "/menyu — тугмалар менюсини очиш (ёпиш — «" + BTN_HIDE + "»)\n"
+                + "/hisobot — кунлик ҳисобот (" + (user.isTelegramDailyReport() ? "ёқилган" : "ўчирилган") + ")\n"
+                + "/uzish — Telegram'ни ҳисобдан узиш";
     }
 
     private static String displayName(User u) {

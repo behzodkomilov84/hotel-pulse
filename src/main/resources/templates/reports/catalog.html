@@ -1,29 +1,29 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Hisobotlar')}"></head>
+<head th:replace="~{fragments/layout :: head('Ҳисоботлар')}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('reports')}"></header>
 <main class="container">
     <div class="page-head reveal">
         <div>
-            <h1>Hisobotlar</h1>
-            <p class="subtitle" th:text="${availableCount} + ' ta hisobot · Exely PMS va USALI'"></p>
+            <h1>Ҳисоботлар</h1>
+            <p class="subtitle" th:text="${availableCount} + ' та ҳисобот · Exely PMS ва USALI'"></p>
         </div>
         <div class="head-actions">
             <form method="get" th:if="${hotels.size() > 1}">
-                <select name="hotel" aria-label="Mehmonxona" onchange="this.form.submit()">
+                <select name="hotel" aria-label="Меҳмонхона" onchange="this.form.submit()">
                     <option th:each="h : ${hotels}" th:value="${h.id}" th:text="${h.name}" th:selected="${hotel != null and h.id == hotel.id}"></option>
                 </select>
             </form>
-            <a class="btn btn-secondary" th:if="${canManage}" th:href="@{/reports/usali/expenses(hotel=${hotel?.id})}">USALI xarajatlari</a>
-            <a class="btn btn-primary" th:if="${hotel != null}" th:href="@{/hotels/{id}(id=${hotel.id})}">Mening ekranim →</a>
+            <a class="btn btn-secondary" th:if="${canManage}" th:href="@{/reports/usali/expenses(hotel=${hotel?.id})}">USALI харажатлари</a>
+            <a class="btn btn-primary" th:if="${hotel != null}" th:href="@{/hotels/{id}(id=${hotel.id})}">Менинг экраним →</a>
         </div>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
     <div class="alert alert-info reveal">
-        <span>Har bir hisobotni oching yoki <b>mehmonxona ekraniga</b> qo'shing: ekranda <b>Tahrirlash</b> → bloklar tartibini o'zgartirish,
-            olib tashlash, <b>+ Hisobot qo'shish</b>. Tarkib har bir foydalanuvchiga alohida saqlanadi.</span>
+        <span>Ҳар бир ҳисоботни очинг ёки <b>меҳмонхона экранига</b> қўшинг: экранда <b>Таҳрирлаш</b> → блоклар тартибини ўзгартириш,
+            олиб ташлаш, <b>+ Ҳисобот қўшиш</b>. Таркиб ҳар бир фойдаланувчига алоҳида сақланади.</span>
     </div>
 
     <div class="catalog-grid">
@@ -41,8 +41,8 @@
                     </div>
                     <div class="catalog-meta">
                         <span class="catalog-exely" th:if="${d.exely}" th:text="${d.exely}"></span>
-                        <span class="badge badge-ok" th:if="${d.available and layout.contains(d.key)}">Ekranda</span>
-                        <span class="badge badge-off" th:unless="${d.available}">Exely bermaydi</span>
+                        <span class="badge badge-ok" th:if="${d.available and layout.contains(d.key)}">Экранда</span>
+                        <span class="badge badge-off" th:unless="${d.available}">Exely бермайди</span>
                     </div>
                 </li>
             </ul>

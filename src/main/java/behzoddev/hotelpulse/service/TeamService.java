@@ -83,7 +83,7 @@ public class TeamService {
         Hotel hotel = hotelService.getAccessible(user, hotelId);
         String n = validName(name);
         if (departmentRepository.findByHotelAndName(hotel.getId(), n).isPresent()) {
-            throw new IllegalArgumentException("\"" + n + "\" bo'limi bu mehmonxonada bor");
+            throw new IllegalArgumentException("\"" + n + "\" бўлими бу меҳмонхонада бор");
         }
         Department d = new Department();
         d.setHotel(hotel);
@@ -99,7 +99,7 @@ public class TeamService {
         departmentRepository.findByHotelAndName(d.getHotel().getId(), n)
                 .filter(other -> !other.getId().equals(id))
                 .ifPresent(other -> {
-                    throw new IllegalArgumentException("\"" + n + "\" bo'limi bu mehmonxonada bor");
+                    throw new IllegalArgumentException("\"" + n + "\" бўлими бу меҳмонхонада бор");
                 });
         d.setName(n);
         return d;
@@ -163,34 +163,34 @@ public class TeamService {
      */
     private User editableStaff(CustomUserDetails user, Long id) {
         requireManager(user);
-        User staff = userRepository.findWithTeam(id).orElseThrow(() -> new NotFoundException("Xodim topilmadi"));
+        User staff = userRepository.findWithTeam(id).orElseThrow(() -> new NotFoundException("Ходим топилмади"));
         if (staff.getRole() != Role.HOTEL_STAFF) {
-            throw new AccessDeniedException("Faqat mehmonxona xodimlarini tahrirlash mumkin");
+            throw new AccessDeniedException("Фақат меҳмонхона ходимларини таҳрирлаш мумкин");
         }
         Set<Long> accessible = hotelService.accessibleHotels(user).stream().map(Hotel::getId).collect(Collectors.toSet());
         if (staff.getHotels().isEmpty() && !user.isOwner()
                 || !staff.getHotels().stream().allMatch(h -> accessible.contains(h.getId()))) {
-            throw new AccessDeniedException("Bu xodim sizning mehmonxonangizda emas");
+            throw new AccessDeniedException("Бу ходим сизнинг меҳмонхонангизда эмас");
         }
         return staff;
     }
 
     private List<Department> accessibleDepartments(CustomUserDetails user, List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
-            throw new IllegalArgumentException("Kamida bitta bo'limni tanlang");
+            throw new IllegalArgumentException("Камида битта бўлимни танланг");
         }
         Set<Long> accessible = hotelService.accessibleHotels(user).stream().map(Hotel::getId).collect(Collectors.toSet());
         List<Department> depts = departmentRepository.findAllById(new LinkedHashSet<>(ids));
         if (depts.size() != new LinkedHashSet<>(ids).size()
                 || !depts.stream().allMatch(d -> accessible.contains(d.getHotel().getId()))) {
-            throw new AccessDeniedException("Bo'lim sizning mehmonxonangizda emas");
+            throw new AccessDeniedException("Бўлим сизнинг меҳмонхонангизда эмас");
         }
         return depts;
     }
 
     private Department accessibleDepartment(CustomUserDetails user, Long id) {
         requireManager(user);
-        Department d = departmentRepository.findFull(id).orElseThrow(() -> new NotFoundException("Bo'lim topilmadi"));
+        Department d = departmentRepository.findFull(id).orElseThrow(() -> new NotFoundException("Бўлим топилмади"));
         hotelService.getAccessible(user, d.getHotel().getId());
         return d;
     }
@@ -202,14 +202,14 @@ public class TeamService {
     private static String validName(String name) {
         String n = name == null ? "" : name.strip().replaceAll("\\s+", " ");
         if (n.isEmpty() || n.length() > NAME_MAX) {
-            throw new IllegalArgumentException("Bo'lim nomi 1–" + NAME_MAX + " belgi bo'lsin");
+            throw new IllegalArgumentException("Бўлим номи 1–" + NAME_MAX + " белги бўлсин");
         }
         return n;
     }
 
     private static void requireManager(CustomUserDetails user) {
         if (!canManage(user)) {
-            throw new AccessDeniedException("Ruxsat yo'q");
+            throw new AccessDeniedException("Рухсат йўқ");
         }
     }
 }

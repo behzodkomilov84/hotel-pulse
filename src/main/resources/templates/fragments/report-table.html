@@ -26,8 +26,8 @@
             </table>
         </div>
         <p class="muted rt-more" th:if="${limit > 0 and t.rows.size() > limit}"
-           th:text="'… yana ' + ${t.rows.size() - limit} + ' qator — «To\'liq →»'"></p>
-        <p class="empty rt-empty" th:if="${t.empty}">Bu davr uchun ma'lumot yo'q</p>
+           th:text="'… яна ' + ${t.rows.size() - limit} + ' қатор — «Тўлиқ →»'"></p>
+        <p class="empty rt-empty" th:if="${t.empty}">Бу давр учун маълумот йўқ</p>
         <ul class="rt-notes" th:if="${!t.notes.isEmpty()}">
             <li th:each="n : ${t.notes}" th:text="${n}"></li>
         </ul>

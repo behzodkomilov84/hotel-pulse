@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Mehmonxonalar boshqaruvi')}"></head>
+<head th:replace="~{fragments/layout :: head('Меҳмонхоналар бошқаруви')}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('admin-hotels')}"></header>
 <main class="container">
     <div class="page-head reveal">
         <div>
-            <h1>Mehmonxonalar boshqaruvi</h1>
-            <p class="subtitle" th:text="'Jami: ' + ${hotels.size()}"></p>
+            <h1>Меҳмонхоналар бошқаруви</h1>
+            <p class="subtitle" th:text="'Жами: ' + ${hotels.size()}"></p>
         </div>
-        <a class="btn btn-primary" th:href="@{/admin/hotels/new}">+ Mehmonxona qo'shish</a>
+        <a class="btn btn-primary" th:href="@{/admin/hotels/new}">+ Меҳмонхона қўшиш</a>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
     <div class="card table-wrap reveal" th:if="${!hotels.isEmpty()}">
         <table>
             <thead>
-            <tr><th>#</th><th>Nomi</th><th>Shahar</th><th>Xonalar</th><th>Exely</th><th>Holati</th><th></th></tr>
+            <tr><th>#</th><th>Номи</th><th>Шаҳар</th><th>Хоналар</th><th>Exely</th><th>Ҳолати</th><th></th></tr>
             </thead>
             <tbody>
             <tr th:each="h : ${hotels}">
@@ -25,22 +25,22 @@
                 <td th:text="${h.city} ?: '—'"></td>
                 <td th:text="${h.roomsCount}"></td>
                 <td>
-                    <span class="badge badge-ok" th:if="${h.exelyConnected and h.exelyLastSyncOk != false}">Ulangan</span>
-                    <span class="badge badge-warn" th:if="${h.exelyConnected and h.exelyLastSyncOk == false}">Sinxronlash xatosi</span>
+                    <span class="badge badge-ok" th:if="${h.exelyConnected and h.exelyLastSyncOk != false}">Уланган</span>
+                    <span class="badge badge-warn" th:if="${h.exelyConnected and h.exelyLastSyncOk == false}">Синхронлаш хатоси</span>
                     <th:block th:if="${h.exelyConnected and h.exelyLastSyncMessage != null}"><button
                             th:replace="~{fragments/layout :: tip(${h.exelyLastSyncMessage})}"></button></th:block>
-                    <span class="badge badge-off" th:unless="${h.exelyConnected}">Ulanmagan</span>
+                    <span class="badge badge-off" th:unless="${h.exelyConnected}">Уланмаган</span>
                 </td>
                 <td>
-                    <span class="badge badge-ok" th:if="${h.active}">Faol</span>
-                    <span class="badge badge-off" th:unless="${h.active}">Nofaol</span>
+                    <span class="badge badge-ok" th:if="${h.active}">Фаол</span>
+                    <span class="badge badge-off" th:unless="${h.active}">Нофаол</span>
                 </td>
-                <td><a class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${h.id})}">Tahrirlash</a></td>
+                <td><a class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${h.id})}">Таҳрирлаш</a></td>
             </tr>
             </tbody>
         </table>
     </div>
-    <div class="card empty reveal" th:if="${hotels.isEmpty()}">Hali mehmonxona qo'shilmagan.</div>
+    <div class="card empty reveal" th:if="${hotels.isEmpty()}">Ҳали меҳмонхона қўшилмаган.</div>
 </main>
 </body>
 </html>

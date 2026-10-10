@@ -110,7 +110,7 @@ public final class ExelyBookingMapper {
 
     static String sourceName(ExelyApi.Source source) {
         if (source == null || source.type() == null) {
-            return "Noma'lum";
+            return "Номаълум";
         }
         if ("Channel".equalsIgnoreCase(source.type())) {
             return source.code() == null || source.code().isBlank() ? "Kanal" : "Kanal " + source.code();

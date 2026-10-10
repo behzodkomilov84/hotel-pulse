@@ -69,3 +69,14 @@ CREATE TABLE otb_snapshots
     PRIMARY KEY (hotel_id, snapshot_date, stay_date),
     CONSTRAINT fk_otb_snapshots_hotel FOREIGN KEY (hotel_id) REFERENCES hotels (id) ON DELETE CASCADE
 );
+
+--changeset behzod:29
+-- Interfeys o'zbek kirill yozuviga o'tdi: standart bo'limlar va "noma'lum" manba nomi ham kirillda
+-- (tahlil tavsiyalaridagi bo'lim nomi bo'yicha xodim tanlash ishlashi uchun).
+UPDATE departments SET name = 'Ресепшн' WHERE name = 'Resepshn';
+UPDATE departments SET name = 'Бухгалтерия' WHERE name = 'Buxgalteriya';
+UPDATE departments SET name = 'Раҳбарият' WHERE name = 'Rahbariyat';
+UPDATE tasks SET department = 'Ресепшн' WHERE department = 'Resepshn';
+UPDATE tasks SET department = 'Бухгалтерия' WHERE department = 'Buxgalteriya';
+UPDATE tasks SET department = 'Раҳбарият' WHERE department = 'Rahbariyat';
+UPDATE bookings SET source = 'Номаълум' WHERE source = 'Noma''lum';

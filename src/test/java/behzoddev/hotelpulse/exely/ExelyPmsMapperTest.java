@@ -49,7 +49,7 @@ class ExelyPmsMapperTest {
 
         assertEquals("T-STD", rows.get(0).getRoomTypeId());
         assertEquals("R101", rows.get(0).getRoomId());
-        assertNull(rows.get(1).getRoomId(), "xona hali joylashtirilmagan");
+        assertNull(rows.get(1).getRoomId(), "хона ҳали жойлаштирилмаган");
         // Komissiya narx ulushi bo'yicha: 300k/400k va 100k/400k.
         assertEquals(0, new BigDecimal("45000").compareTo(rows.get(0).getAgentCommission()));
         assertEquals(0, new BigDecimal("15000").compareTo(rows.get(1).getAgentCommission()));
@@ -86,7 +86,7 @@ class ExelyPmsMapperTest {
         assertEquals(BookingStatus.CONFIRMED, rows.get(2).getStatus());
         assertEquals(BookingStatus.CANCELLED, rows.get(3).getStatus());
         assertNotNull(rows.get(3).getCancelledAt());
-        assertEquals(0, BigDecimal.ZERO.compareTo(rows.get(3).getBalanceDue()), "bekor qilinganda qarz yo'q");
+        assertEquals(0, BigDecimal.ZERO.compareTo(rows.get(3).getBalanceDue()), "бекор қилинганда қарз йўқ");
     }
 
     @Test
@@ -98,10 +98,10 @@ class ExelyPmsMapperTest {
 
         Booking row = ExelyPmsMapper.toBookings(src, 5L, TASHKENT, Map.of("pms:N-1#rs1", firstSeen)).get(0);
 
-        assertEquals(firstSeen, row.getBookedAt(), "birinchi ko'rilgan vaqt saqlanadi");
+        assertEquals(firstSeen, row.getBookedAt(), "биринчи кўрилган вақт сақланади");
         assertEquals("Стойка", row.getSource());
-        assertEquals(LocalDate.of(2026, 10, 2), row.getDepartureDate(), "kunduzgi yashash — 1 kecha");
-        assertEquals(0, BigDecimal.ZERO.compareTo(row.getBalanceDue()), "manfiy qoldiq 0 ga keltiriladi");
+        assertEquals(LocalDate.of(2026, 10, 2), row.getDepartureDate(), "кундузги яшаш — 1 кеча");
+        assertEquals(0, BigDecimal.ZERO.compareTo(row.getBalanceDue()), "манфий қолдиқ 0 га келтирилади");
     }
 
     @Test
@@ -151,18 +151,18 @@ class ExelyPmsMapperTest {
 
         var rows = ExelyPmsMapper.toServices(data, 5L, "UZS", cbu);
 
-        assertEquals(8, rows.size(), "sanasiz qator tashlanadi, takroriy erta kirish saqlanadi");
+        assertEquals(8, rows.size(), "санасиз қатор ташланади, такрорий эрта кириш сақланади");
         assertEquals(7, rows.stream().map(ServiceRevenue::getExternalId).distinct().count(),
                 "takroriy nonushta id'si turli yashashlarda — alohida qatorlar");
-        assertEquals(0, new BigDecimal("538597.54").compareTo(rows.get(0).getAmount()), "45.61 × 11808.76 (Exely kursi)");
+        assertEquals(0, new BigDecimal("538597.54").compareTo(rows.get(0).getAmount()), "45.61 × 11808.76 (Exely курси)");
         assertEquals(0, new BigDecimal("283410.24").compareTo(rows.get(1).getAmount()), "24 × 11808.76");
         assertEquals(1, rows.get(1).getKind());
         assertEquals("USD", rows.get(1).getCurrency());
         assertEquals(11L, rows.get(1).getReservationId());
         assertEquals("US-1", rows.get(1).getBookingNumber());
-        assertEquals(0, new BigDecimal("500000").compareTo(rows.get(4).getAmount()), "so'm — o'girilmaydi");
+        assertEquals(0, new BigDecimal("500000").compareTo(rows.get(4).getAmount()), "сўм — ўгирилмайди");
         assertEquals(LocalDate.of(2026, 10, 2), rows.get(4).getServiceDate());
-        assertEquals(0, new BigDecimal("120000").compareTo(rows.get(5).getAmount()), "kurs yo'q — CBU");
+        assertEquals(0, new BigDecimal("120000").compareTo(rows.get(5).getAmount()), "курс йўқ — CBU");
         assertEquals("N-7", ExelyPmsMapper.bookingNumber("pms:N-7#9007199"));
     }
 
@@ -189,8 +189,8 @@ class ExelyPmsMapperTest {
 
     @Test
     void cancelledPaymentsAndCancellationRecordsAreSkipped() {
-        assertNull(ExelyPmsMapper.toPayment(pay(1, 0, "100000", "202610011600"), 5L), "bekor qilingan asl yozuv");
-        assertNull(ExelyPmsMapper.toPayment(pay(2, 2, "100000", null), 5L), "to'lovni bekor qilish yozuvi");
-        assertNull(ExelyPmsMapper.toPayment(pay(3, 3, "100000", null), 5L), "qaytarishni bekor qilish yozuvi");
+        assertNull(ExelyPmsMapper.toPayment(pay(1, 0, "100000", "202610011600"), 5L), "бекор қилинган асл ёзув");
+        assertNull(ExelyPmsMapper.toPayment(pay(2, 2, "100000", null), 5L), "тўловни бекор қилиш ёзуви");
+        assertNull(ExelyPmsMapper.toPayment(pay(3, 3, "100000", null), 5L), "қайтаришни бекор қилиш ёзуви");
     }
 }

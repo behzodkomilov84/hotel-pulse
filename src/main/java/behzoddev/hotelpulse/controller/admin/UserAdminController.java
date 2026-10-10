@@ -65,7 +65,7 @@ public class UserAdminController {
                          RedirectAttributes ra) {
         try {
             userService.create(username, password, fullName, phone, role, hotelIds);
-            ra.addFlashAttribute("success", "Foydalanuvchi qo'shildi");
+            ra.addFlashAttribute("success", "Фойдаланувчи қўшилди");
             return "redirect:/admin/users";
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
@@ -91,7 +91,7 @@ public class UserAdminController {
                 // O'z loginini o'zgartirgan bo'lsa — sessiya yangi ma'lumot bilan davom etadi.
                 principalRefresher.refresh(saved, request, response);
             }
-            ra.addFlashAttribute("success", "Saqlandi");
+            ra.addFlashAttribute("success", "Сақланди");
             return "redirect:/admin/users";
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());

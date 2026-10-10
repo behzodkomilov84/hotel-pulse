@@ -53,7 +53,7 @@ public class ProfileController {
         try {
             User user = userService.updateOwnProfile(principal.getId(), fullName, phone);
             principalRefresher.refresh(user, request, response);
-            ra.addFlashAttribute("success", "Profil saqlandi");
+            ra.addFlashAttribute("success", "Профил сақланди");
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
             ra.addFlashAttribute("editOpen", true);
@@ -69,7 +69,7 @@ public class ProfileController {
                                  RedirectAttributes ra) {
         try {
             userService.changeOwnPassword(principal.getId(), currentPassword, newPassword, confirmPassword);
-            ra.addFlashAttribute("success", "Parol o'zgartirildi");
+            ra.addFlashAttribute("success", "Парол ўзгартирилди");
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
             ra.addFlashAttribute("passwordOpen", true);
@@ -87,7 +87,7 @@ public class ProfileController {
     public String link(@AuthenticationPrincipal CustomUserDetails principal, RedirectAttributes ra) {
         String bot = telegram.botUsername();
         if (bot == null) {
-            ra.addFlashAttribute("error", "Telegram bot hali sozlanmagan");
+            ra.addFlashAttribute("error", "Telegram бот ҳали созланмаган");
             return "redirect:/profile";
         }
         String token = linkService.createToken(principal.getId());
@@ -97,7 +97,7 @@ public class ProfileController {
     @PostMapping("/telegram/unlink")
     public String unlink(@AuthenticationPrincipal CustomUserDetails principal, RedirectAttributes ra) {
         linkService.unlinkUser(principal.getId());
-        ra.addFlashAttribute("success", "Telegram hisobingizdan uzildi");
+        ra.addFlashAttribute("success", "Telegram ҳисобингиздан узилди");
         return "redirect:/profile";
     }
 
@@ -106,7 +106,7 @@ public class ProfileController {
                               @RequestParam(defaultValue = "false") boolean enabled,
                               RedirectAttributes ra) {
         linkService.setDailyReport(principal.getId(), enabled);
-        ra.addFlashAttribute("success", enabled ? "Kunlik hisobot yoqildi" : "Kunlik hisobot o'chirildi");
+        ra.addFlashAttribute("success", enabled ? "Кунлик ҳисобот ёқилди" : "Кунлик ҳисобот ўчирилди");
         return "redirect:/profile";
     }
 }

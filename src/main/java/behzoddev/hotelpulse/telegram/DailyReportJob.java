@@ -72,7 +72,7 @@ public class DailyReportJob {
             }
             try {
                 if (text == null) {
-                    text = "☀️ <b>Xayrli tong!</b> Kechagi kun natijalari:\n\n" + reports.hotelReport(hotel, "yesterday");
+                    text = "☀️ <b>Хайрли тонг!</b> Кечаги кун натижалари:\n\n" + reports.hotelReport(hotel, "yesterday");
                 }
                 gateway.sendMessage(user.getTelegramChatId(), text, null);
                 sent++;

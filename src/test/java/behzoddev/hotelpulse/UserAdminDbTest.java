@@ -71,7 +71,7 @@ class UserAdminDbTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("name=\"username\"")))
                 .andExpect(content().string(containsString("value=\"thetower\"")))
-                .andExpect(content().string(containsString("Boshqaruv kompaniyasi")));
+                .andExpect(content().string(containsString("Бошқарув компанияси")));
     }
 
     @Test
@@ -84,17 +84,17 @@ class UserAdminDbTest {
         User u = userRepository.findById(target.getId()).orElseThrow();
         assertEquals("tower-group", u.getUsername());
         assertEquals(Role.MANAGEMENT_COMPANY, u.getRole());
-        assertTrue(passwordEncoder.matches("password-123", u.getPassword()), "parol o'zgarmaydi");
+        assertTrue(passwordEncoder.matches("password-123", u.getPassword()), "парол ўзгармайди");
     }
 
     @Test
     void takenOrInvalidLoginIsRejected() throws Exception {
         mvc.perform(post("/admin/users/{id}", target.getId()).with(user(owner)).with(csrf())
                         .param("username", "taken").param("role", "HOTEL_OWNER").param("enabled", "true"))
-                .andExpect(flash().attribute("error", "Bu login band"));
+                .andExpect(flash().attribute("error", "Бу логин банд"));
         mvc.perform(post("/admin/users/{id}", target.getId()).with(user(owner)).with(csrf())
                         .param("username", "a b").param("role", "HOTEL_OWNER").param("enabled", "true"))
-                .andExpect(flash().attribute("error", containsString("Login 3–64")));
+                .andExpect(flash().attribute("error", containsString("Логин 3–64")));
         assertEquals("thetower", userRepository.findById(target.getId()).orElseThrow().getUsername());
     }
 

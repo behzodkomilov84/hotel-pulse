@@ -5,11 +5,11 @@
 <div class="ai-result" th:fragment="analysis" th:with="a=${analysis}, cur=${hotel.currency}">
     <p class="ai-warning" th:if="${a.warning != null}" th:text="${a.warning}"></p>
 
-    <h4>Asosiy xulosa</h4>
+    <h4>Асосий хулоса</h4>
     <p th:text="${a.summary}"></p>
 
     <th:block th:if="${!a.risks.isEmpty()}">
-        <h4>Xavfli nuqtalar</h4>
+        <h4>Хавфли нуқталар</h4>
         <ul class="ai-points">
             <li th:each="p : ${a.risks}" th:classappend="'lvl-' + ${#strings.toLowerCase(p.level.name())}">
                 <strong th:text="${p.title}"></strong>
@@ -19,20 +19,20 @@
     </th:block>
 
     <th:block th:if="${!a.actions.isEmpty()}">
-        <h4>Tavsiyalar</h4>
+        <h4>Тавсиялар</h4>
         <ol class="ai-actions">
             <li th:each="p : ${a.actions}">
                 <span class="ai-who" th:text="${p.title}"></span>
                 <span th:text="${p.text}"></span>
                 <button type="button" class="btn-task" th:if="${canAssign}"
                         th:attr="data-task-title=${p.text}, data-task-dept=${p.title}, data-task-list=${p.listKey}, data-task-list-size=${p.listSize},
-                                 data-task-due=${#temporals.format(today.plusDays(p.level.name() == 'HIGH' ? 1 : (p.level.name() == 'MEDIUM' ? 3 : 7)), 'yyyy-MM-dd')}">📌 Topshiriq berish<span class="btn-task-list" th:if="${p.listSize > 0}" th:text="'· 📎 ' + ${p.listSize} + ' ta ro\'yxat'"></span></button>
+                                 data-task-due=${#temporals.format(today.plusDays(p.level.name() == 'HIGH' ? 1 : (p.level.name() == 'MEDIUM' ? 3 : 7)), 'yyyy-MM-dd')}">📌 Топшириқ бериш<span class="btn-task-list" th:if="${p.listSize > 0}" th:text="'· 📎 ' + ${p.listSize} + ' та рўйхат'"></span></button>
             </li>
         </ol>
     </th:block>
 
     <th:block th:if="${!a.priorities.isEmpty()}">
-        <h4>Birinchi navbatda tekshirish kerak</h4>
+        <h4>Биринчи навбатда текшириш керак</h4>
         <div class="ai-priorities">
             <div class="ai-prio" th:each="r, st : ${a.priorities}">
                 <span class="ai-rank" th:text="${st.count}"></span>
@@ -44,15 +44,15 @@
                     </div>
                     <div class="muted ai-prio-reason" th:text="${r.reason}"></div>
                     <button type="button" class="btn-task" th:if="${canAssign}"
-                            th:attr="data-task-title='Bron ' + ${r.bookingNumber} + (${r.guestName} != null ? ' (' + ${r.guestName} + ')' : '') + ': qarzni tekshirish va undirish',
-                                     data-task-desc=${r.reason} + '. Qarz: ' + ${@fmt.money(r.debt, cur)} + ', to\'langan ' + ${@fmt.moneyShort(r.paid, cur)} + ' / ' + ${@fmt.moneyShort(r.total, cur)} + '.',
+                            th:attr="data-task-title='Брон ' + ${r.bookingNumber} + (${r.guestName} != null ? ' (' + ${r.guestName} + ')' : '') + ': қарзни текшириш ва ундириш',
+                                     data-task-desc=${r.reason} + '. Қарз: ' + ${@fmt.money(r.debt, cur)} + ', тўланган ' + ${@fmt.moneyShort(r.paid, cur)} + ' / ' + ${@fmt.moneyShort(r.total, cur)} + '.',
                                      data-task-booking=${r.bookingNumber},
                                      data-task-list='BOOKING:' + ${r.bookingNumber},
-                                     data-task-due=${#temporals.format(today.plusDays(2), 'yyyy-MM-dd')}">📌 Topshiriq berish</button>
+                                     data-task-due=${#temporals.format(today.plusDays(2), 'yyyy-MM-dd')}">📌 Топшириқ бериш</button>
                 </div>
                 <div class="ai-prio-sum">
                     <b class="debt-cell" th:text="${@fmt.money(r.debt, cur)}"></b>
-                    <span class="muted" th:text="'to\'langan ' + ${@fmt.moneyShort(r.paid, cur)} + ' / ' + ${@fmt.moneyShort(r.total, cur)}"></span>
+                    <span class="muted" th:text="'тўланган ' + ${@fmt.moneyShort(r.paid, cur)} + ' / ' + ${@fmt.moneyShort(r.total, cur)}"></span>
                 </div>
             </div>
         </div>

@@ -8,32 +8,32 @@ import java.util.List;
  * Daromad Exely'dan avtomatik olinadi; OTA komissiyalari ham Exely'dan (Rooms xarajatiga) qo'shiladi.
  */
 public enum UsaliLine {
-    ROOMS_PAYROLL(Dept.ROOMS, "Ish haqi va bog'liq xarajatlar", true),
-    ROOMS_OTHER(Dept.ROOMS, "Boshqa xarajatlar (kir yuvish, jihoz, mehmon buyumlari, ...)", false),
-    FB_COST(Dept.FB, "Mahsulot tannarxi (Cost of sales)", false),
-    FB_PAYROLL(Dept.FB, "Ish haqi va bog'liq xarajatlar", true),
-    FB_OTHER(Dept.FB, "Boshqa xarajatlar", false),
-    OTHER_COST(Dept.OTHER, "Boshqa bo'limlar: tannarx va xarajatlar", false),
-    OTHER_PAYROLL(Dept.OTHER, "Boshqa bo'limlar: ish haqi", true),
-    AG(Dept.UNDISTRIBUTED, "Ma'muriy va umumiy (A&G)", false),
-    AG_PAYROLL(Dept.UNDISTRIBUTED, "Ma'muriy xodimlar ish haqi (A&G payroll)", true),
-    ITS(Dept.UNDISTRIBUTED, "Axborot va telekommunikatsiya tizimlari (ITS)", false),
-    SM(Dept.UNDISTRIBUTED, "Savdo va marketing (S&M)", false),
-    POM(Dept.UNDISTRIBUTED, "Binoga xizmat va ta'mirlash (POM)", false),
-    UTILITIES(Dept.UNDISTRIBUTED, "Kommunal xizmatlar (Utilities)", false),
-    MGMT_FEES(Dept.FEES, "Boshqaruv haqi (Management fees)", false),
-    RENT(Dept.NON_OPERATING, "Ijara", false),
-    PROPERTY_TAX(Dept.NON_OPERATING, "Mulk va yer solig'i", false),
-    INSURANCE(Dept.NON_OPERATING, "Sug'urta", false),
-    OTHER_NON_OPERATING(Dept.NON_OPERATING, "Boshqa nooperatsion xarajatlar", false);
+    ROOMS_PAYROLL(Dept.ROOMS, "Иш ҳақи ва боғлиқ харажатлар", true),
+    ROOMS_OTHER(Dept.ROOMS, "Бошқа харажатлар (кир ювиш, жиҳоз, меҳмон буюмлари, ...)", false),
+    FB_COST(Dept.FB, "Маҳсулот таннархи (Cost of sales)", false),
+    FB_PAYROLL(Dept.FB, "Иш ҳақи ва боғлиқ харажатлар", true),
+    FB_OTHER(Dept.FB, "Бошқа харажатлар", false),
+    OTHER_COST(Dept.OTHER, "Бошқа бўлимлар: таннарх ва харажатлар", false),
+    OTHER_PAYROLL(Dept.OTHER, "Бошқа бўлимлар: иш ҳақи", true),
+    AG(Dept.UNDISTRIBUTED, "Маъмурий ва умумий (A&G)", false),
+    AG_PAYROLL(Dept.UNDISTRIBUTED, "Маъмурий ходимлар иш ҳақи (A&G payroll)", true),
+    ITS(Dept.UNDISTRIBUTED, "Ахборот ва телекоммуникация тизимлари (ITS)", false),
+    SM(Dept.UNDISTRIBUTED, "Савдо ва маркетинг (S&M)", false),
+    POM(Dept.UNDISTRIBUTED, "Бинога хизмат ва таъмирлаш (POM)", false),
+    UTILITIES(Dept.UNDISTRIBUTED, "Коммунал хизматлар (Utilities)", false),
+    MGMT_FEES(Dept.FEES, "Бошқарув ҳақи (Management fees)", false),
+    RENT(Dept.NON_OPERATING, "Ижара", false),
+    PROPERTY_TAX(Dept.NON_OPERATING, "Мулк ва ер солиғи", false),
+    INSURANCE(Dept.NON_OPERATING, "Суғурта", false),
+    OTHER_NON_OPERATING(Dept.NON_OPERATING, "Бошқа нооперацион харажатлар", false);
 
     public enum Dept {
-        ROOMS("Rooms (yashash) bo'limi"),
-        FB("Food & Beverage (ovqatlanish)"),
-        OTHER("Boshqa operatsion bo'limlar"),
-        UNDISTRIBUTED("Taqsimlanmagan operatsion xarajatlar"),
-        FEES("Boshqaruv haqi"),
-        NON_OPERATING("Nooperatsion xarajatlar");
+        ROOMS("Rooms (яшаш) бўлими"),
+        FB("Food & Beverage (овқатланиш)"),
+        OTHER("Бошқа операцион бўлимлар"),
+        UNDISTRIBUTED("Тақсимланмаган операцион харажатлар"),
+        FEES("Бошқарув ҳақи"),
+        NON_OPERATING("Нооперацион харажатлар");
 
         private final String label;
 

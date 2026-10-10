@@ -15,13 +15,13 @@
 
 <header th:fragment="header(active)" class="topbar">
     <a class="brand" th:href="@{/}"><span class="brand-dot"></span>HotelPulse</a>
-    <nav class="nav" aria-label="Asosiy menyu">
-        <a th:href="@{/}" th:classappend="${active == 'dashboard'} ? 'active'">Mehmonxonalar</a>
+    <nav class="nav" aria-label="Асосий меню">
+        <a th:href="@{/}" th:classappend="${active == 'dashboard'} ? 'active'">Меҳмонхоналар</a>
 
         <!-- Ochiladigan menyular: kompyuterda — olib borilganda, telefonda — bosilganda (app.js). -->
         <div class="nav-group nav-mega" th:if="${reportMenu != null}" th:classappend="${active == 'reports'} ? 'active'">
             <button type="button" class="nav-toggle" aria-haspopup="true" aria-expanded="false">
-                Hisobotlar <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                Ҳисоботлар <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <div class="nav-menu mega-menu">
                 <div class="mega-col" th:each="g : ${reportMenu}">
@@ -29,42 +29,42 @@
                     <a th:each="d : ${g.value}" th:href="@{/reports/{k}(k=${d.key})}" th:text="${d.title}"></a>
                 </div>
                 <div class="mega-foot">
-                    <a th:href="@{/reports}">Barcha hisobotlar →</a>
-                    <a sec:authorize="hasAnyRole('OWNER', 'HOTEL_OWNER', 'MANAGEMENT_COMPANY')" th:href="@{/reports/usali/expenses}">USALI xarajatlari</a>
+                    <a th:href="@{/reports}">Барча ҳисоботлар →</a>
+                    <a sec:authorize="hasAnyRole('OWNER', 'HOTEL_OWNER', 'MANAGEMENT_COMPANY')" th:href="@{/reports/usali/expenses}">USALI харажатлари</a>
                 </div>
             </div>
         </div>
 
         <div class="nav-group" th:classappend="${active.startsWith('svc-')} ? 'active'">
             <button type="button" class="nav-toggle" aria-haspopup="true" aria-expanded="false">
-                Xizmatlar <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                Хизматлар <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <div class="nav-menu">
-                <a th:href="@{/services/invoices}" th:classappend="${active == 'svc-invoices'} ? 'active'">Hisob-fakturalar</a>
-                <a th:href="@{/services/tasks}" th:classappend="${active == 'svc-tasks'} ? 'active'">Topshiriqlar</a>
+                <a th:href="@{/services/invoices}" th:classappend="${active == 'svc-invoices'} ? 'active'">Ҳисоб-фактуралар</a>
+                <a th:href="@{/services/tasks}" th:classappend="${active == 'svc-tasks'} ? 'active'">Топшириқлар</a>
             </div>
         </div>
 
         <div class="nav-group" sec:authorize="hasAnyRole('OWNER', 'HOTEL_OWNER', 'MANAGEMENT_COMPANY')"
              th:classappend="${active.startsWith('admin-') or active.startsWith('team-')} ? 'active'">
             <button type="button" class="nav-toggle" aria-haspopup="true" aria-expanded="false">
-                Boshqaruv <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                Бошқарув <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
             </button>
             <div class="nav-menu">
-                <a th:href="@{/team/departments}" th:classappend="${active == 'team-departments'} ? 'active'">Bo'limlar</a>
-                <a th:href="@{/team/staff}" th:classappend="${active == 'team-staff'} ? 'active'">Xodimlar</a>
-                <a sec:authorize="hasRole('OWNER')" th:href="@{/admin/hotels}" th:classappend="${active == 'admin-hotels'} ? 'active'">Mehmonxonalar</a>
-                <a sec:authorize="hasRole('OWNER')" th:href="@{/admin/users}" th:classappend="${active == 'admin-users'} ? 'active'">Foydalanuvchilar</a>
+                <a th:href="@{/team/departments}" th:classappend="${active == 'team-departments'} ? 'active'">Бўлимлар</a>
+                <a th:href="@{/team/staff}" th:classappend="${active == 'team-staff'} ? 'active'">Ходимлар</a>
+                <a sec:authorize="hasRole('OWNER')" th:href="@{/admin/hotels}" th:classappend="${active == 'admin-hotels'} ? 'active'">Меҳмонхоналар</a>
+                <a sec:authorize="hasRole('OWNER')" th:href="@{/admin/users}" th:classappend="${active == 'admin-users'} ? 'active'">Фойдаланувчилар</a>
             </div>
         </div>
     </nav>
     <div class="user-box">
-        <a class="user-link" th:href="@{/profile}" th:classappend="${active == 'profile'} ? 'active'" title="Profil">
-            <span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(currentUser.displayName, 0, 1))}">A</span>
-            <span class="name" th:text="${currentUser.displayName}">Foydalanuvchi</span>
+        <a class="user-link" th:href="@{/profile}" th:classappend="${active == 'profile'} ? 'active'" title="Профил">
+            <span class="avatar" th:text="${#strings.toUpperCase(#strings.substring(currentUser.displayName, 0, 1))}">А</span>
+            <span class="name" th:text="${currentUser.displayName}">Фойдаланувчи</span>
         </a>
         <form th:action="@{/logout}" method="post">
-            <button type="submit" class="btn btn-secondary">Chiqish</button>
+            <button type="submit" class="btn btn-secondary">Чиқиш</button>
         </form>
     </div>
 </header>
@@ -72,7 +72,7 @@
 <!-- Izoh (ⓘ): kompyuterda sichqoncha olib borilganda, telefonda bosilganda ochiladi (app.js). Qatorlar — "\n". -->
 <!-- span[role=button] — havola-kartalar (<a>) ichida ham to'g'ri HTML bo'lishi uchun. -->
 <span class="tip" role="button" tabindex="0" th:fragment="tip(text)"
-      th:attr="data-tip=${text}, aria-label='Izoh: ' + ${text}" aria-expanded="false">i</span>
+      th:attr="data-tip=${text}, aria-label='Изоҳ: ' + ${text}" aria-expanded="false">i</span>
 
 <th:block th:fragment="alerts">
     <div class="alert alert-success" role="status" th:if="${success}" th:text="${success}"></div>

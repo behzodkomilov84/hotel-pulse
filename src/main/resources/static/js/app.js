@@ -76,7 +76,7 @@
                 if (--left <= 0) { clearInterval(timer); return; }
                 fetch(window.location.href, {credentials: 'same-origin'})
                     .then(r => r.text())
-                    .then(html => { if (html.includes('badge badge-ok">Ulangan')) window.location.reload(); })
+                    .then(html => { if (html.includes('badge badge-ok">Уланган')) window.location.reload(); })
                     .catch(() => {});
             }, 4000);
         });
@@ -172,7 +172,7 @@
             const show = input.type === 'password';
             input.type = show ? 'text' : 'password';
             btn.classList.toggle('on', show);
-            btn.setAttribute('aria-label', show ? 'Parolni yashirish' : "Parolni ko'rsatish");
+            btn.setAttribute('aria-label', show ? 'Паролни яшириш' : 'Паролни кўрсатиш');
         });
     });
 
@@ -184,7 +184,7 @@
         const label = form.querySelector('[data-strength-label]');
         const mismatch = form.querySelector('[data-confirm-error]');
         const levels = [
-            {w: .15, cls: 'weak', text: 'Juda qisqa — kamida 8 belgi'},
+            {w: .15, cls: 'weak', text: 'Жуда қисқа — камида 8 белги'},
             {w: .35, cls: 'weak', text: 'Zaif'},
             {w: .6, cls: 'warn', text: "O'rtacha"},
             {w: .8, cls: 'normal', text: 'Yaxshi'},
@@ -201,13 +201,13 @@
         const checkMatch = () => {
             const bad = confirm.value.length > 0 && confirm.value !== pw.value;
             mismatch.hidden = !bad;
-            confirm.setCustomValidity(bad ? 'Parollar bir xil emas' : '');
+            confirm.setCustomValidity(bad ? 'Пароллар бир хил эмас' : '');
         };
         pw.addEventListener('input', () => {
             const lvl = pw.value ? levels[score(pw.value)] : null;
             bar.className = 'meter-fill' + (lvl ? ' ' + lvl.cls : '');
             bar.style.width = lvl ? (lvl.w * 100) + '%' : '0';
-            label.textContent = lvl ? lvl.text : 'Kamida 8 belgi';
+            label.textContent = lvl ? lvl.text : 'Камида 8 белги';
             checkMatch();
         });
         confirm.addEventListener('input', checkMatch);

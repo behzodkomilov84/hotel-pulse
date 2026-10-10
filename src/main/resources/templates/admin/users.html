@@ -1,22 +1,22 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Foydalanuvchilar')}"></head>
+<head th:replace="~{fragments/layout :: head('Фойдаланувчилар')}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('admin-users')}"></header>
 <main class="container">
     <div class="page-head reveal">
         <div>
-            <h1>Foydalanuvchilar</h1>
-            <p class="subtitle" th:text="'Jami: ' + ${users.size()}"></p>
+            <h1>Фойдаланувчилар</h1>
+            <p class="subtitle" th:text="'Жами: ' + ${users.size()}"></p>
         </div>
-        <a class="btn btn-primary" th:href="@{/admin/users/new}">+ Foydalanuvchi qo'shish</a>
+        <a class="btn btn-primary" th:href="@{/admin/users/new}">+ Фойдаланувчи қўшиш</a>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
     <div class="card table-wrap reveal">
         <table>
             <thead>
-            <tr><th>#</th><th>Login</th><th>F.I.Sh.</th><th>Roli</th><th>Mehmonxonalar</th><th>Holati</th><th></th></tr>
+            <tr><th>#</th><th>Логин</th><th>Ф.И.Ш.</th><th>Роли</th><th>Меҳмонхоналар</th><th>Ҳолати</th><th></th></tr>
             </thead>
             <tbody>
             <tr th:each="u : ${users}">
@@ -25,15 +25,15 @@
                 <td th:text="${u.fullName} ?: '—'"></td>
                 <td><span class="badge badge-role" th:text="${u.role.label}"></span></td>
                 <td class="wrap">
-                    <span th:if="${u.role.name() == 'OWNER'}">Barchasi</span>
-                    <span th:if="${u.role.name() != 'OWNER' and u.hotels.isEmpty()}" class="badge badge-warn">Biriktirilmagan</span>
+                    <span th:if="${u.role.name() == 'OWNER'}">Барчаси</span>
+                    <span th:if="${u.role.name() != 'OWNER' and u.hotels.isEmpty()}" class="badge badge-warn">Бириктирилмаган</span>
                     <span th:each="h, st : ${u.hotels}" th:text="${h.name} + (${st.last} ? '' : ', ')"></span>
                 </td>
                 <td>
-                    <span class="badge badge-ok" th:if="${u.enabled}">Faol</span>
-                    <span class="badge badge-off" th:unless="${u.enabled}">Bloklangan</span>
+                    <span class="badge badge-ok" th:if="${u.enabled}">Фаол</span>
+                    <span class="badge badge-off" th:unless="${u.enabled}">Блокланган</span>
                 </td>
-                <td><a class="btn btn-secondary" th:href="@{/admin/users/{id}(id=${u.id})}">Tahrirlash</a></td>
+                <td><a class="btn btn-secondary" th:href="@{/admin/users/{id}(id=${u.id})}">Таҳрирлаш</a></td>
             </tr>
             </tbody>
         </table>

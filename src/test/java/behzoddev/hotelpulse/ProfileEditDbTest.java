@@ -89,7 +89,7 @@ class ProfileEditDbTest {
         var session = mvc.perform(post("/profile").with(user(principal())).with(csrf())
                         .param("fullName", "  Ali Valiyev ").param("phone", "+998 90 123 45 67"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(flash().attribute("success", "Profil saqlandi"))
+                .andExpect(flash().attribute("success", "Профил сақланди"))
                 .andReturn().getRequest().getSession();
 
         User saved = userRepository.findById(u.getId()).orElseThrow();
@@ -116,7 +116,7 @@ class ProfileEditDbTest {
         mvc.perform(post("/profile/password").with(user(principal())).with(csrf())
                         .param("currentPassword", "wrong-one")
                         .param("newPassword", "new-password-456").param("confirmPassword", "new-password-456"))
-                .andExpect(flash().attribute("error", "Joriy parol noto'g'ri"))
+                .andExpect(flash().attribute("error", "Жорий парол нотўғри"))
                 .andExpect(flash().attribute("passwordOpen", true));
         assertTrue(passwordEncoder.matches(OLD_PASSWORD, userRepository.findById(u.getId()).orElseThrow().getPassword()));
     }
@@ -126,7 +126,7 @@ class ProfileEditDbTest {
         mvc.perform(post("/profile/password").with(user(principal())).with(csrf())
                         .param("currentPassword", OLD_PASSWORD)
                         .param("newPassword", "new-password-456").param("confirmPassword", "other-password-789"))
-                .andExpect(flash().attribute("error", "Yangi parol va uning takrori bir xil emas"));
+                .andExpect(flash().attribute("error", "Янги парол ва унинг такрори бир хил эмас"));
         mvc.perform(post("/profile/password").with(user(principal())).with(csrf())
                         .param("currentPassword", OLD_PASSWORD)
                         .param("newPassword", "short").param("confirmPassword", "short"))
@@ -139,7 +139,7 @@ class ProfileEditDbTest {
         mvc.perform(post("/profile/password").with(user(principal())).with(csrf())
                         .param("currentPassword", OLD_PASSWORD)
                         .param("newPassword", "new-password-456").param("confirmPassword", "new-password-456"))
-                .andExpect(flash().attribute("success", "Parol o'zgartirildi"));
+                .andExpect(flash().attribute("success", "Парол ўзгартирилди"));
         String hash = userRepository.findById(u.getId()).orElseThrow().getPassword();
         assertTrue(passwordEncoder.matches("new-password-456", hash));
         assertFalse(passwordEncoder.matches(OLD_PASSWORD, hash));
@@ -161,6 +161,6 @@ class ProfileEditDbTest {
         // Haqiqiy ruxsat yo'qligi esa hamon 403.
         mvc.perform(get("/admin/hotels").with(user(principal()))).andExpect(status().isForbidden());
         mvc.perform(get("/login").param("expired", ""))
-                .andExpect(content().string(containsString("Sessiya muddati tugadi")));
+                .andExpect(content().string(containsString("Сессия муддати тугади")));
     }
 }

@@ -71,10 +71,10 @@ class TeamDbTest {
 
     @Test
     void ownerCreatesDepartmentsAndStaffInSeveralDepartments() {
-        Department reception = teamService.createDepartment(owner, hotel.getId(), " Resepshn ");
-        Department accounting = teamService.createDepartment(owner, hotel.getId(), "Buxgalteriya");
-        assertEquals("Resepshn", reception.getName());
-        assertThrows(IllegalArgumentException.class, () -> teamService.createDepartment(owner, hotel.getId(), "resepshn"),
+        Department reception = teamService.createDepartment(owner, hotel.getId(), " Ресепшн ");
+        Department accounting = teamService.createDepartment(owner, hotel.getId(), "Бухгалтерия");
+        assertEquals("Ресепшн", reception.getName());
+        assertThrows(IllegalArgumentException.class, () -> teamService.createDepartment(owner, hotel.getId(), "ресепшн"),
                 "bir mehmonxonada nomi takrorlanmaydi");
         assertThrows(AccessDeniedException.class, () -> teamService.createDepartment(otherOwner, hotel.getId(), "X"),
                 "begona mehmonxonaga bo'lim qo'shib bo'lmaydi");
@@ -92,7 +92,7 @@ class TeamDbTest {
         // Begona egasi bu xodimni ko'rmaydi va o'zgartira olmaydi, o'z bo'limiga ham qo'sha olmaydi.
         assertTrue(teamService.staff(otherOwner).isEmpty());
         assertThrows(AccessDeniedException.class, () -> teamService.staffMember(otherOwner, staff.getId()));
-        Department foreignDept = teamService.createDepartment(otherOwner, foreign.getId(), "Resepshn");
+        Department foreignDept = teamService.createDepartment(otherOwner, foreign.getId(), "Ресепшн");
         assertThrows(AccessDeniedException.class, () -> teamService.createStaff(owner, "spy", "password1", null, null,
                 List.of(foreignDept.getId())));
         // Xodim o'zi jamoani boshqara olmaydi; egasini "xodim" sifatida tahrirlab bo'lmaydi.
@@ -102,8 +102,8 @@ class TeamDbTest {
         // Bo'limdan chiqarish va qayta nomlash; bo'lim o'chirilsa — xodim qoladi.
         teamService.updateStaff(owner, staff.getId(), "aziza", "Aziza K.", null, true, List.of(accounting.getId()), null);
         assertEquals(1, userRepository.findWithTeam(staff.getId()).orElseThrow().getDepartments().size());
-        teamService.renameDepartment(owner, accounting.getId(), "Moliya");
-        assertEquals("Moliya", departmentRepository.findById(accounting.getId()).orElseThrow().getName());
+        teamService.renameDepartment(owner, accounting.getId(), "Молия");
+        assertEquals("Молия", departmentRepository.findById(accounting.getId()).orElseThrow().getName());
         teamService.deleteDepartment(owner, accounting.getId());
         assertTrue(userRepository.findWithTeam(staff.getId()).orElseThrow().getDepartments().isEmpty());
         assertTrue(userRepository.findById(staff.getId()).isPresent());
@@ -111,8 +111,8 @@ class TeamDbTest {
 
     @Test
     void taskIsGivenWithinDepartment() {
-        Department reception = teamService.createDepartment(owner, hotel.getId(), "Resepshn");
-        Department accounting = teamService.createDepartment(owner, hotel.getId(), "Buxgalteriya");
+        Department reception = teamService.createDepartment(owner, hotel.getId(), "Ресепшн");
+        Department accounting = teamService.createDepartment(owner, hotel.getId(), "Бухгалтерия");
         User cashier = teamService.createStaff(owner, "kassir", "password1", "Kassir", null, List.of(accounting.getId()));
         LocalDate today = LocalDate.now(clock);
 
@@ -121,37 +121,37 @@ class TeamDbTest {
                 cashier.getId(), "Vyselenie", null, null, null, today, Task.SOURCE_MANUAL, null, reception.getId()), TaskEvent.SITE));
         Task ok = taskService.create(owner, new TaskService.NewTask(hotel.getId(), cashier.getId(), "Qarzni undiring",
                 null, null, null, today, Task.SOURCE_MANUAL, null, accounting.getId()), TaskEvent.SITE);
-        assertEquals("Buxgalteriya", ok.getDepartment());
+        assertEquals("Бухгалтерия", ok.getDepartment());
         assertEquals(accounting.getId(), departmentId(ok.getId()));
 
         // Tahlildan faqat nomi keladi: xodim shu bo'limda bo'lsa — bog'lanadi, bo'lmasa — nomi qoladi.
         Task byName = taskService.create(owner, new TaskService.NewTask(hotel.getId(), cashier.getId(), "Undiring",
-                null, "buxgalteriya", null, today, Task.SOURCE_DEBT_ANALYSIS), TaskEvent.SITE);
+                null, "бухгалтерия", null, today, Task.SOURCE_DEBT_ANALYSIS), TaskEvent.SITE);
         assertEquals(accounting.getId(), departmentId(byName.getId()));
         Task other = taskService.create(owner, new TaskService.NewTask(hotel.getId(), cashier.getId(), "Vyselenie",
-                null, "Resepshn", null, today, Task.SOURCE_DEBT_ANALYSIS), TaskEvent.SITE);
+                null, "Ресепшн", null, today, Task.SOURCE_DEBT_ANALYSIS), TaskEvent.SITE);
         assertNull(departmentId(other.getId()));
-        assertEquals("Resepshn", taskRepository.findById(other.getId()).orElseThrow().getDepartment());
+        assertEquals("Ресепшн", taskRepository.findById(other.getId()).orElseThrow().getDepartment());
     }
 
     @Test
     void newHotelGetsDefaultDepartments() {
         Hotel h = hotelService.save(null, "Fresh Hotel", "Xiva", 10, "UZS", null, null, null, null, true);
-        assertEquals(List.of("Buxgalteriya", "Rahbariyat", "Resepshn"),
+        assertEquals(List.of("Бухгалтерия", "Раҳбарият", "Ресепшн"),
                 departmentRepository.findAllByHotelIds(List.of(h.getId())).stream().map(Department::getName).toList());
     }
 
     @Test
     void pagesForOwnerAndForbiddenForStaff() throws Exception {
         MockMvc mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
-        Department reception = teamService.createDepartment(owner, hotel.getId(), "Resepshn");
+        Department reception = teamService.createDepartment(owner, hotel.getId(), "Ресепшн");
 
         // Menyu: egasida "Bo'limlar" va "Xodimlar" bor, platforma bo'limlari yo'q.
         String home = html(mvc, "/", owner);
         assertTrue(home.contains("/team/departments") && home.contains("/team/staff"));
         assertFalse(home.contains("/admin/users"));
 
-        assertTrue(html(mvc, "/team/departments", owner).contains("Resepshn"));
+        assertTrue(html(mvc, "/team/departments", owner).contains("Ресепшн"));
         assertTrue(html(mvc, "/team/staff/new", owner).contains("name=\"departmentIds\""));
 
         // Forma orqali xodim qo'shish.
@@ -162,7 +162,7 @@ class TeamDbTest {
         assertEquals("/team/staff", location);
         User staff = userRepository.findByUsername("dilnoza").orElseThrow();
         String list = html(mvc, "/team/staff", owner);
-        assertTrue(list.contains("Dilnoza") && list.contains("Resepshn"));
+        assertTrue(list.contains("Dilnoza") && list.contains("Ресепшн"));
         assertTrue(html(mvc, "/team/staff/" + staff.getId(), owner).contains("dilnoza"));
 
         // Topshiriq oynasi: bo'lim tanlovi va xodimning bo'limlari.

@@ -49,11 +49,11 @@ public class TaskController {
     static final Map<String, String> VIEWS = new LinkedHashMap<>();
 
     static {
-        VIEWS.put("open", "Bajarilishi kerak");
-        VIEWS.put("review", "Tekshiruvda");
-        VIEWS.put("overdue", "Muddati o'tgan");
-        VIEWS.put("finished", "Yakunlangan");
-        VIEWS.put("all", "Hammasi");
+        VIEWS.put("open", "Бажарилиши керак");
+        VIEWS.put("review", "Текширувда");
+        VIEWS.put("overdue", "Муддати ўтган");
+        VIEWS.put("finished", "Якунланган");
+        VIEWS.put("all", "Ҳаммаси");
     }
 
     private final TaskService taskService;
@@ -132,16 +132,16 @@ public class TaskController {
         String[] parts = target.split(":");
         try {
             if (parts.length != 2) {
-                throw new TaskException("Bajaruvchini tanlang.");
+                throw new TaskException("Бажарувчини танланг.");
             }
             String src = Task.SOURCE_DEBT_ANALYSIS.equals(source) ? source : Task.SOURCE_MANUAL;
             Task task = taskService.create(user, new TaskService.NewTask(Long.parseLong(parts[0]), Long.parseLong(parts[1]),
                     title, description, department, bookingNumber, dueDate, src, listKey, departmentId), TaskEvent.SITE);
-            String tg = task.getAssignee().getTelegramChatId() != null ? " Xodimga Telegram'da xabar yuborildi."
-                    : " Xodim Telegram'ni ulamagan — topshiriqni saytda ko'radi.";
-            ra.addFlashAttribute("success", "Topshiriq #" + task.getId() + " berildi: " + TaskNotifier.name(task.getAssignee()) + "." + tg);
+            String tg = task.getAssignee().getTelegramChatId() != null ? " Ходимга Telegram'да хабар юборилди."
+                    : " Ходим Telegram'ни уламаган — топшириқни сайтда кўради.";
+            ra.addFlashAttribute("success", "Топшириқ #" + task.getId() + " берилди: " + TaskNotifier.name(task.getAssignee()) + "." + tg);
         } catch (TaskException | NumberFormatException e) {
-            ra.addFlashAttribute("error", e instanceof TaskException ? e.getMessage() : "Bajaruvchini tanlang.");
+            ra.addFlashAttribute("error", e instanceof TaskException ? e.getMessage() : "Бажарувчини танланг.");
         }
         return "redirect:" + safeBack(back);
     }
@@ -153,29 +153,29 @@ public class TaskController {
             String msg = switch (action) {
                 case "start" -> {
                     taskService.start(user, id, TaskEvent.SITE);
-                    yield "Topshiriq bajarilmoqda deb belgilandi.";
+                    yield "Топшириқ бажарилмоқда деб белгиланди.";
                 }
                 case "complete" -> {
                     taskService.complete(user, id, comment, TaskEvent.SITE);
-                    yield "Bajarildi deb belgilandi — topshiriq beruvchi tekshiradi.";
+                    yield "Бажарилди деб белгиланди — топшириқ берувчи текширади.";
                 }
                 case "accept" -> {
                     taskService.accept(user, id, comment, TaskEvent.SITE);
-                    yield "Bajarilgani tasdiqlandi.";
+                    yield "Бажарилгани тасдиқланди.";
                 }
                 case "return" -> {
                     taskService.returnTask(user, id, comment, TaskEvent.SITE);
-                    yield "Topshiriq qayta bajarishga qaytarildi.";
+                    yield "Топшириқ қайта бажаришга қайтарилди.";
                 }
                 case "cancel" -> {
                     taskService.cancel(user, id, comment, TaskEvent.SITE);
-                    yield "Topshiriq bekor qilindi.";
+                    yield "Топшириқ бекор қилинди.";
                 }
                 case "comment" -> {
                     taskService.comment(user, id, comment, TaskEvent.SITE);
-                    yield "Izoh qo'shildi.";
+                    yield "Изоҳ қўшилди.";
                 }
-                default -> throw new TaskException("Noma'lum amal.");
+                default -> throw new TaskException("Номаълум амал.");
             };
             ra.addFlashAttribute("success", msg);
         } catch (TaskException e) {
@@ -201,7 +201,7 @@ public class TaskController {
     public ResponseEntity<byte[]> itemsCsv(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long id) {
         Task task = taskService.get(user, id);
         StringBuilder sb = new StringBuilder("﻿");
-        sb.append("№;Bron raqami;Mehmon;Manba;Holat;Kelish;Ketish;Narx;To'langan;Qarz;O'tgan kun;Bajarildi;Valyuta\n");
+        sb.append("№;Брон рақами;Меҳмон;Манба;Ҳолат;Келиш;Кетиш;Нарх;Тўланган;Қарз;Ўтган кун;Бажарилди;Валюта\n");
         for (TaskItem i : taskService.items(user, id)) {
             sb.append(i.getPosition()).append(';')
                     .append(csv(i.getBookingNumber())).append(';')
@@ -214,7 +214,7 @@ public class TaskController {
                     .append(i.getPaid().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
                     .append(i.getDebt().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
                     .append(i.getAgeDays()).append(';')
-                    .append(i.isDone() ? "ha" : "").append(';')
+                    .append(i.isDone() ? "ҳа" : "").append(';')
                     .append(task.getHotel().getCurrency()).append('\n');
         }
         return ResponseEntity.ok()
@@ -231,8 +231,8 @@ public class TaskController {
         LocalDate today = taskService.today();
         String v = VIEWS.containsKey(view) ? view : "all";
         StringBuilder sb = new StringBuilder("﻿");
-        sb.append("№;Mehmonxona;Topshiriq;Izoh;Bo'lim;Bron;Bajaruvchi;Topshiriq berdi;Berilgan;Muddat;Holat;Muddati o'tgan;"
-                + "Bajarildi deb belgilangan;Tekshirilgan;Ilova (yashashlar);Ilovadan bajarilgan\n");
+        sb.append("№;Меҳмонхона;Топшириқ;Изоҳ;Бўлим;Брон;Бажарувчи;Топшириқ берди;Берилган;Муддат;Ҳолат;Муддати ўтган;"
+                + "Бажарилди деб белгиланган;Текширилган;Илова (яшашлар);Иловадан бажарилган\n");
         List<Task> visible = taskService.visible(user);
         Map<Long, TaskService.ItemSummary> sums = taskService.itemSummaries(visible);
         for (Task t : visible) {
@@ -251,7 +251,7 @@ public class TaskController {
                     .append(t.getCreatedAt().format(TIME)).append(';')
                     .append(t.getDueDate() == null ? "" : t.getDueDate().format(DAY)).append(';')
                     .append(csv(t.getStatus().getLabel())).append(';')
-                    .append(t.isOverdue(today) ? "ha" : "").append(';')
+                    .append(t.isOverdue(today) ? "ҳа" : "").append(';')
                     .append(t.getCompletedAt() == null ? "" : t.getCompletedAt().format(TIME)).append(';')
                     .append(t.getReviewedAt() == null ? "" : t.getReviewedAt().format(TIME)).append(';')
                     .append(is == null ? "" : String.valueOf(is.count())).append(';')

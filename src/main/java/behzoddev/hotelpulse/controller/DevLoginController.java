@@ -44,7 +44,7 @@ public class DevLoginController {
         }
         UserDetails details = userDetailsService.loadUserByUsername(user);
         if (!details.isEnabled()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Foydalanuvchi bloklangan");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Фойдаланувчи блокланган");
         }
         if (request.getSession(false) != null) {
             request.changeSessionId();

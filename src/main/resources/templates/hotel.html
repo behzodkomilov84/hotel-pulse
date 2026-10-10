@@ -6,23 +6,23 @@
 <main class="container" th:with="cur=${hotel.currency}">
     <div class="page-head reveal">
         <div>
-            <h1 th:text="${hotel.name}">Mehmonxona</h1>
+            <h1 th:text="${hotel.name}">Меҳмонхона</h1>
             <p class="subtitle">
                 <span th:if="${hotel.city}" th:text="${hotel.city}"></span>
                 <span th:if="${hotel.city}">·</span>
-                <span th:text="${hotel.roomsCount} + ' ta xona'"></span>
-                <span class="badge badge-ok" th:if="${hotel.exelyConnected}">Exely ulangan</span>
-                <span class="badge badge-warn" th:unless="${hotel.exelyConnected}">Exely ulanmagan</span>
+                <span th:text="${hotel.roomsCount} + ' та хона'"></span>
+                <span class="badge badge-ok" th:if="${hotel.exelyConnected}">Exely уланган</span>
+                <span class="badge badge-warn" th:unless="${hotel.exelyConnected}">Exely уланмаган</span>
             </p>
         </div>
         <div class="head-actions">
             <th:block th:if="${hasData}">
                 <button type="button" class="btn btn-secondary" data-ws-edit>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                    Tahrirlash
+                    Таҳрирлаш
                 </button>
             </th:block>
-            <a sec:authorize="hasRole('OWNER')" class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">Sozlamalar</a>
+            <a sec:authorize="hasRole('OWNER')" class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">Созламалар</a>
         </div>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
@@ -32,9 +32,9 @@
         <div class="empty-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
         </div>
-        <p><strong>Hali ma'lumot yo'q</strong></p>
-        <p th:unless="${hotel.exelyConnected}">Exely ulangach, bronlar va to'lovlar shu yerda avtomatik ko'rinadi.</p>
-        <p th:if="${hotel.exelyConnected}">Exely ulangan — birinchi sinxronlash tugagach, ma'lumotlar shu yerda ko'rinadi.</p>
+        <p><strong>Ҳали маълумот йўқ</strong></p>
+        <p th:unless="${hotel.exelyConnected}">Exely улангач, бронлар ва тўловлар шу ерда автоматик кўринади.</p>
+        <p th:if="${hotel.exelyConnected}">Exely уланган — биринчи синхронлаш тугагач, маълумотлар шу ерда кўринади.</p>
     </div>
 
     <th:block th:if="${hasData}" th:with="s=${kpi.stays}, ps=${kpi.previousStays}">
@@ -44,20 +44,20 @@
         <!-- ===== Tahrirlash rejimi paneli (Tahrirlash tugmasi bosilganda) ===== -->
         <div class="ws-toolbar" data-ws-toolbar hidden>
             <div class="ws-toolbar-text">
-                <strong>Tahrirlash rejimi</strong>
-                <span class="muted">— bloklarni sudrab yoki ↑ ↓ bilan joyini o'zgartiring, ✕ — olib tashlash.</span>
+                <strong>Таҳрирлаш режими</strong>
+                <span class="muted">— блокларни судраб ёки ↑ ↓ билан жойини ўзгартиринг, ✕ — олиб ташлаш.</span>
             </div>
             <div class="ws-toolbar-actions">
-                <button type="button" class="btn btn-secondary" data-modal-open="addReportModal">+ Hisobot qo'shish</button>
-                <form method="post" th:action="@{/reports/layout/reset}" th:if="${layoutCustom}" data-confirm="Standart tarkib tiklansinmi? Qo'shilgan hisobotlar ekrandan olinadi.">
+                <button type="button" class="btn btn-secondary" data-modal-open="addReportModal">+ Ҳисобот қўшиш</button>
+                <form method="post" th:action="@{/reports/layout/reset}" th:if="${layoutCustom}" data-confirm="Стандарт таркиб тиклансинми? Қўшилган ҳисоботлар экрандан олинади.">
                     <input type="hidden" name="back" th:value="${backUrl}">
-                    <button type="submit" class="btn btn-secondary">Standartga qaytarish</button>
+                    <button type="submit" class="btn btn-secondary">Стандартга қайтариш</button>
                 </form>
-                <button type="button" class="btn btn-secondary" data-ws-cancel>Bekor qilish</button>
+                <button type="button" class="btn btn-secondary" data-ws-cancel>Бекор қилиш</button>
                 <form method="post" th:action="@{/reports/layout}" data-ws-save>
                     <input type="hidden" name="keys">
                     <input type="hidden" name="back" th:value="${backUrl}">
-                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                    <button type="submit" class="btn btn-primary">Сақлаш</button>
                 </form>
             </div>
         </div>
@@ -67,58 +67,58 @@
             <section class="ws-block" th:each="b, bStat : ${blocks}" th:id="'block-' + ${b.key}"
                      th:classappend="'ws-' + ${b.size}" th:attr="data-key=${b.key}">
                 <div class="ws-edit-bar">
-                    <span class="ws-handle" title="Sudrab joyini o'zgartiring" aria-hidden="true">⋮⋮</span>
+                    <span class="ws-handle" title="Судраб жойини ўзгартиринг" aria-hidden="true">⋮⋮</span>
                     <span class="ws-edit-title" th:text="${b.title}"></span>
-                    <button type="button" class="ws-btn" data-ws-up aria-label="Yuqoriga">↑</button>
-                    <button type="button" class="ws-btn" data-ws-down aria-label="Pastga">↓</button>
-                    <button type="button" class="ws-btn ws-remove" data-ws-remove aria-label="Olib tashlash">✕</button>
+                    <button type="button" class="ws-btn" data-ws-up aria-label="Юқорига">↑</button>
+                    <button type="button" class="ws-btn" data-ws-down aria-label="Пастга">↓</button>
+                    <button type="button" class="ws-btn ws-remove" data-ws-remove aria-label="Олиб ташлаш">✕</button>
                 </div>
                 <th:block th:switch="${b.key}">
                 <th:block th:case="'today'">
         <!-- ===== Bugun ===== -->
-        <h2 class="section-title"><span class="live-dot"></span>Bugun</h2>
+        <h2 class="section-title"><span class="live-dot"></span>Бугун</h2>
         <div class="stats-grid stagger">
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Bandlik<span th:replace="~{fragments/layout :: tip(#{tip.today.occupancy})}"></span></span>
+                    <span class="stat-label">Бандлик<span th:replace="~{fragments/layout :: tip(#{tip.today.occupancy})}"></span></span>
                     <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v9"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.pct(today.occupancy)}">0%</div>
                 <div class="meter"><div class="meter-fill" th:attr="data-fill=${today.occupancy}"></div></div>
-                <div class="stat-sub" th:text="${today.inHouseRooms} + ' / ' + ${hotel.roomsCount} + ' xona band'"></div>
+                <div class="stat-sub" th:text="${today.inHouseRooms} + ' / ' + ${hotel.roomsCount} + ' хона банд'"></div>
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Keladiganlar<span th:replace="~{fragments/layout :: tip(#{tip.today.arrivals})}"></span></span>
+                    <span class="stat-label">Келадиганлар<span th:replace="~{fragments/layout :: tip(#{tip.today.arrivals})}"></span></span>
                     <span class="stat-icon i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${today.arrivals}">0</div>
-                <div class="stat-sub">bron bugun keladi</div>
+                <div class="stat-sub">брон бугун келади</div>
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Ketadiganlar<span th:replace="~{fragments/layout :: tip(#{tip.today.departures})}"></span></span>
+                    <span class="stat-label">Кетадиганлар<span th:replace="~{fragments/layout :: tip(#{tip.today.departures})}"></span></span>
                     <span class="stat-icon i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${today.departures}">0</div>
-                <div class="stat-sub">bron bugun ketadi</div>
+                <div class="stat-sub">брон бугун кетади</div>
             </div>
             <!-- Bosilsa — qarzdorlik bo'yicha batafsil hisobot. -->
             <a class="card stat stat-link" th:href="@{/hotels/{id}/debts(id=${hotel.id})}"
                th:classappend="${paymentsComplete and today.debtorCount > 0} ? 'stat-alert'">
                 <div class="stat-top">
-                    <span class="stat-label">Qarzdorlik<span th:replace="~{fragments/layout :: tip(#{tip.today.debt})}"></span></span>
+                    <span class="stat-label">Қарздорлик<span th:replace="~{fragments/layout :: tip(#{tip.today.debt})}"></span></span>
                     <span class="stat-icon i-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></span>
                 </div>
                 <th:block th:if="${paymentsComplete}">
                     <div class="stat-value" data-count th:text="${@fmt.moneyShort(today.debt, cur)}">0</div>
-                    <div class="stat-sub" th:text="${today.debtorCount} + ' ta bron to\'liq to\'lanmagan'"></div>
+                    <div class="stat-sub" th:text="${today.debtorCount} + ' та брон тўлиқ тўланмаган'"></div>
                 </th:block>
                 <th:block th:unless="${paymentsComplete}">
                     <div class="stat-value">—</div>
-                    <div class="stat-sub">Exely PMS kaliti ulanganda ko'rinadi</div>
+                    <div class="stat-sub">Exely PMS калити уланганда кўринади</div>
                 </th:block>
-                <div class="stat-more">Batafsil →</div>
+                <div class="stat-more">Батафсил →</div>
             </a>
         </div>
                     <th:block th:if="${bStat.first}"><div th:replace="~{::periodbar}"></div></th:block>
@@ -128,13 +128,13 @@
         <div class="stats-grid stagger">
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Bandlik<span th:replace="~{fragments/layout :: tip(#{tip.occupancy})}"></span></span>
+                    <span class="stat-label">Бандлик<span th:replace="~{fragments/layout :: tip(#{tip.occupancy})}"></span></span>
                     <span class="stat-icon i-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.pct(s.occupancy)}">0%</div>
                 <div class="delta" th:classappend="${@fmt.trend(s.occupancy, ps.occupancy)}"
                      th:text="${@fmt.pointChange(s.occupancy, ps.occupancy)}"></div>
-                <div class="stat-sub" th:text="${s.soldRoomNights} + ' / ' + ${s.availableRoomNights} + ' xona-kecha'"></div>
+                <div class="stat-sub" th:text="${s.soldRoomNights} + ' / ' + ${s.availableRoomNights} + ' хона-кеча'"></div>
             </div>
             <div class="card stat">
                 <div class="stat-top">
@@ -144,7 +144,7 @@
                 <div class="stat-value" data-count th:text="${@fmt.money(s.adr, cur)}">0</div>
                 <div class="delta" th:if="${@fmt.change(s.adr, ps.adr)}"
                      th:classappend="${@fmt.trend(s.adr, ps.adr)}" th:text="${@fmt.change(s.adr, ps.adr)}"></div>
-                <div class="stat-sub">xonaning o'rtacha narxi</div>
+                <div class="stat-sub">хонанинг ўртача нархи</div>
             </div>
             <div class="card stat">
                 <div class="stat-top">
@@ -154,11 +154,11 @@
                 <div class="stat-value" data-count th:text="${@fmt.money(s.revpar, cur)}">0</div>
                 <div class="delta" th:if="${@fmt.change(s.revpar, ps.revpar)}"
                      th:classappend="${@fmt.trend(s.revpar, ps.revpar)}" th:text="${@fmt.change(s.revpar, ps.revpar)}"></div>
-                <div class="stat-sub">har bir mavjud xonaga</div>
+                <div class="stat-sub">ҳар бир мавжуд хонага</div>
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label"><span th:text="${s.extrasRevenue.signum() > 0} ? 'Yashash daromadi' : 'Xona daromadi'">Xona daromadi</span><th:block
+                    <span class="stat-label"><span th:text="${s.extrasRevenue.signum() > 0} ? 'Яшаш даромади' : 'Хона даромади'">Хона даромади</span><th:block
                             th:if="${s.extrasRevenue.signum() != 0}"><span
                             th:replace="~{fragments/layout :: tip(#{tip.revenue.services} + '\n\n'
                                 + 'Yashash: ' + ${@fmt.money(s.roomRevenue, cur)}
@@ -175,66 +175,66 @@
                      th:text="${@fmt.change(s.roomRevenue, ps.roomRevenue)}"></div>
                 <div class="stat-sub" th:if="${s.extrasRevenue.signum() == 0}" th:text="${@fmt.money(s.roomRevenue, cur)}"></div>
                 <div class="stat-sub" th:if="${s.extrasRevenue.signum() != 0}">
-                    + nonushta <b th:text="${@fmt.moneyShort(s.mealsRevenue, cur)}"></b>
-                    <span th:if="${s.extrasRevenue.compareTo(s.mealsRevenue) != 0}">· boshqa
+                    + нонушта <b th:text="${@fmt.moneyShort(s.mealsRevenue, cur)}"></b>
+                    <span th:if="${s.extrasRevenue.compareTo(s.mealsRevenue) != 0}">· бошқа
                         <b th:text="${@fmt.moneyShort(s.extrasRevenue.subtract(s.mealsRevenue), cur)}"></b></span>
-                    <span class="muted">· jami</span> <b th:text="${@fmt.moneyShort(s.totalRevenue(), cur)}"></b>
+                    <span class="muted">· жами</span> <b th:text="${@fmt.moneyShort(s.totalRevenue(), cur)}"></b>
                 </div>
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Tushgan to'lovlar<span th:replace="~{fragments/layout :: tip(${paymentsComplete} ? #{tip.payments} : #{tip.payments.partial})}"></span></span>
+                    <span class="stat-label">Тушган тўловлар<span th:replace="~{fragments/layout :: tip(${paymentsComplete} ? #{tip.payments} : #{tip.payments.partial})}"></span></span>
                     <span class="stat-icon i-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.moneyShort(kpi.paymentsReceived, cur)}">0</div>
                 <div class="delta" th:if="${@fmt.change(kpi.paymentsReceived, kpi.previousPaymentsReceived)}"
                      th:classappend="${@fmt.trend(kpi.paymentsReceived, kpi.previousPaymentsReceived)}"
                      th:text="${@fmt.change(kpi.paymentsReceived, kpi.previousPaymentsReceived)}"></div>
-                <div class="stat-sub" th:text="${paymentsComplete} ? ${@fmt.money(kpi.paymentsReceived, cur)} : 'faqat oldindan to\'lovlar (Exely)'"></div>
+                <div class="stat-sub" th:text="${paymentsComplete} ? ${@fmt.money(kpi.paymentsReceived, cur)} : 'фақат олдиндан тўловлар (Exely)'"></div>
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Yangi bronlar<span th:replace="~{fragments/layout :: tip(#{tip.newBookings})}"></span></span>
+                    <span class="stat-label">Янги бронлар<span th:replace="~{fragments/layout :: tip(#{tip.newBookings})}"></span></span>
                     <span class="stat-icon i-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v4M10 16h4"/></svg></span>
                 </div>
                 <div class="stat-value" data-count th:text="${kpi.newBookings}">0</div>
-                <div class="stat-sub">shu davrda qabul qilingan</div>
+                <div class="stat-sub">шу даврда қабул қилинган</div>
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">Bekor qilingan / kelmagan<span th:replace="~{fragments/layout :: tip(#{tip.cancellations})}"></span></span>
+                    <span class="stat-label">Бекор қилинган / келмаган<span th:replace="~{fragments/layout :: tip(#{tip.cancellations})}"></span></span>
                     <span class="stat-icon i-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg></span>
                 </div>
                 <div class="stat-value" th:text="${kpi.cancellations} + ' / ' + ${s.noShows}">0</div>
-                <div class="stat-sub" th:text="${kpi.newBookings > 0} ? 'yangi bronlarga nisbatan: ' + ${@fmt.pct(1.0 * kpi.cancellations / kpi.newBookings)} : '—'"></div>
+                <div class="stat-sub" th:text="${kpi.newBookings > 0} ? 'янги бронларга нисбатан: ' + ${@fmt.pct(1.0 * kpi.cancellations / kpi.newBookings)} : '—'"></div>
             </div>
             <div class="card stat">
                 <div class="stat-top">
-                    <span class="stat-label">O'rtacha yashash<span th:replace="~{fragments/layout :: tip(#{tip.los})}"></span></span>
+                    <span class="stat-label">Ўртача яшаш<span th:replace="~{fragments/layout :: tip(#{tip.los})}"></span></span>
                     <span class="stat-icon i-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></span>
                 </div>
-                <div class="stat-value" data-count th:text="${@fmt.number(s.avgLengthOfStay)} + ' kecha'">0</div>
-                <div class="stat-sub">shu davrda kelganlar</div>
+                <div class="stat-value" data-count th:text="${@fmt.number(s.avgLengthOfStay)} + ' кеча'">0</div>
+                <div class="stat-sub">шу даврда келганлар</div>
             </div>
         </div>
                 </th:block>
                 <th:block th:case="'flow'">
         <!-- ===== Daromad va tushum ===== -->
         <div class="card flow-card reveal" th:with="gap=${s.totalRevenue().subtract(kpi.paymentsReceived)}">
-            <h3 class="card-title">Daromad va tushum</h3>
+            <h3 class="card-title">Даромад ва тушум</h3>
             <div class="flow-grid">
                 <div class="flow-item">
-                    <div class="k">Daromad<span th:replace="~{fragments/layout :: tip(#{tip.flow.revenue})}"></span></div>
+                    <div class="k">Даромад<span th:replace="~{fragments/layout :: tip(#{tip.flow.revenue})}"></span></div>
                     <div class="v" th:text="${@fmt.moneyShort(s.totalRevenue(), cur)}">0</div>
                     <div class="sub" th:text="${@fmt.money(s.totalRevenue(), cur)}"></div>
                 </div>
                 <div class="flow-item">
-                    <div class="k">Tushum (to'lovlar)<span th:replace="~{fragments/layout :: tip(${paymentsComplete} ? #{tip.flow.payments} : #{tip.payments.partial})}"></span></div>
+                    <div class="k">Тушум (тўловлар)<span th:replace="~{fragments/layout :: tip(${paymentsComplete} ? #{tip.flow.payments} : #{tip.payments.partial})}"></span></div>
                     <div class="v" th:text="${@fmt.moneyShort(kpi.paymentsReceived, cur)}">0</div>
-                    <div class="sub" th:text="${paymentsComplete} ? ${@fmt.money(kpi.paymentsReceived, cur)} : 'faqat oldindan to\'lovlar (Exely)'"></div>
+                    <div class="sub" th:text="${paymentsComplete} ? ${@fmt.money(kpi.paymentsReceived, cur)} : 'фақат олдиндан тўловлар (Exely)'"></div>
                 </div>
                 <div class="flow-item" th:classappend="${gap.signum() > 0} ? 'gap-pos' : (${gap.signum() < 0} ? 'gap-neg' : '')">
-                    <div class="k">Farq<span th:replace="~{fragments/layout :: tip(#{tip.flow.gap})}"></span></div>
+                    <div class="k">Фарқ<span th:replace="~{fragments/layout :: tip(#{tip.flow.gap})}"></span></div>
                     <div class="v" th:text="${@fmt.signedMoneyShort(gap, cur)}">0</div>
                     <div class="sub" th:text="${@fmt.gapNote(gap)}"></div>
                 </div>
@@ -243,14 +243,14 @@
                 </th:block>
                 <th:block th:case="'daily-chart'">
                     <div class="card ws-card">
-                        <h3 class="card-title">Kunlik bandlik va daromad</h3>
-                        <div class="chart-box"><canvas id="dailyChart" aria-label="Kunlik bandlik va daromad grafigi" role="img"></canvas></div>
+                        <h3 class="card-title">Кунлик бандлик ва даромад</h3>
+                        <div class="chart-box"><canvas id="dailyChart" aria-label="Кунлик бандлик ва даромад графиги" role="img"></canvas></div>
                     </div>
                 </th:block>
                 <th:block th:case="'sources-chart'">
                     <div class="card ws-card">
-                        <h3 class="card-title">Savdo kanallari</h3>
-                        <div class="chart-box chart-box-sm" th:if="${!s.sources.isEmpty()}"><canvas id="sourceChart" aria-label="Savdo kanallari ulushi" role="img"></canvas></div>
+                        <h3 class="card-title">Савдо каналлари</h3>
+                        <div class="chart-box chart-box-sm" th:if="${!s.sources.isEmpty()}"><canvas id="sourceChart" aria-label="Савдо каналлари улуши" role="img"></canvas></div>
                         <table class="compact source-table" th:if="${!s.sources.isEmpty()}">
                             <colgroup><col><col class="col-pct"><col class="col-sum"></colgroup>
                             <tr th:each="src, st : ${s.sources}">
@@ -259,21 +259,21 @@
                                 <td class="num" th:text="${@fmt.moneyShort(src.revenue, cur)}"></td>
                             </tr>
                         </table>
-                        <p class="empty" th:if="${s.sources.isEmpty()}">Bu davrda bron yo'q</p>
+                        <p class="empty" th:if="${s.sources.isEmpty()}">Бу даврда брон йўқ</p>
                     </div>
                 </th:block>
                 <th:block th:case="*">
                     <div class="card ws-card report-card" th:with="t=${tables[b.key]}">
                         <div class="report-card-head">
                             <div>
-                                <h3 class="card-title" th:text="${b.title}">Hisobot</h3>
+                                <h3 class="card-title" th:text="${b.title}">Ҳисобот</h3>
                                 <p class="muted report-card-sub" th:if="${b.exely}" th:text="'Exely: ' + ${b.exely}"></p>
                             </div>
                             <div class="report-card-actions">
                                 <a class="btn btn-secondary btn-sm"
                                    th:href="@{/reports/{k}/export.csv(k=${b.key}, hotel=${hotel.id}, period=${kpi.period.key}, from=${kpi.period.from}, to=${kpi.period.to})}">Excel</a>
                                 <a class="btn btn-secondary btn-sm"
-                                   th:href="@{/reports/{k}(k=${b.key}, hotel=${hotel.id}, period=${kpi.period.key}, from=${kpi.period.from}, to=${kpi.period.to})}">To'liq →</a>
+                                   th:href="@{/reports/{k}(k=${b.key}, hotel=${hotel.id}, period=${kpi.period.key}, from=${kpi.period.from}, to=${kpi.period.to})}">Тўлиқ →</a>
                             </div>
                         </div>
                         <div th:replace="~{fragments/report-table :: table(${t}, 12)}"></div>
@@ -284,15 +284,15 @@
         </div>
 
         <div class="card empty reveal" th:if="${blocks.isEmpty()}">
-            <p><strong>Ekranda hisobot yo'q</strong></p>
-            <p><b>Tahrirlash</b> → <b>+ Hisobot qo'shish</b> bilan kerakli hisobotlarni qo'shing.</p>
+            <p><strong>Экранда ҳисобот йўқ</strong></p>
+            <p><b>Таҳрирлаш</b> → <b>+ Ҳисобот қўшиш</b> билан керакли ҳисоботларни қўшинг.</p>
         </div>
 
         <!-- ===== Hisobot qo'shish: ro'yxatdan (Hisobotlar menyusidagi bilan bir xil) ===== -->
         <dialog class="modal modal-wide" id="addReportModal" aria-labelledby="addReportTitle">
             <div class="modal-head">
-                <h3 id="addReportTitle">Hisobot qo'shish</h3>
-                <button type="button" class="modal-close" data-modal-close aria-label="Yopish">×</button>
+                <h3 id="addReportTitle">Ҳисобот қўшиш</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Ёпиш">×</button>
             </div>
             <div class="add-report-groups">
                 <div class="add-report-group" th:each="g : ${catalogGroups}">
@@ -309,10 +309,10 @@
                                 <input type="hidden" name="back" th:value="${backUrl}">
                                 <button type="submit" class="btn btn-sm"
                                         th:classappend="${layout.contains(d.key)} ? 'btn-secondary' : 'btn-primary'"
-                                        th:text="${layout.contains(d.key)} ? 'Ekranda ✓' : '+ Qo\'shish'"
+                                        th:text="${layout.contains(d.key)} ? 'Экранда ✓' : '+ Қўшиш'"
                                         th:disabled="${layout.contains(d.key)}"></button>
                             </form>
-                            <span class="badge badge-off" th:unless="${d.available}">Exely bermaydi</span>
+                            <span class="badge badge-off" th:unless="${d.available}">Exely бермайди</span>
                         </li>
                     </ul>
                 </div>
@@ -413,24 +413,24 @@
 <div class="period-wrap" th:fragment="periodbar">
         <!-- ===== Davr tanlash ===== -->
         <div class="period-bar reveal">
-            <nav class="segmented" aria-label="Davr">
+            <nav class="segmented" aria-label="Давр">
                 <a th:each="opt : ${periodOptions}"
                    th:href="@{/hotels/{id}(id=${hotel.id}, period=${opt.key})}"
                    th:classappend="${kpi.period.key == opt.key} ? 'active'"
-                   th:text="${opt.value}">Davr</a>
+                   th:text="${opt.value}">Давр</a>
             </nav>
             <form class="custom-period" method="get" th:action="@{/hotels/{id}(id=${hotel.id})}">
                 <input type="hidden" name="period" value="custom">
-                <input type="date" name="from" required th:value="${kpi.period.from}" aria-label="Boshlanish sanasi">
+                <input type="date" name="from" required th:value="${kpi.period.from}" aria-label="Бошланиш санаси">
                 <span>—</span>
-                <input type="date" name="to" required th:value="${kpi.period.to}" aria-label="Tugash sanasi">
-                <button type="submit" class="btn btn-secondary">Ko'rsatish</button>
+                <input type="date" name="to" required th:value="${kpi.period.to}" aria-label="Тугаш санаси">
+                <button type="submit" class="btn btn-secondary">Кўрсатиш</button>
             </form>
         </div>
         <p class="period-caption reveal">
             <strong th:text="${kpi.period.label}"></strong>
-            <span th:text="'· taqqoslash: ' + ${kpi.previousPeriod.label}"></span>
-            <span th:if="${kpi.period.to.isAfter(todayDate)}" class="badge badge-role">kelajak — hozircha bron qilingani</span>
+            <span th:text="'· таққослаш: ' + ${kpi.previousPeriod.label}"></span>
+            <span th:if="${kpi.period.to.isAfter(todayDate)}" class="badge badge-role">келажак — ҳозирча брон қилингани</span>
         </p>
 </div>
 </th:block>

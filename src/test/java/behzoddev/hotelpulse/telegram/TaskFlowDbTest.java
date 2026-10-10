@@ -142,27 +142,27 @@ class TaskFlowDbTest {
         // 1) Tahlil botda — egasiga "📌" tugmalari bilan.
         bot.handle(msg(OWNER_CHAT, TelegramBotService.BTN_ANALYSIS));
         var analysis = gateway.last(OWNER_CHAT);
-        assertTrue(analysis.html().contains("Qarzdorlik tahlili"), analysis.html());
-        assertTrue(analysis.html().contains("Tavsiyalar"));
+        assertTrue(analysis.html().contains("Қарздорлик таҳлили"), analysis.html());
+        assertTrue(analysis.html().contains("Тавсиялар"));
         String kb = analysis.markup().toString();
         assertTrue(kb.contains("ta:a:" + hotel.getId() + ":0"), kb);
-        assertTrue(kb.contains("ta:p:" + hotel.getId() + ":0"), "bron bo'yicha ham topshiriq");
+        assertTrue(kb.contains("ta:p:" + hotel.getId() + ":0"), "брон бўйича ҳам топшириқ");
 
         // 2) Tavsiya → xodim (faqat shu mehmonxona xodimi) → muddat → topshiriq.
         bot.handle(cb(OWNER_CHAT, "ta:a:" + hotel.getId() + ":0"));
         String staffKb = gateway.last(OWNER_CHAT).markup().toString();
         assertTrue(staffKb.contains("tb:a:" + hotel.getId() + ":0:" + staff.getId()), staffKb);
-        assertFalse(staffKb.contains(":" + otherStaff.getId() + "\""), "boshqa mehmonxona xodimi ro'yxatda yo'q");
+        assertFalse(staffKb.contains(":" + otherStaff.getId() + "\""), "бошқа меҳмонхона ходими рўйхатда йўқ");
         bot.handle(cb(OWNER_CHAT, "tb:a:" + hotel.getId() + ":0:" + staff.getId()));
         assertTrue(gateway.last(OWNER_CHAT).markup().toString().contains("tc:a:" + hotel.getId() + ":0:" + staff.getId() + ":3"));
         bot.handle(cb(OWNER_CHAT, "tc:a:" + hotel.getId() + ":0:" + staff.getId() + ":3"));
-        assertTrue(gateway.last(OWNER_CHAT).html().contains("Topshiriq berildi"));
+        assertTrue(gateway.last(OWNER_CHAT).html().contains("Топшириқ берилди"));
 
         Task task = taskRepository.findAll().get(0);
         assertEquals(TaskStatus.NEW, task.getStatus());
         assertEquals(Task.SOURCE_DEBT_ANALYSIS, task.getSource());
         assertEquals(today.plusDays(3), task.getDueDate());
-        assertNotNull(task.getDepartment(), "bo'lim tavsiyadan olinadi");
+        assertNotNull(task.getDepartment(), "бўлим тавсиядан олинади");
         long id = task.getId();
 
         // Tavsiyaga tegishli ro'yxat ilova qilingan (1-tavsiya — vyselenie qilinmagan: Valiyev).
@@ -173,9 +173,9 @@ class TaskFlowDbTest {
 
         // Xodimga botda xabar — ilova va "Boshladim" / "Bajarildi" tugmalari bilan.
         var toStaff = gateway.last(STAFF_CHAT);
-        assertTrue(toStaff.html().contains("Ilova: 1 ta yashash"), toStaff.html());
+        assertTrue(toStaff.html().contains("Илова: 1 та яшаш"), toStaff.html());
         assertTrue(toStaff.html().contains("Valiyev"));
-        assertTrue(toStaff.html().contains("Sizga yangi topshiriq"));
+        assertTrue(toStaff.html().contains("Сизга янги топшириқ"));
         assertTrue(toStaff.markup().toString().contains("k:s:" + id));
         assertTrue(toStaff.markup().toString().contains("k:c:" + id));
 
@@ -183,14 +183,14 @@ class TaskFlowDbTest {
         bot.handle(cb(STAFF_CHAT, "k:c:" + id));
         assertEquals(TaskStatus.REVIEW, status(id));
         var review = gateway.last(OWNER_CHAT);
-        assertTrue(review.html().contains("tekshiring"));
+        assertTrue(review.html().contains("текширинг"));
         assertTrue(review.markup().toString().contains("k:a:" + id));
         bot.handle(msg(STAFF_CHAT, "2 ta yashash vyselenie qilindi"));
         assertTrue(gateway.last(OWNER_CHAT).html().contains("2 ta yashash vyselenie qilindi"));
 
         // 4) Egasi: qaytaradi — sabab so'raladi, keyingi matn sabab bo'ladi.
         bot.handle(cb(OWNER_CHAT, "k:r:" + id));
-        assertTrue(gateway.last(OWNER_CHAT).html().contains("sababini yozing"));
+        assertTrue(gateway.last(OWNER_CHAT).html().contains("сабабини ёзинг"));
         bot.handle(msg(OWNER_CHAT, "Valiyev hali ham yashayapti"));
         assertEquals(TaskStatus.RETURNED, status(id));
         assertTrue(gateway.last(STAFF_CHAT).html().contains("Valiyev hali ham yashayapti"));
@@ -199,7 +199,7 @@ class TaskFlowDbTest {
         bot.handle(cb(STAFF_CHAT, "k:c:" + id));
         bot.handle(cb(OWNER_CHAT, "k:a:" + id));
         assertEquals(TaskStatus.DONE, status(id));
-        assertTrue(gateway.last(STAFF_CHAT).html().contains("tasdiqlandi"));
+        assertTrue(gateway.last(STAFF_CHAT).html().contains("тасдиқланди"));
 
         // Tarix — har bir amal qayd etilgan.
         List<TaskAction> actions = eventRepository.findAllByTaskIdOrderByCreatedAtAscIdAsc(id).stream()
@@ -209,7 +209,7 @@ class TaskFlowDbTest {
 
         // Ro'yxat botda: egasida — tekshiruvda/muddati o'tgan yo'q, xodimda — ochiq yo'q.
         bot.handle(msg(STAFF_CHAT, TelegramBotService.BTN_TASKS));
-        assertTrue(gateway.last(STAFF_CHAT).html().contains("Ochiq topshiriq yo'q"));
+        assertTrue(gateway.last(STAFF_CHAT).html().contains("Очиқ топшириқ йўқ"));
     }
 
     @Test
@@ -233,7 +233,7 @@ class TaskFlowDbTest {
                 "boshqa mehmonxona xodimiga berib bo'lmaydi");
 
         Task t = taskService.create(o, newTask(staff.getId()), TaskEvent.SITE);
-        assertThrows(AccessDeniedException.class, () -> taskService.get(x, t.getId()), "begona xodim ko'rmaydi");
+        assertThrows(AccessDeniedException.class, () -> taskService.get(x, t.getId()), "бегона ходим кўрмайди");
         assertThrows(AccessDeniedException.class, () -> taskService.complete(o, t.getId(), null, TaskEvent.SITE),
                 "bajarildi — faqat bajaruvchi");
         taskService.complete(s, t.getId(), null, TaskEvent.SITE);
@@ -245,10 +245,10 @@ class TaskFlowDbTest {
         // Xodim botda tahlilni ko'radi, lekin topshiriq berish tugmalari yo'q.
         bot.handle(msg(STAFF_CHAT, "/tahlil"));
         var a = gateway.last(STAFF_CHAT);
-        assertTrue(a.html().contains("Qarzdorlik tahlili"));
+        assertTrue(a.html().contains("Қарздорлик таҳлили"));
         assertNull(a.markup());
         bot.handle(cb(STAFF_CHAT, "ta:a:" + hotel.getId() + ":0"));
-        assertTrue(gateway.last(STAFF_CHAT).html().contains("Ruxsat yo'q"));
+        assertTrue(gateway.last(STAFF_CHAT).html().contains("Рухсат йўқ"));
     }
 
     @Test
@@ -259,12 +259,12 @@ class TaskFlowDbTest {
         gateway.sent.clear();
 
         assertEquals(1, taskService.remindDue());
-        assertTrue(gateway.last(STAFF_CHAT).html().contains("muddati o'tdi"));
-        assertTrue(gateway.last(STAFF_CHAT).html().contains("2 kun"));
-        assertTrue(gateway.last(OWNER_CHAT).html().contains("Muddati o'tgan topshiriqlar"));
+        assertTrue(gateway.last(STAFF_CHAT).html().contains("муддати ўтди"));
+        assertTrue(gateway.last(STAFF_CHAT).html().contains("2 кун"));
+        assertTrue(gateway.last(OWNER_CHAT).html().contains("Муддати ўтган топшириқлар"));
 
         long before = gateway.sent.size();
-        assertEquals(0, taskService.remindDue(), "bugun allaqachon eslatilgan");
+        assertEquals(0, taskService.remindDue(), "бугун аллақачон эслатилган");
         assertEquals(before, gateway.sent.size());
         assertTrue(taskRepository.findById(t.getId()).orElseThrow().isOverdue(today));
     }
@@ -278,7 +278,7 @@ class TaskFlowDbTest {
         // Qarzdorlik sahifasi va tahlil: egasida — oyna va "Topshiriq berish" tugmalari, xodimda — yo'q.
         String debts = html(mvc, "/hotels/" + hotel.getId() + "/debts", o);
         assertTrue(debts.contains("id=\"taskModal\""));
-        assertTrue(debts.contains(hotel.getId() + ":" + staff.getId()), "xodim tanlovda");
+        assertTrue(debts.contains(hotel.getId() + ":" + staff.getId()), "ходим танловда");
         assertTrue(html(mvc, "/hotels/" + hotel.getId() + "/debts/analysis", o).contains("data-task-title"));
         assertFalse(html(mvc, "/hotels/" + hotel.getId() + "/debts", s).contains("id=\"taskModal\""));
         assertFalse(html(mvc, "/hotels/" + hotel.getId() + "/debts/analysis", s).contains("data-task-title"));
@@ -307,8 +307,8 @@ class TaskFlowDbTest {
         String list = html(mvc, "/services/tasks", s);
         assertTrue(list.contains("Valiyev yashashini vyselenie qiling"));
         String detail = html(mvc, "/services/tasks/" + t.getId(), s);
-        assertTrue(detail.contains("Bajarildi"));
-        assertTrue(detail.contains("Tarix"));
+        assertTrue(detail.contains("Бажарилди"));
+        assertTrue(detail.contains("Тарих"));
 
         // Ilova: ketgan mehmon (Karimov) — sahifada, Excel'da; xodim qatorni belgilaydi, begona belgilay olmaydi.
         var items = itemRepository.findAllByTaskIdOrderByPositionAsc(t.getId());
@@ -316,31 +316,31 @@ class TaskFlowDbTest {
         assertEquals("Karimov", items.get(0).getGuestName());
         assertTrue(detail.contains("Ilova:"));
         assertTrue(detail.contains("Karimov"));
-        assertTrue(html(mvc, "/services/tasks", o).contains("📎 1 ta"));
+        assertTrue(html(mvc, "/services/tasks", o).contains("📎 1 та"));
         long itemId = items.get(0).getId();
         mvc.perform(post("/services/tasks/" + t.getId() + "/items/" + itemId).with(user(o)).with(csrf()));
-        assertFalse(itemRepository.findById(itemId).orElseThrow().isDone(), "faqat bajaruvchi belgilaydi");
+        assertFalse(itemRepository.findById(itemId).orElseThrow().isDone(), "фақат бажарувчи белгилайди");
         mvc.perform(post("/services/tasks/" + t.getId() + "/items/" + itemId).with(user(s)).with(csrf()));
         assertTrue(itemRepository.findById(itemId).orElseThrow().isDone());
         String itemsCsv = new String(mvc.perform(get("/services/tasks/" + t.getId() + "/items.csv").with(user(o)))
                 .andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
-        assertTrue(itemsCsv.contains("Karimov") && itemsCsv.contains(";ha;"), itemsCsv);
+        assertTrue(itemsCsv.contains("Karimov") && itemsCsv.contains(";ҳа;"), itemsCsv);
 
         // Xodim bajardi → egasi tasdiqladi; ro'yxat bo'yicha natija izohga yoziladi.
         mvc.perform(post("/services/tasks/" + t.getId() + "/complete").with(user(s)).with(csrf()).param("comment", "Bajardim"));
         assertEquals(TaskStatus.REVIEW, status(t.getId()));
-        assertTrue(gateway.last(OWNER_CHAT).html().contains("Ro'yxat: 1 / 1 ta belgilangan"));
+        assertTrue(gateway.last(OWNER_CHAT).html().contains("Рўйхат: 1 / 1 та белгиланган"));
         assertTrue(html(mvc, "/services/tasks?view=review", o).contains("Valiyev yashashini vyselenie qiling"));
-        assertTrue(html(mvc, "/services/tasks/" + t.getId(), o).contains("Tasdiqlash"));
+        assertTrue(html(mvc, "/services/tasks/" + t.getId(), o).contains("Тасдиқлаш"));
         mvc.perform(post("/services/tasks/" + t.getId() + "/accept").with(user(o)).with(csrf()));
         assertEquals(TaskStatus.DONE, status(t.getId()));
 
         // Excel.
         String csv = new String(mvc.perform(get("/services/tasks/export.csv").with(user(o)))
                 .andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
-        assertTrue(csv.contains("Bajaruvchi"));
+        assertTrue(csv.contains("Бажарувчи"));
         assertTrue(csv.contains("Resepshn Xodimi"));
-        assertTrue(csv.contains("Tasdiqlangan"));
+        assertTrue(csv.contains("Тасдиқланган"));
 
         // Begona xodim tafsilotni ko'rmaydi.
         int code = mvc.perform(get("/services/tasks/" + t.getId()).with(user(new CustomUserDetails(otherStaff))))

@@ -9,55 +9,55 @@
         th:with="hasStaff=${!groups.?[!staff.isEmpty()].isEmpty()}">
     <form class="form" method="post" th:action="@{/services/tasks}" data-task-form>
         <div class="modal-head">
-            <h3 id="taskModalTitle">Topshiriq berish</h3>
-            <button type="button" class="modal-close" data-modal-close aria-label="Yopish">×</button>
+            <h3 id="taskModalTitle">Топшириқ бериш</h3>
+            <button type="button" class="modal-close" data-modal-close aria-label="Ёпиш">×</button>
         </div>
 
         <div class="alert alert-info" th:unless="${hasStaff}">
-            Mehmonxonaga hali <b>xodim</b> biriktirilmagan. <b>Boshqaruv → Bo'limlar</b>da bo'lim yarating, keyin
-            <b>Boshqaruv → Xodimlar</b>da xodim qo'shib, bo'limga biriktiring.
+            Меҳмонхонага ҳали <b>ходим</b> бириктирилмаган. <b>Бошқарув → Бўлимлар</b>да бўлим яратинг, кейин
+            <b>Бошқарув → Ходимлар</b>да ходим қўшиб, бўлимга бириктиринг.
         </div>
 
         <th:block th:if="${hasStaff}">
             <div class="field">
-                <label for="taskDept">Bo'lim</label>
+                <label for="taskDept">Бўлим</label>
                 <select id="taskDept" name="departmentId">
-                    <option value="">— barcha xodimlar —</option>
+                    <option value="">— барча ходимлар —</option>
                     <optgroup th:each="g : ${groups}" th:if="${!g.departments.isEmpty()}" th:label="${g.hotel.name}">
                         <option th:each="d : ${g.departments}" th:value="${d.id}" th:text="${d.name}"
                                 th:attr="data-hotel=${g.hotel.id}"></option>
                     </optgroup>
                 </select>
-                <span class="hint">Bo'lim tanlansa — pastda faqat shu bo'lim xodimlari chiqadi.</span>
+                <span class="hint">Бўлим танланса — пастда фақат шу бўлим ходимлари чиқади.</span>
             </div>
             <div class="field">
-                <label for="taskTarget">Bajaruvchi</label>
+                <label for="taskTarget">Бажарувчи</label>
                 <select id="taskTarget" name="target" required>
-                    <option value="">— xodimni tanlang —</option>
+                    <option value="">— ходимни танланг —</option>
                     <optgroup th:each="g : ${groups}" th:if="${!g.staff.isEmpty()}" th:label="${g.hotel.name}">
                         <option th:each="u : ${g.staff}" th:value="${g.hotel.id} + ':' + ${u.id}"
                                 th:attr="data-hotel=${g.hotel.id}, data-depts=${#strings.listJoin(u.departments.![id], ' ')}"
                                 th:text="(${u.fullName} ?: ${u.username}) + (${u.telegramChatId != null} ? ' · Telegram ✓' : '')"></option>
                     </optgroup>
                 </select>
-                <span class="hint" data-no-staff hidden>Bu bo'limda xodim yo'q — <b>Boshqaruv → Xodimlar</b>da biriktiring yoki boshqa bo'limni tanlang.</span>
-                <span class="hint" data-staff-hint>«Telegram ✓» — xodim topshiriqni botda ham oladi.</span>
+                <span class="hint" data-no-staff hidden>Бу бўлимда ходим йўқ — <b>Бошқарув → Ходимлар</b>да бириктиринг ёки бошқа бўлимни танланг.</span>
+                <span class="hint" data-staff-hint>«Telegram ✓» — ходим топшириқни ботда ҳам олади.</span>
             </div>
             <div class="field">
-                <label for="taskTitle">Topshiriq</label>
+                <label for="taskTitle">Топшириқ</label>
                 <textarea id="taskTitle" name="title" rows="3" maxlength="255" required
-                          placeholder="Nima qilish kerak?"></textarea>
+                          placeholder="Нима қилиш керак?"></textarea>
             </div>
             <div class="field">
-                <label for="taskDescription">Izoh <span class="muted">(ixtiyoriy)</span></label>
+                <label for="taskDescription">Изоҳ <span class="muted">(ихтиёрий)</span></label>
                 <textarea id="taskDescription" name="description" rows="3" maxlength="4000"
-                          placeholder="Qo'shimcha ma'lumot"></textarea>
+                          placeholder="Қўшимча маълумот"></textarea>
             </div>
             <div class="field">
-                <label for="taskDue">Muddat</label>
+                <label for="taskDue">Муддат</label>
                 <input type="date" id="taskDue" name="dueDate" th:attr="min=${#temporals.format(today, 'yyyy-MM-dd')}"
                        th:value="${#temporals.format(today.plusDays(3), 'yyyy-MM-dd')}">
-                <span class="hint">Muddat kuni va o'tgach — botda eslatma (09:00).</span>
+                <span class="hint">Муддат куни ва ўтгач — ботда эслатма (09:00).</span>
             </div>
             <!-- Tavsiyadagi bo'lim nomi (mehmonxonada shunday bo'lim bo'lmasa ham topshiriqda saqlanadi). -->
             <input type="hidden" id="taskDepartment" name="department">
@@ -69,8 +69,8 @@
         </th:block>
 
         <div class="form-actions">
-            <button type="button" class="btn btn-secondary" data-modal-close>Bekor qilish</button>
-            <button type="submit" class="btn btn-primary" th:if="${hasStaff}">Topshiriq berish</button>
+            <button type="button" class="btn btn-secondary" data-modal-close>Бекор қилиш</button>
+            <button type="submit" class="btn btn-primary" th:if="${hasStaff}">Топшириқ бериш</button>
         </div>
     </form>
 </dialog>
@@ -78,6 +78,6 @@
 <!-- Topshiriq holati belgisi (ro'yxat va tafsilot sahifalari). -->
 <span th:fragment="status(s)" class="badge"
       th:classappend="${s.name() == 'DONE'} ? 'badge-ok' : (${s.name() == 'REVIEW'} ? 'badge-role' : (${s.name() == 'RETURNED'} ? 'badge-danger' : (${s.name() == 'CANCELLED'} ? 'badge-off' : 'badge-warn')))"
-      th:text="${s.label}">Holat</span>
+      th:text="${s.label}">Ҳолат</span>
 </body>
 </html>

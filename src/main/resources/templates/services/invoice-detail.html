@@ -3,15 +3,15 @@
 <body>
 <!-- Hisob-fakturalar sahifasida qarz bosilganda ochiladigan oyna mazmuni (fetch orqali). -->
 <div th:fragment="detail" class="stay-detail">
-    <p class="muted" th:if="${d == null}">Yashash topilmadi — sahifani yangilang.</p>
+    <p class="muted" th:if="${d == null}">Яшаш топилмади — саҳифани янгиланг.</p>
     <th:block th:if="${d != null}">
         <div class="stay-head">
             <div>
-                <div class="stay-guest" th:text="${d.guestName} ?: '—'">Mehmon</div>
+                <div class="stay-guest" th:text="${d.guestName} ?: '—'">Меҳмон</div>
                 <div class="muted">
                     <span class="mono" th:text="${d.bookingNumber}"></span>
                     <span th:text="' · ' + ${#temporals.format(d.arrival, 'dd.MM.yyyy')} + ' → ' + ${#temporals.format(d.departure, 'dd.MM.yyyy')}"></span>
-                    <span th:if="${d.roomsInBooking > 1}" th:text="' · guruh broni: ' + ${d.roomsInBooking} + ' ta xona'"></span>
+                    <span th:if="${d.roomsInBooking > 1}" th:text="' · гуруҳ брони: ' + ${d.roomsInBooking} + ' та хона'"></span>
                 </div>
             </div>
             <span class="badge" th:text="${d.category.label}"
@@ -20,25 +20,25 @@
 
         <table class="detail-table">
             <thead>
-            <tr><th>Xizmat</th><th class="num">Summa</th><th>Qaysi hisobda</th></tr>
+            <tr><th>Хизмат</th><th class="num">Сумма</th><th>Қайси ҳисобда</th></tr>
             </thead>
             <tbody>
             <tr th:each="l : ${d.lines}">
-                <td><span th:text="${l.name}"></span> <span class="muted" th:if="${l.days > 1}" th:text="'(' + ${l.days} + ' kun)'"></span></td>
+                <td><span th:text="${l.name}"></span> <span class="muted" th:if="${l.days > 1}" th:text="'(' + ${l.days} + ' кун)'"></span></td>
                 <td class="num" th:text="${@fmt.money(l.amount, d.currency)}"></td>
                 <td class="wrap" th:text="${l.account} ?: '—'"></td>
             </tr>
-            <tr th:if="${d.lines.isEmpty()}"><td colspan="3" class="muted">Xizmatlar ma'lumoti yo'q</td></tr>
+            <tr th:if="${d.lines.isEmpty()}"><td colspan="3" class="muted">Хизматлар маълумоти йўқ</td></tr>
             </tbody>
             <tfoot>
-            <tr><th>Jami — xona narxi</th><th class="num" th:text="${@fmt.money(d.total, d.currency)}"></th><th></th></tr>
-            <tr><td>To'langan</td><td class="num" th:text="${@fmt.money(d.paid, d.currency)}"></td><td></td></tr>
-            <tr class="debt-row"><th>Qarz</th><th class="num debt-cell" th:text="${@fmt.money(d.debt, d.currency)}"></th><th></th></tr>
+            <tr><th>Жами — хона нархи</th><th class="num" th:text="${@fmt.money(d.total, d.currency)}"></th><th></th></tr>
+            <tr><td>Тўланган</td><td class="num" th:text="${@fmt.money(d.paid, d.currency)}"></td><td></td></tr>
+            <tr class="debt-row"><th>Қарз</th><th class="num debt-cell" th:text="${@fmt.money(d.debt, d.currency)}"></th><th></th></tr>
             </tfoot>
         </table>
 
         <th:block th:if="${!d.accounts.isEmpty()}">
-            <h4 class="detail-sub">Exely hisoblari</h4>
+            <h4 class="detail-sub">Exely ҳисоблари</h4>
             <table class="detail-table">
                 <tbody>
                 <tr th:each="a : ${d.accounts}">
@@ -48,7 +48,7 @@
                 </tr>
                 </tbody>
             </table>
-            <p class="note" th:if="${d.roomsInBooking > 1}">Guruhning umumiy hisobida bronning barcha xonalari birga yozilgan — uning summasi shu xonaning qarzi emas.</p>
+            <p class="note" th:if="${d.roomsInBooking > 1}">Гуруҳнинг умумий ҳисобида броннинг барча хоналари бирга ёзилган — унинг суммаси шу хонанинг қарзи эмас.</p>
         </th:block>
     </th:block>
 </div>

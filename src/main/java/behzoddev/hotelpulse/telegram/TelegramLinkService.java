@@ -84,7 +84,7 @@ public class TelegramLinkService {
 
     @Transactional
     public void unlinkUser(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Foydalanuvchi topilmadi"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Фойдаланувчи топилмади"));
         user.setTelegramChatId(null);
         user.setTelegramLinkedAt(null);
     }
@@ -100,7 +100,7 @@ public class TelegramLinkService {
     /** @return yangi holat */
     @Transactional
     public boolean setDailyReport(Long userId, boolean enabled) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Foydalanuvchi topilmadi"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("Фойдаланувчи топилмади"));
         user.setTelegramDailyReport(enabled);
         return enabled;
     }

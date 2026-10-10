@@ -38,10 +38,10 @@ public final class ReportCatalog {
         }
     }
 
-    public static final String OPS = "Kunlik operatsiya";
-    public static final String REVENUE = "Daromad va bandlik";
-    public static final String SOURCES = "Mijozlar va manbalar";
-    public static final String FINANCE = "Moliya";
+    public static final String OPS = "Кунлик операция";
+    public static final String REVENUE = "Даромад ва бандлик";
+    public static final String SOURCES = "Мижозлар ва манбалар";
+    public static final String FINANCE = "Молия";
     public static final String USALI = "USALI";
 
     public static final List<String> GROUPS = List.of(OPS, REVENUE, SOURCES, FINANCE, USALI);
@@ -57,94 +57,94 @@ public final class ReportCatalog {
 
     static {
         // ---- Kunlik operatsiya
-        add("today", OPS, "Bugun", "Сводная статистика (на сегодня)",
-                "Bugungi bandlik, keladigan va ketadiganlar, qarzdorlik", Kind.WIDGET, "full");
-        add("arrivals", OPS, "Kelishlar", "Заезды",
-                "Davrda keladigan mehmonlar: bron, xona turi, xona, kechalar, summa, qoldiq", Kind.TABLE, "full");
-        add("departures", OPS, "Ketishlar", "Выезды",
-                "Davrda ketadigan mehmonlar va ularning qoldig'i", Kind.TABLE, "full");
-        add("inhouse", OPS, "Band xonalar", "Занятые номера",
-                "Tanlangan kunda yashayotgan mehmonlar: xona, kelish-ketish, qoldiq", Kind.TABLE, "full");
-        add("guests", OPS, "Mehmonlar ro'yxati", "Список гостей",
-                "Davrda yashagan va bron qilgan mehmonlar: tashriflar, kechalar, summa", Kind.TABLE, "full");
-        add("meals", OPS, "Ovqatlanish", "Отчет по питанию",
-                "Kunlar bo'yicha mehmonlar soni va sotilgan ovqatlanish (nonushta) summasi", Kind.TABLE, "full");
-        add("housekeeping", OPS, "Xonalarni tozalash", "Обслуживание номеров",
-                "Exely API housekeeping ma'lumotini bermaydi", Kind.UNAVAILABLE, "full");
-        add("activity-log", OPS, "Foydalanuvchilar harakati jurnali", "Журнал активности пользователей",
-                "Exely API foydalanuvchilar harakati jurnalini bermaydi", Kind.UNAVAILABLE, "full");
+        add("today", OPS, "Бугун", "Сводная статистика (на сегодня)",
+                "Бугунги бандлик, келадиган ва кетадиганлар, қарздорлик", Kind.WIDGET, "full");
+        add("arrivals", OPS, "Келишлар", "Заезды",
+                "Даврда келадиган меҳмонлар: брон, хона тури, хона, кечалар, сумма, қолдиқ", Kind.TABLE, "full");
+        add("departures", OPS, "Кетишлар", "Выезды",
+                "Даврда кетадиган меҳмонлар ва уларнинг қолдиғи", Kind.TABLE, "full");
+        add("inhouse", OPS, "Банд хоналар", "Занятые номера",
+                "Танланган кунда яшаётган меҳмонлар: хона, келиш-кетиш, қолдиқ", Kind.TABLE, "full");
+        add("guests", OPS, "Меҳмонлар рўйхати", "Список гостей",
+                "Даврда яшаган ва брон қилган меҳмонлар: ташрифлар, кечалар, сумма", Kind.TABLE, "full");
+        add("meals", OPS, "Овқатланиш", "Отчет по питанию",
+                "Кунлар бўйича меҳмонлар сони ва сотилган овқатланиш (нонушта) суммаси", Kind.TABLE, "full");
+        add("housekeeping", OPS, "Хоналарни тозалаш", "Обслуживание номеров",
+                "Exely API housekeeping маълумотини бермайди", Kind.UNAVAILABLE, "full");
+        add("activity-log", OPS, "Фойдаланувчилар ҳаракати журнали", "Журнал активности пользователей",
+                "Exely API фойдаланувчилар ҳаракати журналини бермайди", Kind.UNAVAILABLE, "full");
 
         // ---- Daromad va bandlik
-        add("kpi", REVENUE, "Asosiy ko'rsatkichlar", "Сводная статистика",
-                "Bandlik, ADR, RevPAR, daromad, to'lovlar, bronlar, bekor qilinganlar, o'rtacha yashash", Kind.WIDGET, "full");
-        add("flow", REVENUE, "Daromad va tushum", null,
-                "Davr daromadi, tushgan to'lovlar va ular orasidagi farq", Kind.WIDGET, "full");
-        add("daily-chart", REVENUE, "Kunlik bandlik va daromad (grafik)", "Доходность и загрузка",
-                "Kunlar bo'yicha bandlik va daromad grafigi", Kind.WIDGET, "wide");
-        add("daily", REVENUE, "Kunlik daromad va bandlik (jadval)", "Доходность и загрузка",
-                "Har kun: sotilgan xonalar, bandlik, ADR, RevPAR, daromad", Kind.TABLE, "full");
-        add("manager-period", REVENUE, "Menejer hisoboti (davr)", "Отчет менеджера за период",
-                "Asosiy ko'rsatkichlar: davr, oldingi davr va o'zgarish", Kind.TABLE, "full");
-        add("flash", REVENUE, "Menejer hisoboti (sana)", "Отчет менеджера на дату",
-                "Flash report: kun, oy boshidan va yil boshidan ko'rsatkichlar", Kind.TABLE, "full");
-        add("room-types", REVENUE, "Xona turlari bo'yicha daromad", "Доходность по тарифам",
-                "Xona turlari: sotilgan kechalar, bandlik, ADR, daromad ulushi (tarif rejasi API'da yo'q)", Kind.TABLE, "full");
-        add("rate-plans", REVENUE, "Tariflar bo'yicha daromad", "Доходность по тарифам",
-                "Exely API bronning tarif rejasini bermaydi — o'rniga «Xona turlari bo'yicha daromad»", Kind.UNAVAILABLE, "full");
-        add("history-forecast", REVENUE, "Tarix va prognoz", "История и прогноз",
-                "Oylar bo'yicha: o'tgan oylar — haqiqiy, kelgusi oylar — hozirgacha bron qilingani", Kind.TABLE, "full");
-        add("demand-calendar", REVENUE, "Talab kalendari", "Календарь спроса",
-                "Kelgusi 60 kun: sotilgan va bo'sh xonalar, bandlik", Kind.TABLE, "full");
-        add("demand-intensity", REVENUE, "Talab dinamikasi (pickup)", "Оценка интенсивности спроса",
-                "Kelgusi kunlar uchun oxirgi 1 va 7 kunda qancha xona sotildi (kunlik suratlar asosida)", Kind.TABLE, "full");
-        add("financial", REVENUE, "Moliyaviy hisobot", "Финансовый отчет",
-                "Kunlar bo'yicha daromad moddalari (yashash, ovqatlanish, boshqa) va tushum; oldingi davr bilan", Kind.TABLE, "full");
+        add("kpi", REVENUE, "Асосий кўрсаткичлар", "Сводная статистика",
+                "Бандлик, ADR, RevPAR, даромад, тўловлар, бронлар, бекор қилинганлар, ўртача яшаш", Kind.WIDGET, "full");
+        add("flow", REVENUE, "Даромад ва тушум", null,
+                "Давр даромади, тушган тўловлар ва улар орасидаги фарқ", Kind.WIDGET, "full");
+        add("daily-chart", REVENUE, "Кунлик бандлик ва даромад (график)", "Доходность и загрузка",
+                "Кунлар бўйича бандлик ва даромад графиги", Kind.WIDGET, "wide");
+        add("daily", REVENUE, "Кунлик даромад ва бандлик (жадвал)", "Доходность и загрузка",
+                "Ҳар кун: сотилган хоналар, бандлик, ADR, RevPAR, даромад", Kind.TABLE, "full");
+        add("manager-period", REVENUE, "Менежер ҳисоботи (давр)", "Отчет менеджера за период",
+                "Асосий кўрсаткичлар: давр, олдинги давр ва ўзгариш", Kind.TABLE, "full");
+        add("flash", REVENUE, "Менежер ҳисоботи (сана)", "Отчет менеджера на дату",
+                "Flash report: кун, ой бошидан ва йил бошидан кўрсаткичлар", Kind.TABLE, "full");
+        add("room-types", REVENUE, "Хона турлари бўйича даромад", "Доходность по тарифам",
+                "Хона турлари: сотилган кечалар, бандлик, ADR, даромад улуши (тариф режаси API'да йўқ)", Kind.TABLE, "full");
+        add("rate-plans", REVENUE, "Тарифлар бўйича даромад", "Доходность по тарифам",
+                "Exely API броннинг тариф режасини бермайди — ўрнига «Хона турлари бўйича даромад»", Kind.UNAVAILABLE, "full");
+        add("history-forecast", REVENUE, "Тарих ва прогноз", "История и прогноз",
+                "Ойлар бўйича: ўтган ойлар — ҳақиқий, келгуси ойлар — ҳозиргача брон қилингани", Kind.TABLE, "full");
+        add("demand-calendar", REVENUE, "Талаб календари", "Календарь спроса",
+                "Келгуси 60 кун: сотилган ва бўш хоналар, бандлик", Kind.TABLE, "full");
+        add("demand-intensity", REVENUE, "Талаб динамикаси (pickup)", "Оценка интенсивности спроса",
+                "Келгуси кунлар учун охирги 1 ва 7 кунда қанча хона сотилди (кунлик суратлар асосида)", Kind.TABLE, "full");
+        add("financial", REVENUE, "Молиявий ҳисобот", "Финансовый отчет",
+                "Кунлар бўйича даромад моддалари (яшаш, овқатланиш, бошқа) ва тушум; олдинги давр билан", Kind.TABLE, "full");
 
         // ---- Mijozlar va manbalar
-        add("sources-chart", SOURCES, "Savdo kanallari (grafik)", "Заказчики и источники",
-                "Daromadning savdo kanallari bo'yicha ulushi", Kind.WIDGET, "narrow");
-        add("sources", SOURCES, "Manbalar — umumiy", "Заказчики и источники — сводный",
-                "Manba bo'yicha: bronlar, kechalar, daromad, ADR, bekor qilish", Kind.TABLE, "full");
-        add("sources-detail", SOURCES, "Manbalar — batafsil", "Заказчики и источники — детальный",
-                "Har bir manba bo'yicha bronlar ro'yxati", Kind.TABLE, "full");
-        add("clients", SOURCES, "Mijozlar (to'lovchilar)", "Заказчики и источники",
-                "Eng ko'p daromad keltirgan mijozlar va kompaniyalar", Kind.TABLE, "full");
-        add("cancellations", SOURCES, "Bekor qilishlar", "Отчет по отменам",
-                "Manba bo'yicha bronlar, bekor qilinganlar va ulushi, yo'qotilgan daromad", Kind.TABLE, "full");
-        add("cancel-window", SOURCES, "Bekor qilish oynasi", "Окно аннуляций",
-                "Kelishdan necha kun oldin bekor qilinadi — manbalar bo'yicha", Kind.TABLE, "full");
-        add("agents", SOURCES, "Agentlar (OTA)", "Отчет по агентам",
-                "Agentlar bo'yicha daromad va to'langan komissiya", Kind.TABLE, "full");
-        add("managers", SOURCES, "Menejerlar samaradorligi", "Эффективность работы менеджеров",
-                "Xodimlar qabul qilgan to'lovlar (bronni kim yaratgani API'da yo'q)", Kind.TABLE, "full");
-        add("tags", SOURCES, "Teglar", "Теги",
-                "Exely API yashash teglarini bermaydi", Kind.UNAVAILABLE, "full");
+        add("sources-chart", SOURCES, "Савдо каналлари (график)", "Заказчики и источники",
+                "Даромаднинг савдо каналлари бўйича улуши", Kind.WIDGET, "narrow");
+        add("sources", SOURCES, "Манбалар — умумий", "Заказчики и источники — сводный",
+                "Манба бўйича: бронлар, кечалар, даромад, ADR, бекор қилиш", Kind.TABLE, "full");
+        add("sources-detail", SOURCES, "Манбалар — батафсил", "Заказчики и источники — детальный",
+                "Ҳар бир манба бўйича бронлар рўйхати", Kind.TABLE, "full");
+        add("clients", SOURCES, "Мижозлар (тўловчилар)", "Заказчики и источники",
+                "Энг кўп даромад келтирган мижозлар ва компаниялар", Kind.TABLE, "full");
+        add("cancellations", SOURCES, "Бекор қилишлар", "Отчет по отменам",
+                "Манба бўйича бронлар, бекор қилинганлар ва улуши, йўқотилган даромад", Kind.TABLE, "full");
+        add("cancel-window", SOURCES, "Бекор қилиш ойнаси", "Окно аннуляций",
+                "Келишдан неча кун олдин бекор қилинади — манбалар бўйича", Kind.TABLE, "full");
+        add("agents", SOURCES, "Агентлар (OTA)", "Отчет по агентам",
+                "Агентлар бўйича даромад ва тўланган комиссия", Kind.TABLE, "full");
+        add("managers", SOURCES, "Менежерлар самарадорлиги", "Эффективность работы менеджеров",
+                "Ходимлар қабул қилган тўловлар (бронни ким яратгани API'да йўқ)", Kind.TABLE, "full");
+        add("tags", SOURCES, "Теглар", "Теги",
+                "Exely API яшаш тегларини бермайди", Kind.UNAVAILABLE, "full");
 
         // ---- Moliya
-        add("payments", FINANCE, "To'lovlar", "Платежи",
-                "Davrdagi barcha to'lovlar va qaytarishlar", Kind.TABLE, "full");
-        add("payment-methods", FINANCE, "To'lov usullari", "Способы оплаты",
-                "To'lovlar usul bo'yicha: naqd, karta, o'tkazma, ...", Kind.TABLE, "full");
-        add("deposit", FINANCE, "Depozit", "Депозит",
-                "Exely API depozit operatsiyalarini alohida ajratmaydi", Kind.UNAVAILABLE, "full");
-        add("services-summary", FINANCE, "Qo'shimcha xizmatlar — umumiy", "Допуслуги — сводный отчет",
-                "Xizmatlar bo'yicha soni va summasi", Kind.TABLE, "full");
-        add("services-detail", FINANCE, "Qo'shimcha xizmatlar — batafsil", "Допуслуги — детальный отчет",
-                "Xizmatlar kunlar bo'yicha", Kind.TABLE, "full");
-        add("balances", FINANCE, "Bronlar balansi (qarzdorlik)", "Балансы бронирований",
-                "Qarz toifalari va eng katta qarzdorlar; batafsil — Qarzdorlik sahifasida", Kind.TABLE, "full");
+        add("payments", FINANCE, "Тўловлар", "Платежи",
+                "Даврдаги барча тўловлар ва қайтаришлар", Kind.TABLE, "full");
+        add("payment-methods", FINANCE, "Тўлов усуллари", "Способы оплаты",
+                "Тўловлар усул бўйича: нақд, карта, ўтказма, ...", Kind.TABLE, "full");
+        add("deposit", FINANCE, "Депозит", "Депозит",
+                "Exely API депозит операцияларини алоҳида ажратмайди", Kind.UNAVAILABLE, "full");
+        add("services-summary", FINANCE, "Қўшимча хизматлар — умумий", "Допуслуги — сводный отчет",
+                "Хизматлар бўйича сони ва суммаси", Kind.TABLE, "full");
+        add("services-detail", FINANCE, "Қўшимча хизматлар — батафсил", "Допуслуги — детальный отчет",
+                "Хизматлар кунлар бўйича", Kind.TABLE, "full");
+        add("balances", FINANCE, "Бронлар баланси (қарздорлик)", "Балансы бронирований",
+                "Қарз тоифалари ва энг катта қарздорлар; батафсил — Қарздорлик саҳифасида", Kind.TABLE, "full");
 
         // ---- USALI
         add("usali-summary", USALI, "Summary Operating Statement", "USALI — Summary Operating Statement",
-                "Daromad, bo'lim xarajatlari, GOP, boshqaruv haqi, EBITDA (xarajatlar — oyma-oy kiritiladi)", Kind.TABLE, "full");
-        add("usali-rooms", USALI, "Rooms bo'limi", "USALI — Rooms Schedule",
-                "Yashash daromadi segmentlar bo'yicha, xarajatlar va bo'lim foydasi", Kind.TABLE, "full");
-        add("usali-fb", USALI, "Food & Beverage bo'limi", "USALI — F&B Schedule",
-                "Ovqatlanish daromadi, tannarx va bo'lim foydasi", Kind.TABLE, "full");
-        add("usali-other", USALI, "Boshqa bo'limlar va daromadlar", "USALI — Other Operated Departments, Misc. Income",
-                "Qo'shimcha xizmatlar daromadi va xarajati", Kind.TABLE, "full");
-        add("usali-stats", USALI, "Operatsion statistika", "USALI — Operating Statistics",
-                "Occupancy, ADR, RevPAR, TRevPAR, ALOS, GOPPAR, CPOR va boshqalar", Kind.TABLE, "full");
+                "Даромад, бўлим харажатлари, GOP, бошқарув ҳақи, EBITDA (харажатлар — ойма-ой киритилади)", Kind.TABLE, "full");
+        add("usali-rooms", USALI, "Rooms бўлими", "USALI — Rooms Schedule",
+                "Яшаш даромади сегментлар бўйича, харажатлар ва бўлим фойдаси", Kind.TABLE, "full");
+        add("usali-fb", USALI, "Food & Beverage бўлими", "USALI — F&B Schedule",
+                "Овқатланиш даромади, таннарх ва бўлим фойдаси", Kind.TABLE, "full");
+        add("usali-other", USALI, "Бошқа бўлимлар ва даромадлар", "USALI — Other Operated Departments, Misc. Income",
+                "Қўшимча хизматлар даромади ва харажати", Kind.TABLE, "full");
+        add("usali-stats", USALI, "Операцион статистика", "USALI — Operating Statistics",
+                "Occupancy, ADR, RevPAR, TRevPAR, ALOS, GOPPAR, CPOR ва бошқалар", Kind.TABLE, "full");
     }
 
     public static List<ReportDef> all() {

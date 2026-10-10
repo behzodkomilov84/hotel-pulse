@@ -125,19 +125,19 @@ class TelegramBotDbTest {
         String token = linkService.createToken(single.getId());
 
         bot.handle(msg(1001, "/start " + token));
-        assertTrue(gateway.last().html().contains("Ulandi"));
-        assertNotNull(gateway.last().markup().get("keyboard"), "asosiy menyu tugmalari");
+        assertTrue(gateway.last().html().contains("Уланди"));
+        assertNotNull(gateway.last().markup().get("keyboard"), "асосий меню тугмалари");
         assertEquals(1001L, userRepository.findById(single.getId()).orElseThrow().getTelegramChatId());
 
         // Token qayta ishlatilmaydi.
         bot.handle(msg(2002, "/start " + token));
-        assertTrue(gateway.last().html().contains("eskirgan"));
+        assertTrue(gateway.last().html().contains("эскирган"));
     }
 
     @Test
     void unknownChatGetsInstructions() {
         bot.handle(msg(3003, "/bugun"));
-        assertTrue(gateway.last().html().contains("Profil"));
+        assertTrue(gateway.last().html().contains("Профил"));
     }
 
     @Test
@@ -145,8 +145,8 @@ class TelegramBotDbTest {
         link(single, 1001);
         bot.handle(msg(1001, TelegramBotService.BTN_TODAY));
         String html = gateway.last().html();
-        assertTrue(html.contains("Alpha &lt;Hotel&gt;"), "HTML qochirilgan bo'lishi kerak");
-        assertTrue(html.contains("Bandlik"));
+        assertTrue(html.contains("Alpha &lt;Hotel&gt;"), "HTML қочирилган бўлиши керак");
+        assertTrue(html.contains("Бандлик"));
         assertTrue(html.contains("RevPAR"));
         // Ommaviy sayt manzili berilgan — "Saytda batafsil" tugmasi.
         assertTrue(gateway.last().markup().toString().contains("https://hotelpulse.example/hotels/" + hotelA.getId()));
@@ -163,12 +163,12 @@ class TelegramBotDbTest {
         assertTrue(keyboard.contains("r:month:" + hotelB.getId()));
 
         bot.handle(cb(1001, "r:month:all"));
-        assertTrue(gateway.last().html().contains("Barcha mehmonxonalar"));
-        assertTrue(gateway.last().html().contains("ma'lumot yo'q"), "Beta'da ma'lumot yo'q");
+        assertTrue(gateway.last().html().contains("Барча меҳмонхоналар"));
+        assertTrue(gateway.last().html().contains("маълумот йўқ"), "Beta'да маълумот йўқ");
 
         // single foydalanuvchi Beta'ga biriktirilmagan — soxta callback bilan ham ko'ra olmaydi.
         bot.handle(cb(2002, "r:month:" + hotelB.getId()));
-        assertTrue(gateway.last().html().contains("ruxsat yo'q"));
+        assertTrue(gateway.last().html().contains("рухсат йўқ"));
     }
 
     @Test
@@ -181,15 +181,15 @@ class TelegramBotDbTest {
 
         bot.handle(msg(2002, TelegramBotService.BTN_TODAY));
         String one = gateway.last().html();
-        assertTrue(one.contains("Daromad va tushum"));
-        assertTrue(one.contains("Tushum (to'lovlar)"));
-        assertTrue(one.contains("Farq"));
+        assertTrue(one.contains("Даромад ва тушум"));
+        assertTrue(one.contains("Тушум (тўловлар)"));
+        assertTrue(one.contains("Фарқ"));
 
         bot.handle(cb(1001, "r:month:all"));
         String all = gateway.last().html();
-        assertTrue(all.contains("<b>Jami</b> (2 ta mehmonxona)"), all);
-        assertTrue(all.contains("O'rtacha ADR"));
-        assertFalse(all.contains("Gamma"), "biriktirilmagan mehmonxona jamiga kirmaydi");
+        assertTrue(all.contains("<b>Жами</b> (2 та меҳмонхона)"), all);
+        assertTrue(all.contains("Ўртача ADR"));
+        assertFalse(all.contains("Gamma"), "бириктирилмаган меҳмонхона жамига кирмайди");
 
         // O'rtacha ADR og'irlikli: jami yashash daromadi / jami sotilgan xona-kechalar (faqat A va B).
         var period = reports.period("month");
@@ -206,7 +206,7 @@ class TelegramBotDbTest {
         link(single, 1001);
         bot.handle(cb(1001, "d:off"));
         assertFalse(userRepository.findById(single.getId()).orElseThrow().isTelegramDailyReport());
-        assertTrue(gateway.last().html().contains("o'chirilgan"));
+        assertTrue(gateway.last().html().contains("ўчирилган"));
 
         bot.handle(msg(1001, "/uzish"));
         assertNull(userRepository.findById(single.getId()).orElseThrow().getTelegramChatId());
@@ -219,7 +219,7 @@ class TelegramBotDbTest {
         u.setEnabled(false);
         userRepository.save(u);
         bot.handle(msg(1001, "/bugun"));
-        assertTrue(gateway.last().html().contains("bloklangan"));
+        assertTrue(gateway.last().html().contains("блокланган"));
     }
 
     @Test
@@ -233,10 +233,10 @@ class TelegramBotDbTest {
         java.time.LocalDate today = java.time.LocalDate.of(2026, 10, 6);
         int sent = dailyReportJob.send(hotelA, today);
 
-        assertEquals(1, sent, "faqat kunlik hisobot yoqilgan va mehmonxonani ko'ra oladigan foydalanuvchi");
-        assertTrue(gateway.sent.stream().anyMatch(s -> s.chatId() == 1001 && s.html().contains("Xayrli tong")
-                && s.html().contains("Kecha")));
-        assertTrue(gateway.sent.stream().noneMatch(s -> s.chatId() == 2002), "hisoboti o'chirilgan");
+        assertEquals(1, sent, "фақат кунлик ҳисобот ёқилган ва меҳмонхонани кўра оладиган фойдаланувчи");
+        assertTrue(gateway.sent.stream().anyMatch(s -> s.chatId() == 1001 && s.html().contains("Хайрли тонг")
+                && s.html().contains("Кеча")));
+        assertTrue(gateway.sent.stream().noneMatch(s -> s.chatId() == 2002), "ҳисоботи ўчирилган");
         assertEquals(today, hotelRepository.findById(hotelA.getId()).orElseThrow().getDailyReportSentOn(),
                 "kuniga bir marta — yuborilgani belgilandi");
         assertEquals(List.of(single.getId()),
@@ -249,22 +249,22 @@ class TelegramBotDbTest {
         Hotel h = new Hotel();
         h.setDailyReportTime(java.time.LocalTime.of(5, 0));
         java.time.LocalDate day = java.time.LocalDate.of(2026, 10, 6);
-        assertFalse(DailyReportJob.isDue(h, day.atTime(4, 59)), "vaqti kelmagan");
-        assertTrue(DailyReportJob.isDue(h, day.atTime(5, 0)), "aynan vaqtida");
-        assertTrue(DailyReportJob.isDue(h, day.atTime(7, 30)), "server o'chiq bo'lgan — 3 soat ichida yetkaziladi");
-        assertFalse(DailyReportJob.isDue(h, day.atTime(8, 1)), "kech — ertaga");
+        assertFalse(DailyReportJob.isDue(h, day.atTime(4, 59)), "вақти келмаган");
+        assertTrue(DailyReportJob.isDue(h, day.atTime(5, 0)), "айнан вақтида");
+        assertTrue(DailyReportJob.isDue(h, day.atTime(7, 30)), "сервер ўчиқ бўлган — 3 соат ичида етказилади");
+        assertFalse(DailyReportJob.isDue(h, day.atTime(8, 1)), "кеч — эртага");
         h.setDailyReportSentOn(day);
-        assertFalse(DailyReportJob.isDue(h, day.atTime(5, 1)), "bugun yuborilgan");
-        assertTrue(DailyReportJob.isDue(h, day.plusDays(1).atTime(5, 0)), "ertasi kuni — yana");
+        assertFalse(DailyReportJob.isDue(h, day.atTime(5, 1)), "бугун юборилган");
+        assertTrue(DailyReportJob.isDue(h, day.plusDays(1).atTime(5, 0)), "эртаси куни — яна");
 
         // Bir nechta mehmonxona — har biri o'z vaqtida.
         Hotel other = new Hotel();
         other.setName("ARDA");
         other.setDailyReportTime(java.time.LocalTime.of(6, 30));
         h.setName("Karvon");
-        assertEquals("har kuni (Karvon — 05:00, ARDA — 06:30)", TelegramBotService.dailyReportWhen(List.of(h, other)));
+        assertEquals("ҳар куни (Karvon — 05:00, ARDA — 06:30)", TelegramBotService.dailyReportWhen(List.of(h, other)));
         other.setDailyReportTime(java.time.LocalTime.of(5, 0));
-        assertEquals("har kuni soat 05:00 da", TelegramBotService.dailyReportWhen(List.of(h, other)));
+        assertEquals("ҳар куни соат 05:00 да", TelegramBotService.dailyReportWhen(List.of(h, other)));
     }
 
     @Autowired
@@ -280,7 +280,7 @@ class TelegramBotDbTest {
         String before = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/profile")
                         .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(principal)))
                 .andReturn().getResponse().getContentAsString();
-        assertTrue(before.contains("Telegram&#39;ni ulash") || before.contains("Telegram'ni ulash"));
+        assertTrue(before.contains("Telegram&#39;ни улаш") || before.contains("Telegram'ни улаш"));
 
         // "Ulash" tugmasi → t.me deep-link'ga yo'naltiradi.
         String location = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/profile/telegram/link")
@@ -294,8 +294,8 @@ class TelegramBotDbTest {
         String after = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get("/profile")
                         .with(org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user(principal)))
                 .andReturn().getResponse().getContentAsString();
-        assertTrue(after.contains("badge badge-ok\">Ulangan"));
-        assertTrue(after.contains("Kunlik hisobot"));
+        assertTrue(after.contains("badge badge-ok\">Уланган"));
+        assertTrue(after.contains("Кунлик ҳисобот"));
     }
 
     private void link(User user, long chatId) {

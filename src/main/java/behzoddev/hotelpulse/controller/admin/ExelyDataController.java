@@ -97,10 +97,10 @@ public class ExelyDataController {
         Set<String> columns = new LinkedHashSet<>();
         raw.forEach(id, kind, q, s -> {
             Map<String, String> row = new LinkedHashMap<>();
-            row.put("Kalit", s.externalId());
-            row.put("Bron raqami", s.bookingNumber() == null ? "" : s.bookingNumber());
-            row.put("Sana", s.refDate() == null ? "" : s.refDate().format(DAY));
-            row.put("Olingan", s.fetchedAt() == null ? "" : s.fetchedAt().format(TIME));
+            row.put("Калит", s.externalId());
+            row.put("Брон рақами", s.bookingNumber() == null ? "" : s.bookingNumber());
+            row.put("Сана", s.refDate() == null ? "" : s.refDate().format(DAY));
+            row.put("Олинган", s.fetchedAt() == null ? "" : s.fetchedAt().format(TIME));
             row.putAll(ExelyRawView.flatten(ExelyPmsClient.tree(s.json())));
             columns.addAll(row.keySet());
             rows.add(row);
@@ -125,7 +125,7 @@ public class ExelyDataController {
     private static ExelyRawView.Kind kind(String kind) {
         ExelyRawView.Kind k = ExelyRawView.KINDS.get(kind);
         if (k == null) {
-            throw new ResponseStatusException(NOT_FOUND, "Noma'lum ma'lumot turi");
+            throw new ResponseStatusException(NOT_FOUND, "Номаълум маълумот тури");
         }
         return k;
     }

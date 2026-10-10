@@ -16,11 +16,11 @@ public record DebtReport(List<Row> rows, Summary summary, List<AgingBucket> agin
     /** Qarz toifasi. */
     public enum Category {
         /** Hozir yashayapti (ketish sanasi kelmagan). */
-        IN_HOUSE("Yashayapti"),
+        IN_HOUSE("Яшаяпти"),
         /** Ketgan (PMS'da vyselenie qilingan). */
-        CHECKED_OUT("Ketgan"),
+        CHECKED_OUT("Кетган"),
         /** Ketish sanasi o'tgan, lekin PMS'da vyselenie qilinmagan — tekshirish kerak. */
-        NOT_CHECKED_OUT("Vyselenie qilinmagan");
+        NOT_CHECKED_OUT("Выселение қилинмаган");
 
         private final String label;
 

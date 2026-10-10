@@ -24,7 +24,7 @@ class PortfolioSummaryTest {
         Formats fmt = new Formats();
         assertEquals("+" + fmt.moneyShort(new BigDecimal("20000000"), "UZS"), fmt.signedMoneyShort(new BigDecimal("20000000"), "UZS"));
         assertEquals("−" + fmt.moneyShort(new BigDecimal("4100000"), "UZS"), fmt.signedMoneyShort(new BigDecimal("-4100000"), "UZS"));
-        assertEquals("hali to'lanmagan qism", fmt.gapNote(BigDecimal.ONE));
-        assertEquals("oldindan to'lovlar ko'proq", fmt.gapNote(BigDecimal.ONE.negate()));
+        assertEquals("ҳали тўланмаган қисм", fmt.gapNote(BigDecimal.ONE));
+        assertEquals("олдиндан тўловлар кўпроқ", fmt.gapNote(BigDecimal.ONE.negate()));
     }
 }

@@ -31,7 +31,7 @@ public class UserService {
     @Transactional(readOnly = true)
     public User getById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Foydalanuvchi topilmadi"));
+                .orElseThrow(() -> new NotFoundException("Фойдаланувчи топилмади"));
         user.getHotels().size();
         return user;
     }
@@ -40,15 +40,15 @@ public class UserService {
     public User create(String username, String password, String fullName, String phone,
                        Role role, List<Long> hotelIds) {
         if (username == null || !username.trim().matches("[A-Za-z0-9_.\\-]{3,64}")) {
-            throw new IllegalArgumentException("Login 3–64 belgidan iborat bo'lsin (lotin harflari, raqamlar, _ . -)");
+            throw new IllegalArgumentException("Логин 3–64 белгидан иборат бўлсин (лотин ҳарфлари, рақамлар, _ . -)");
         }
         if (userRepository.existsByUsername(username.trim())) {
-            throw new IllegalArgumentException("Bu login band");
+            throw new IllegalArgumentException("Бу логин банд");
         }
         validatePassword(password);
         if (role == null || role == Role.OWNER) {
             // Platforma egasi bitta — OwnerBootstrap yaratadi; paneldan qo'shilmaydi.
-            throw new IllegalArgumentException("Rolni tanlang");
+            throw new IllegalArgumentException("Ролни танланг");
         }
         User user = new User();
         user.setUsername(username.trim());
@@ -74,10 +74,10 @@ public class UserService {
         if (username != null && !username.trim().equals(user.getUsername())) {
             String login = username.trim();
             if (!login.matches("[A-Za-z0-9_.\\-]{3,64}")) {
-                throw new IllegalArgumentException("Login 3–64 belgidan iborat bo'lsin (lotin harflari, raqamlar, _ . -)");
+                throw new IllegalArgumentException("Логин 3–64 белгидан иборат бўлсин (лотин ҳарфлари, рақамлар, _ . -)");
             }
             if (userRepository.existsByUsername(login)) {
-                throw new IllegalArgumentException("Bu login band");
+                throw new IllegalArgumentException("Бу логин банд");
             }
             user.setUsername(login);
         }
@@ -85,7 +85,7 @@ public class UserService {
         user.setPhone(blankToNull(phone));
         if (user.getRole() != Role.OWNER) {
             if (role == null || role == Role.OWNER) {
-                throw new IllegalArgumentException("Rolni tanlang");
+                throw new IllegalArgumentException("Ролни танланг");
             }
             user.setRole(role);
             user.setEnabled(enabled);
@@ -106,10 +106,10 @@ public class UserService {
         String name = blankToNull(fullName);
         String tel = blankToNull(phone);
         if (name != null && name.length() > 150) {
-            throw new IllegalArgumentException("F.I.Sh. 150 belgidan oshmasin");
+            throw new IllegalArgumentException("Ф.И.Ш. 150 белгидан ошмасин");
         }
         if (tel != null && !tel.matches("\\+?[0-9 ()\\-]{7,32}")) {
-            throw new IllegalArgumentException("Telefon raqami noto'g'ri (masalan: +998 90 123 45 67)");
+            throw new IllegalArgumentException("Телефон рақами нотўғри (масалан: +998 90 123 45 67)");
         }
         User user = getById(userId);
         user.setFullName(name);
@@ -122,14 +122,14 @@ public class UserService {
     public void changeOwnPassword(Long userId, String currentPassword, String newPassword, String confirmPassword) {
         User user = getById(userId);
         if (currentPassword == null || !passwordEncoder.matches(currentPassword, user.getPassword())) {
-            throw new IllegalArgumentException("Joriy parol noto'g'ri");
+            throw new IllegalArgumentException("Жорий парол нотўғри");
         }
         validatePassword(newPassword);
         if (!newPassword.equals(confirmPassword)) {
-            throw new IllegalArgumentException("Yangi parol va uning takrori bir xil emas");
+            throw new IllegalArgumentException("Янги парол ва унинг такрори бир хил эмас");
         }
         if (passwordEncoder.matches(newPassword, user.getPassword())) {
-            throw new IllegalArgumentException("Yangi parol eskisidan farq qilishi kerak");
+            throw new IllegalArgumentException("Янги парол эскисидан фарқ қилиши керак");
         }
         user.setPassword(passwordEncoder.encode(newPassword));
     }
@@ -140,7 +140,7 @@ public class UserService {
 
     private static void validatePassword(String password) {
         if (password == null || password.length() < MIN_PASSWORD_LENGTH) {
-            throw new IllegalArgumentException("Parol kamida " + MIN_PASSWORD_LENGTH + " belgidan iborat bo'lsin");
+            throw new IllegalArgumentException("Парол камида " + MIN_PASSWORD_LENGTH + " белгидан иборат бўлсин");
         }
     }
 

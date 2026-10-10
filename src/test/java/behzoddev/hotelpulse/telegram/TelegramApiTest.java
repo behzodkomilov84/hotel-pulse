@@ -87,7 +87,7 @@ class TelegramApiTest {
 
         TelegramApi.TelegramException e = assertThrows(TelegramApi.TelegramException.class, () -> api.getUpdates(0));
         assertEquals(409, e.code());
-        assertFalse(e.getMessage().contains("123:ABC"), "token xato xabarida bo'lmasligi kerak");
+        assertFalse(e.getMessage().contains("123:ABC"), "токен хато хабарида бўлмаслиги керак");
     }
 
     @Test

@@ -45,7 +45,7 @@ public class TaskNotifier {
     static final int ITEMS_IN_MESSAGE = 10;
 
     public void created(Task t, List<TaskItem> items) {
-        send(t.getAssignee(), "📌 <b>Sizga yangi topshiriq</b>\n\n" + card(t) + itemsBlock(t, items), assigneeButtons(t));
+        send(t.getAssignee(), "📌 <b>Сизга янги топшириқ</b>\n\n" + card(t) + itemsBlock(t, items), assigneeButtons(t));
     }
 
     /** Ilova: jami va eng katta qatorlar (to'liq ro'yxat — saytda). */
@@ -56,10 +56,10 @@ public class TaskNotifier {
         String cur = t.getHotel().getCurrency();
         BigDecimal debt = items.stream().map(TaskItem::getDebt).reduce(BigDecimal.ZERO, BigDecimal::add);
         long done = items.stream().filter(TaskItem::isDone).count();
-        StringBuilder sb = new StringBuilder("\n\n📎 <b>Ilova: ").append(items.size()).append(" ta yashash</b> · qarz ")
+        StringBuilder sb = new StringBuilder("\n\n📎 <b>Илова: ").append(items.size()).append(" та яшаш</b> · қарз ")
                 .append(fmt.moneyShort(debt, cur));
         if (done > 0) {
-            sb.append(" · bajarilgan ").append(done).append(" / ").append(items.size());
+            sb.append(" · бажарилган ").append(done).append(" / ").append(items.size());
         }
         sb.append("\n");
         for (TaskItem i : items.stream().limit(ITEMS_IN_MESSAGE).toList()) {
@@ -70,41 +70,41 @@ public class TaskNotifier {
                 sb.append(" · ").append(esc(i.getCategory().toLowerCase()));
             }
             if (i.getAgeDays() > 0) {
-                sb.append(", ").append(i.getAgeDays()).append(" kun");
+                sb.append(", ").append(i.getAgeDays()).append(" кун");
             }
             sb.append("\n");
         }
         if (items.size() > ITEMS_IN_MESSAGE) {
-            sb.append("… yana ").append(items.size() - ITEMS_IN_MESSAGE)
-                    .append(" ta — to'liq ro'yxat saytda (topshiriq sahifasi, Excel).\n");
+            sb.append("… яна ").append(items.size() - ITEMS_IN_MESSAGE)
+                    .append(" та — тўлиқ рўйхат сайтда (топшириқ саҳифаси, Excel).\n");
         }
         return sb.toString();
     }
 
     public void completed(Task t, String comment) {
-        send(t.getAssignedBy(), "✅ <b>Topshiriq bajarildi — tekshiring</b>\n\n" + card(t)
+        send(t.getAssignedBy(), "✅ <b>Топшириқ бажарилди — текширинг</b>\n\n" + card(t)
                 + commentLine(name(t.getAssignee()), comment), reviewerButtons(t));
     }
 
     public void accepted(Task t, String comment) {
-        send(t.getAssignee(), "👍 <b>Topshiriq tasdiqlandi</b>\n\n" + card(t)
+        send(t.getAssignee(), "👍 <b>Топшириқ тасдиқланди</b>\n\n" + card(t)
                 + commentLine(name(t.getAssignedBy()), comment), siteButton(t));
     }
 
     public void returned(Task t, String comment) {
-        send(t.getAssignee(), "↩️ <b>Topshiriq qayta bajarishga qaytarildi</b>\n\n" + card(t)
+        send(t.getAssignee(), "↩️ <b>Топшириқ қайта бажаришга қайтарилди</b>\n\n" + card(t)
                 + commentLine(name(t.getAssignedBy()), comment), assigneeButtons(t));
     }
 
     public void cancelled(Task t, String comment) {
-        send(t.getAssignee(), "🚫 <b>Topshiriq bekor qilindi</b>\n\n" + card(t)
+        send(t.getAssignee(), "🚫 <b>Топшириқ бекор қилинди</b>\n\n" + card(t)
                 + commentLine(name(t.getAssignedBy()), comment), null);
     }
 
     /** Izoh — yozgan odamdan boshqa tomonga. */
     public void commented(Task t, Long authorId, String authorName, String text) {
         User to = t.getAssignee().getId().equals(authorId) ? t.getAssignedBy() : t.getAssignee();
-        send(to, "💬 <b>Topshiriq #" + t.getId() + " bo'yicha izoh</b>\n<i>" + esc(t.getTitle()) + "</i>"
+        send(to, "💬 <b>Топшириқ #" + t.getId() + " бўйича изоҳ</b>\n<i>" + esc(t.getTitle()) + "</i>"
                 + commentLine(authorName, text), siteButton(t));
     }
 
@@ -112,8 +112,8 @@ public class TaskNotifier {
     public void reminders(List<Task> due, LocalDate today) {
         for (Task t : due) {
             String head = t.isOverdue(today)
-                    ? "⏰ <b>Topshiriq muddati o'tdi</b> (" + ChronoUnit.DAYS.between(t.getDueDate(), today) + " kun)"
-                    : "⏳ <b>Bugun — topshiriq muddati</b>";
+                    ? "⏰ <b>Топшириқ муддати ўтди</b> (" + ChronoUnit.DAYS.between(t.getDueDate(), today) + " кун)"
+                    : "⏳ <b>Бугун — топшириқ муддати</b>";
             send(t.getAssignee(), head + "\n\n" + card(t), assigneeButtons(t));
         }
         Map<Long, List<Task>> byAssigner = new LinkedHashMap<>();
@@ -123,11 +123,11 @@ public class TaskNotifier {
             }
         }
         byAssigner.values().forEach(list -> {
-            StringBuilder sb = new StringBuilder("⏰ <b>Muddati o'tgan topshiriqlar</b> (siz bergan)\n\n");
+            StringBuilder sb = new StringBuilder("⏰ <b>Муддати ўтган топшириқлар</b> (сиз берган)\n\n");
             for (Task t : list) {
                 sb.append("• #").append(t.getId()).append(" ").append(esc(t.getTitle()))
                         .append("\n   ").append(esc(name(t.getAssignee()))).append(" · ").append(esc(t.getHotel().getName()))
-                        .append(" · muddat ").append(t.getDueDate().format(DAY)).append(" · ")
+                        .append(" · муддат ").append(t.getDueDate().format(DAY)).append(" · ")
                         .append(t.getStatus().getLabel().toLowerCase()).append("\n");
             }
             send(list.get(0).getAssignedBy(), sb.toString(), null);
@@ -149,16 +149,16 @@ public class TaskNotifier {
             sb.append(" · ").append(esc(t.getDepartment()));
         }
         if (t.getBookingNumber() != null) {
-            sb.append("\n🧾 Bron: <code>").append(esc(t.getBookingNumber())).append("</code>");
+            sb.append("\n🧾 Брон: <code>").append(esc(t.getBookingNumber())).append("</code>");
         }
-        sb.append("\n👤 Bajaruvchi: ").append(esc(name(t.getAssignee())));
+        sb.append("\n👤 Бажарувчи: ").append(esc(name(t.getAssignee())));
         if (t.getAssignedBy() != null) {
-            sb.append(" · berdi: ").append(esc(name(t.getAssignedBy())));
+            sb.append(" · берди: ").append(esc(name(t.getAssignedBy())));
         }
         if (t.getDueDate() != null) {
-            sb.append("\n📅 Muddat: <b>").append(t.getDueDate().format(DAY)).append("</b>").append(dueNote(t, today));
+            sb.append("\n📅 Муддат: <b>").append(t.getDueDate().format(DAY)).append("</b>").append(dueNote(t, today));
         }
-        sb.append("\n📍 Holat: ").append(t.getStatus().getLabel());
+        sb.append("\n📍 Ҳолат: ").append(t.getStatus().getLabel());
         return sb.toString();
     }
 
@@ -168,9 +168,9 @@ public class TaskNotifier {
         }
         long days = ChronoUnit.DAYS.between(today, t.getDueDate());
         if (days < 0) {
-            return " — <b>" + (-days) + " kun o'tdi</b>";
+            return " — <b>" + (-days) + " кун ўтди</b>";
         }
-        return days == 0 ? " — bugun" : " — " + days + " kun qoldi";
+        return days == 0 ? " — бугун" : " — " + days + " кун қолди";
     }
 
     private static String commentLine(String author, String comment) {
@@ -191,10 +191,10 @@ public class TaskNotifier {
         List<List<Map<String, Object>>> rows = new ArrayList<>();
         List<Map<String, Object>> row = new ArrayList<>();
         if (t.getStatus() == TaskStatus.NEW || t.getStatus() == TaskStatus.RETURNED) {
-            row.add(button("▶️ Boshladim", START, t));
+            row.add(button("▶️ Бошладим", START, t));
         }
         if (t.getStatus().isOpen()) {
-            row.add(button("✅ Bajarildi", COMPLETE, t));
+            row.add(button("✅ Бажарилди", COMPLETE, t));
         }
         if (!row.isEmpty()) {
             rows.add(row);
@@ -207,7 +207,7 @@ public class TaskNotifier {
     Map<String, Object> reviewerButtons(Task t) {
         List<List<Map<String, Object>>> rows = new ArrayList<>();
         if (t.getStatus() == TaskStatus.REVIEW) {
-            rows.add(List.of(button("👍 Tasdiqlash", ACCEPT, t), button("↩️ Qaytarish", RETURN, t)));
+            rows.add(List.of(button("👍 Тасдиқлаш", ACCEPT, t), button("↩️ Қайтариш", RETURN, t)));
         }
         addSite(rows, t);
         return rows.isEmpty() ? null : Map.of("inline_keyboard", rows);
@@ -221,7 +221,7 @@ public class TaskNotifier {
 
     private void addSite(List<List<Map<String, Object>>> rows, Task t) {
         if (props.hasPublicSiteUrl()) {
-            rows.add(List.of(Map.of("text", "🌐 Saytda ochish",
+            rows.add(List.of(Map.of("text", "🌐 Сайтда очиш",
                     "url", props.siteUrl().replaceAll("/+$", "") + "/services/tasks/" + t.getId())));
         }
     }

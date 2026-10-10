@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${member == null} ? 'Yangi xodim' : ${member.username})}"></head>
+<head th:replace="~{fragments/layout :: head(${member == null} ? 'Янги ходим' : ${member.username})}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('team-staff')}"></header>
 <main class="container container-narrow" th:with="f=${form}">
     <div class="page-head reveal">
-        <h1 th:text="${member == null} ? 'Yangi xodim' : (${member.fullName} ?: ${member.username})">Xodim</h1>
-        <a class="btn btn-secondary" th:href="@{/team/staff}">← Xodimlar</a>
+        <h1 th:text="${member == null} ? 'Янги ходим' : (${member.fullName} ?: ${member.username})">Ходим</h1>
+        <a class="btn btn-secondary" th:href="@{/team/staff}">← Ходимлар</a>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
@@ -14,35 +14,35 @@
           th:action="${member == null} ? @{/team/staff} : @{/team/staff/{id}(id=${member.id})}">
         <div class="form-grid">
             <div class="field">
-                <label for="fullName">F.I.Sh.</label>
+                <label for="fullName">Ф.И.Ш.</label>
                 <input type="text" id="fullName" name="fullName" maxlength="150" autocomplete="off"
-                       th:value="${f != null} ? ${f.fullName} : ${member?.fullName}" placeholder="Ism Familiya">
+                       th:value="${f != null} ? ${f.fullName} : ${member?.fullName}" placeholder="Исм Фамилия">
             </div>
             <div class="field">
-                <label for="phone">Telefon</label>
+                <label for="phone">Телефон</label>
                 <input type="text" id="phone" name="phone" maxlength="32" placeholder="+998 90 123 45 67"
                        th:value="${f != null} ? ${f.phone} : ${member?.phone}">
             </div>
             <div class="field">
-                <label for="username">Login *</label>
+                <label for="username">Логин *</label>
                 <input type="text" id="username" name="username" required maxlength="64" pattern="[A-Za-z0-9_.\-]{3,64}"
                        autocomplete="off" th:value="${f != null} ? ${f.username} : ${member?.username}">
-                <span class="hint">Lotin harflari, raqamlar, _ . - (3–64 belgi)</span>
+                <span class="hint">Лотин ҳарфлари, рақамлар, _ . - (3–64 белги)</span>
             </div>
             <div class="field" th:if="${member == null}">
-                <label for="password">Parol *</label>
+                <label for="password">Парол *</label>
                 <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password">
-                <span class="hint">Kamida 8 belgi — xodimga ayting, u Profil'da o'zgartira oladi.</span>
+                <span class="hint">Камида 8 белги — ходимга айтинг, у Профилда ўзгартира олади.</span>
             </div>
             <div class="field" th:if="${member != null}">
-                <label for="newPassword">Yangi parol</label>
+                <label for="newPassword">Янги парол</label>
                 <input type="password" id="newPassword" name="newPassword" minlength="8" autocomplete="new-password"
-                       placeholder="O'zgartirmaslik uchun bo'sh qoldiring">
+                       placeholder="Ўзгартирмаслик учун бўш қолдиринг">
             </div>
         </div>
 
         <div class="field">
-            <label>Bo'limlar * <span class="muted">(bir nechtasini tanlash mumkin)</span></label>
+            <label>Бўлимлар * <span class="muted">(бир нечтасини танлаш мумкин)</span></label>
             <fieldset class="dept-pick" th:each="g : ${groups}" th:if="${!g.departments.isEmpty()}">
                 <legend th:text="${g.hotel.name}"></legend>
                 <div class="check-list">
@@ -52,17 +52,17 @@
                     </label>
                 </div>
             </fieldset>
-            <span class="hint">Xodim tanlangan bo'limlar mehmonxonasiga biriktiriladi.
-                Kerakli bo'lim yo'q bo'lsa — <a th:href="@{/team/departments}">Bo'limlar</a> sahifasida qo'shing.</span>
+            <span class="hint">Ходим танланган бўлимлар меҳмонхонасига бириктирилади.
+                Керакли бўлим йўқ бўлса — <a th:href="@{/team/departments}">Бўлимлар</a> саҳифасида қўшинг.</span>
         </div>
 
         <label class="check" th:if="${member != null}">
-            <input type="checkbox" name="enabled" value="true" th:checked="${member.enabled}"> Faol (saytga va botga kira oladi)
+            <input type="checkbox" name="enabled" value="true" th:checked="${member.enabled}"> Фаол (сайтга ва ботга кира олади)
         </label>
 
         <div class="form-actions">
-            <a class="btn btn-secondary" th:href="@{/team/staff}">Bekor qilish</a>
-            <button type="submit" class="btn btn-primary">Saqlash</button>
+            <a class="btn btn-secondary" th:href="@{/team/staff}">Бекор қилиш</a>
+            <button type="submit" class="btn btn-primary">Сақлаш</button>
         </div>
     </form>
 </main>

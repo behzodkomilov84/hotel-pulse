@@ -101,7 +101,7 @@ class ExelySyncDbTest {
                 .filter(b -> b.getHotelId().equals(hotel.getId()))
                 .sorted(Comparator.comparing(Booking::getExternalId))
                 .toList();
-        assertEquals(3, rows.size(), "faol bron 2 ta xona + bekor qilingan 1 ta");
+        assertEquals(3, rows.size(), "фаол брон 2 та хона + бекор қилинган 1 та");
         assertTrue(rows.stream().allMatch(b -> b.getOrigin() == DataOrigin.EXELY));
         assertEquals(BookingStatus.CANCELLED, rows.get(0).getStatus());
         assertEquals("20230622-500821-12025196#0", rows.get(1).getExternalId());
@@ -113,7 +113,7 @@ class ExelySyncDbTest {
         assertEquals("TOKEN-2", after.getExelyContinueToken());
         assertEquals(Boolean.TRUE, after.getExelyLastSyncOk());
         assertNotNull(after.getExelyLastSyncAt());
-        assertEquals("2 ta bron yangilandi", after.getExelyLastSyncMessage());
+        assertEquals("2 та брон янгиланди", after.getExelyLastSyncMessage());
     }
 
     @Test
@@ -136,7 +136,7 @@ class ExelySyncDbTest {
         assertTrue(syncService.sync(hotel.getId()).ok());
 
         long rows = bookingRepository.findAll().stream().filter(b -> b.getHotelId().equals(hotel.getId())).count();
-        assertEquals(2, rows, "qayta sinxronlash takror qator yaratmasligi kerak");
+        assertEquals(2, rows, "қайта синхронлаш такрор қатор яратмаслиги керак");
         long payments = paymentRepository.findAll().stream().filter(p -> p.getHotelId().equals(hotel.getId())).count();
         assertEquals(1, payments);
     }

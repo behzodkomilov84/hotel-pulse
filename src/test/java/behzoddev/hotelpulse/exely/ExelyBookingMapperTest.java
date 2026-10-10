@@ -86,7 +86,7 @@ class ExelyBookingMapperTest {
     void sourceNames() {
         assertEquals("Sayt", ExelyBookingMapper.sourceName(new ExelyApi.Source("BookingEngine", null)));
         assertEquals("Kanal", ExelyBookingMapper.sourceName(new ExelyApi.Source("Channel", "")));
-        assertEquals("Noma'lum", ExelyBookingMapper.sourceName(null));
+        assertEquals("Номаълум", ExelyBookingMapper.sourceName(null));
         assertEquals("SomethingNew", ExelyBookingMapper.sourceName(new ExelyApi.Source("SomethingNew", "X")));
     }
 }

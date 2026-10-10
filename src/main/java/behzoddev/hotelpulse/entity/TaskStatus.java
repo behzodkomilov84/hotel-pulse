@@ -6,16 +6,16 @@ import java.util.Set;
 /** Topshiriq holati. */
 public enum TaskStatus {
     /** Berildi, xodim hali boshlamagan. */
-    NEW("Yangi"),
+    NEW("Янги"),
     /** Xodim boshladi. */
-    IN_PROGRESS("Bajarilmoqda"),
+    IN_PROGRESS("Бажарилмоқда"),
     /** Xodim "bajarildi" dedi — topshiriq beruvchi tekshirishi kerak. */
-    REVIEW("Tekshiruvda"),
+    REVIEW("Текширувда"),
     /** Topshiriq beruvchi bajarilganini tasdiqladi. */
-    DONE("Tasdiqlangan"),
+    DONE("Тасдиқланган"),
     /** Tekshiruvdan qaytarildi — xodim qayta bajarishi kerak. */
-    RETURNED("Qaytarilgan"),
-    CANCELLED("Bekor qilingan");
+    RETURNED("Қайтарилган"),
+    CANCELLED("Бекор қилинган");
 
     /** Xodimda ochiq turgan (bajarilishi kerak bo'lgan) holatlar — muddat va eslatma shular uchun. */
     public static final Set<TaskStatus> OPEN = EnumSet.of(NEW, IN_PROGRESS, RETURNED);

@@ -46,9 +46,9 @@ public class ReportService {
     static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("dd.MM.yyyy");
     static final DateTimeFormatter DAY_SHORT = DateTimeFormatter.ofPattern("dd.MM");
     static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-    static final String[] WEEKDAYS = {"Du", "Se", "Ch", "Pa", "Ju", "Sh", "Ya"};
-    static final String[] MONTHS = {"Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun", "Iyul", "Avgust", "Sentyabr",
-            "Oktyabr", "Noyabr", "Dekabr"};
+    static final String[] WEEKDAYS = {"Ду", "Се", "Чо", "Па", "Жу", "Ша", "Як"};
+    static final String[] MONTHS = {"Январ", "Феврал", "Март", "Апрел", "Май", "Июн", "Июл", "Август", "Сентябр",
+            "Октябр", "Ноябр", "Декабр"};
 
     private final ReportData data;
     private final KpiService kpiService;
@@ -62,9 +62,9 @@ public class ReportService {
         String cur = fmt.currencyLabel(hotel.getCurrency());
         return switch (key) {
             case "arrivals" -> stayList(hotel, data.arrivingIn(hotel.getId(), p).stream()
-                    .filter(s -> s.status() != BookingStatus.CANCELLED).toList(), cur, "Kelish");
+                    .filter(s -> s.status() != BookingStatus.CANCELLED).toList(), cur, "Келиш");
             case "departures" -> stayList(hotel, data.departingIn(hotel.getId(), p).stream()
-                    .filter(Stay::active).sorted(Comparator.comparing(Stay::departure)).toList(), cur, "Ketish");
+                    .filter(Stay::active).sorted(Comparator.comparing(Stay::departure)).toList(), cur, "Кетиш");
             case "inhouse" -> inHouse(hotel, p, cur);
             case "guests" -> guests(hotel, p, cur);
             case "meals" -> meals(hotel, p, cur);
@@ -102,9 +102,9 @@ public class ReportService {
     private ReportTable stayList(Hotel hotel, List<Stay> stays, String cur, String dateLabel) {
         Map<String, String> types = data.roomTypes(hotel.getId());
         Map<String, String> rooms = data.rooms(hotel.getId());
-        ReportTable t = new ReportTable().col("Kelish").col("Ketish").num("Kecha").col("Bron").col("Mehmon")
-                .col("Xona turi").col("Xona").num("Mehmonlar").col("Manba").col("Holat")
-                .num("Summa, " + cur).num("Qoldiq, " + cur);
+        ReportTable t = new ReportTable().col("Келиш").col("Кетиш").num("Кеча").col("Брон").col("Меҳмон")
+                .col("Хона тури").col("Хона").num("Меҳмонлар").col("Манба").col("Ҳолат")
+                .num("Сумма, " + cur).num("Қолдиқ, " + cur);
         int guests = 0;
         BigDecimal total = BigDecimal.ZERO, balance = BigDecimal.ZERO;
         for (Stay s : stays) {
@@ -115,7 +115,7 @@ public class ReportService {
             total = total.add(s.total());
             balance = balance.add(s.balance());
         }
-        t.total("Jami", "", "", stays.size() + " ta", "", "", "", guests, "", "", fmt.amount(total), fmt.amount(balance));
+        t.total("Жами", "", "", stays.size() + " та", "", "", "", guests, "", "", fmt.amount(total), fmt.amount(balance));
         return t;
     }
 
@@ -127,8 +127,8 @@ public class ReportService {
                 .filter(s -> s.inHouseOn(d))
                 .sorted(Comparator.comparing((Stay s) -> nz(rooms.get(s.roomId())), roomOrder()))
                 .toList();
-        ReportTable t = new ReportTable().col("Xona").col("Xona turi").col("Bron").col("Mehmon").num("Mehmonlar")
-                .col("Kelish").col("Ketish").col("Manba").num("Summa, " + cur).num("Qoldiq, " + cur);
+        ReportTable t = new ReportTable().col("Хона").col("Хона тури").col("Брон").col("Меҳмон").num("Меҳмонлар")
+                .col("Келиш").col("Кетиш").col("Манба").num("Сумма, " + cur).num("Қолдиқ, " + cur);
         int guests = 0;
         BigDecimal balance = BigDecimal.ZERO;
         for (Stay s : list) {
@@ -137,8 +137,8 @@ public class ReportService {
             guests += s.guests();
             balance = balance.add(s.balance());
         }
-        t.total("Jami", "", list.size() + " ta yashash", "", guests, "", "", "", "", fmt.amount(balance));
-        t.note("Sana: " + d.format(DAY) + " · band xonalar: " + list.size() + " / " + hotel.getRoomsCount()
+        t.total("Жами", "", list.size() + " та яшаш", "", guests, "", "", "", "", fmt.amount(balance));
+        t.note("Сана: " + d.format(DAY) + " · банд хоналар: " + list.size() + " / " + hotel.getRoomsCount()
                 + " (" + fmt.pct(ratio(list.size(), hotel.getRoomsCount())) + ")");
         return t;
     }
@@ -166,18 +166,18 @@ public class ReportService {
                 a.sources().add(s.source());
             }
         }
-        ReportTable t = new ReportTable().col("Mehmon / to'lovchi").num("Yashashlar").num("Kechalar (davrda)")
-                .num("Daromad (davrda), " + cur).col("Oxirgi ketish").col("Manbalar");
+        ReportTable t = new ReportTable().col("Меҳмон / тўловчи").num("Яшашлар").num("Кечалар (даврда)")
+                .num("Даромад (даврда), " + cur).col("Охирги кетиш").col("Манбалар");
         by.entrySet().stream().sorted(Comparator.comparing((Map.Entry<String, Acc> e) -> e.getValue().sum()[0]).reversed())
                 .forEach(e -> {
                     Acc a = e.getValue();
                     t.row(e.getKey(), a.stays()[0], a.nights()[0], fmt.amount(a.sum()[0]), a.last()[0].format(DAY),
                             String.join(", ", a.sources()));
                 });
-        t.total("Jami: " + by.size() + " ta mehmon", by.values().stream().mapToInt(a -> a.stays()[0]).sum(),
+        t.total("Жами: " + by.size() + " та меҳмон", by.values().stream().mapToInt(a -> a.stays()[0]).sum(),
                 by.values().stream().mapToLong(a -> a.nights()[0]).sum(),
                 fmt.amount(by.values().stream().map(a -> a.sum()[0]).reduce(BigDecimal.ZERO, BigDecimal::add)), "", "");
-        t.note("Shaxsiy ma'lumotlar (telefon, hujjat) ko'rsatilmaydi — faqat ism va tashriflar.");
+        t.note("Шахсий маълумотлар (телефон, ҳужжат) кўрсатилмайди — фақат исм ва ташрифлар.");
         return t;
     }
 
@@ -192,8 +192,8 @@ public class ReportService {
                 mealLines.merge(r.date(), 1, Integer::sum);
             }
         }
-        ReportTable t = new ReportTable().col("Sana").col("Kun").num("Ertalab mehmonlar").num("Kelayotgan mehmonlar")
-                .num("Sotilgan ovqatlanish (qator)").num("Ovqatlanish summasi, " + cur);
+        ReportTable t = new ReportTable().col("Сана").col("Кун").num("Эрталаб меҳмонлар").num("Келаётган меҳмонлар")
+                .num("Сотилган овқатланиш (қатор)").num("Овқатланиш суммаси, " + cur);
         int tg = 0, ta = 0, tl = 0;
         BigDecimal ts = BigDecimal.ZERO;
         for (LocalDate d = p.from(); !d.isAfter(p.to()); d = d.plusDays(1)) {
@@ -210,8 +210,8 @@ public class ReportService {
             tl += lines;
             ts = ts.add(sum);
         }
-        t.total("Jami", "", tg, ta, tl, fmt.amount(ts));
-        t.note("Ertalab mehmonlar — oldingi kechani mehmonxonada o'tkazganlar (nonushta rejasi uchun).");
+        t.total("Жами", "", tg, ta, tl, fmt.amount(ts));
+        t.note("Эрталаб меҳмонлар — олдинги кечани меҳмонхонада ўтказганлар (нонушта режаси учун).");
         return t;
     }
 
@@ -220,14 +220,14 @@ public class ReportService {
     private ReportTable daily(Hotel hotel, Period p, String cur) {
         StayMetrics s = kpiService.metrics(hotel, p);
         int rooms = hotel.getRoomsCount();
-        ReportTable t = new ReportTable().col("Sana").col("Kun").num("Sotilgan xonalar").num("Bandlik")
-                .num("ADR, " + cur).num("RevPAR, " + cur).num("Yashash, " + cur).num("Xizmatlar, " + cur).num("Jami, " + cur);
+        ReportTable t = new ReportTable().col("Сана").col("Кун").num("Сотилган хоналар").num("Бандлик")
+                .num("ADR, " + cur).num("RevPAR, " + cur).num("Яшаш, " + cur).num("Хизматлар, " + cur).num("Жами, " + cur);
         for (StayMetrics.DailyPoint d : s.daily()) {
             t.row(d.date().format(DAY), weekday(d.date()), d.roomsSold(), heat(d.occupancy()),
                     fmt.amount(div(d.roomRevenue(), d.roomsSold())), fmt.amount(div(d.roomRevenue(), rooms)),
                     fmt.amount(d.roomRevenue()), fmt.amount(d.revenue().subtract(d.roomRevenue())), fmt.amount(d.revenue()));
         }
-        t.total("Jami", "", s.soldRoomNights(), fmt.pct(s.occupancy()), fmt.amount(s.adr()), fmt.amount(s.revpar()),
+        t.total("Жами", "", s.soldRoomNights(), fmt.pct(s.occupancy()), fmt.amount(s.adr()), fmt.amount(s.revpar()),
                 fmt.amount(s.roomRevenue()), fmt.amount(s.extrasRevenue()), fmt.amount(s.totalRevenue()));
         return t;
     }
@@ -235,35 +235,35 @@ public class ReportService {
     private ReportTable managerPeriod(Hotel hotel, Period p, String cur) {
         HotelKpi now = kpiService.report(hotel, p);
         HotelKpi prev = kpiService.report(hotel, p.previous());
-        ReportTable t = new ReportTable().col("Ko'rsatkich").num(p.label()).num(p.previous().label()).num("O'zgarish");
+        ReportTable t = new ReportTable().col("Кўрсаткич").num(p.label()).num(p.previous().label()).num("Ўзгариш");
         metricsRows(t, now, prev, hotel, cur);
         return t;
     }
 
     private void metricsRows(ReportTable t, HotelKpi a, HotelKpi b, Hotel hotel, String cur) {
         StayMetrics s = a.stays(), q = b.stays();
-        t.rowOf("section", "Bandlik");
-        t.row("Mavjud xona-kechalar", s.availableRoomNights(), q.availableRoomNights(), "");
-        t.row("Sotilgan xona-kechalar", s.soldRoomNights(), q.soldRoomNights(), change(s.soldRoomNights(), q.soldRoomNights()));
-        t.row("Bandlik", fmt.pct(s.occupancy()), fmt.pct(q.occupancy()), fmt.pointChange(s.occupancy(), q.occupancy()));
-        t.row("O'rtacha yashash (kecha)", fmt.number(s.avgLengthOfStay()), fmt.number(q.avgLengthOfStay()), "");
-        t.rowOf("section", "Narx va daromad, " + cur);
+        t.rowOf("section", "Бандлик");
+        t.row("Мавжуд хона-кечалар", s.availableRoomNights(), q.availableRoomNights(), "");
+        t.row("Сотилган хона-кечалар", s.soldRoomNights(), q.soldRoomNights(), change(s.soldRoomNights(), q.soldRoomNights()));
+        t.row("Бандлик", fmt.pct(s.occupancy()), fmt.pct(q.occupancy()), fmt.pointChange(s.occupancy(), q.occupancy()));
+        t.row("Ўртача яшаш (кеча)", fmt.number(s.avgLengthOfStay()), fmt.number(q.avgLengthOfStay()), "");
+        t.rowOf("section", "Нарх ва даромад, " + cur);
         t.row("ADR", fmt.amount(s.adr()), fmt.amount(q.adr()), nz(fmt.change(s.adr(), q.adr())));
         t.row("RevPAR", fmt.amount(s.revpar()), fmt.amount(q.revpar()), nz(fmt.change(s.revpar(), q.revpar())));
-        t.row("TRevPAR (jami daromad / mavjud xona)", fmt.amount(div(s.totalRevenue(), s.availableRoomNights())),
+        t.row("TRevPAR (жами даромад / мавжуд хона)", fmt.amount(div(s.totalRevenue(), s.availableRoomNights())),
                 fmt.amount(div(q.totalRevenue(), q.availableRoomNights())), "");
-        t.row("Yashash daromadi", fmt.amount(s.roomRevenue()), fmt.amount(q.roomRevenue()), nz(fmt.change(s.roomRevenue(), q.roomRevenue())));
-        t.row("Ovqatlanish", fmt.amount(s.mealsRevenue()), fmt.amount(q.mealsRevenue()), nz(fmt.change(s.mealsRevenue(), q.mealsRevenue())));
+        t.row("Яшаш даромади", fmt.amount(s.roomRevenue()), fmt.amount(q.roomRevenue()), nz(fmt.change(s.roomRevenue(), q.roomRevenue())));
+        t.row("Овқатланиш", fmt.amount(s.mealsRevenue()), fmt.amount(q.mealsRevenue()), nz(fmt.change(s.mealsRevenue(), q.mealsRevenue())));
         BigDecimal so = s.extrasRevenue().subtract(s.mealsRevenue()), qo = q.extrasRevenue().subtract(q.mealsRevenue());
-        t.row("Boshqa xizmatlar", fmt.amount(so), fmt.amount(qo), nz(fmt.change(so, qo)));
-        t.rowOf("subtotal", "Jami daromad", fmt.amount(s.totalRevenue()), fmt.amount(q.totalRevenue()),
+        t.row("Бошқа хизматлар", fmt.amount(so), fmt.amount(qo), nz(fmt.change(so, qo)));
+        t.rowOf("subtotal", "Жами даромад", fmt.amount(s.totalRevenue()), fmt.amount(q.totalRevenue()),
                 nz(fmt.change(s.totalRevenue(), q.totalRevenue())));
-        t.row("Tushgan to'lovlar", fmt.amount(a.paymentsReceived()), fmt.amount(b.paymentsReceived()),
+        t.row("Тушган тўловлар", fmt.amount(a.paymentsReceived()), fmt.amount(b.paymentsReceived()),
                 nz(fmt.change(a.paymentsReceived(), b.paymentsReceived())));
-        t.rowOf("section", "Bronlar");
-        t.row("Yangi bronlar", a.newBookings(), b.newBookings(), change(a.newBookings(), b.newBookings()));
-        t.row("Bekor qilingan", a.cancellations(), b.cancellations(), change(a.cancellations(), b.cancellations()));
-        t.row("Kelmagan (no-show)", s.noShows(), q.noShows(), "");
+        t.rowOf("section", "Бронлар");
+        t.row("Янги бронлар", a.newBookings(), b.newBookings(), change(a.newBookings(), b.newBookings()));
+        t.row("Бекор қилинган", a.cancellations(), b.cancellations(), change(a.cancellations(), b.cancellations()));
+        t.row("Келмаган (no-show)", s.noShows(), q.noShows(), "");
     }
 
     private ReportTable flash(Hotel hotel, Period p, String cur) {
@@ -272,28 +272,28 @@ public class ReportService {
         Period mtd = new Period("custom", d.withDayOfMonth(1), d);
         Period ytd = new Period("custom", d.withDayOfYear(1), d);
         HotelKpi kd = kpiService.report(hotel, day), km = kpiService.report(hotel, mtd), ky = kpiService.report(hotel, ytd);
-        ReportTable t = new ReportTable().col("Ko'rsatkich").num(d.format(DAY)).num("Oy boshidan").num("Yil boshidan");
+        ReportTable t = new ReportTable().col("Кўрсаткич").num(d.format(DAY)).num("Ой бошидан").num("Йил бошидан");
         for (Object[] r : List.<Object[]>of(
-                new Object[]{"Bandlik", (Function<HotelKpi, String>) k -> fmt.pct(k.stays().occupancy())},
-                new Object[]{"Sotilgan xona-kechalar", (Function<HotelKpi, String>) k -> String.valueOf(k.stays().soldRoomNights())},
+                new Object[]{"Бандлик", (Function<HotelKpi, String>) k -> fmt.pct(k.stays().occupancy())},
+                new Object[]{"Сотилган хона-кечалар", (Function<HotelKpi, String>) k -> String.valueOf(k.stays().soldRoomNights())},
                 new Object[]{"ADR, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.stays().adr())},
                 new Object[]{"RevPAR, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.stays().revpar())},
-                new Object[]{"Yashash daromadi, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.stays().roomRevenue())},
-                new Object[]{"Ovqatlanish, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.stays().mealsRevenue())},
-                new Object[]{"Boshqa xizmatlar, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.stays().extrasRevenue().subtract(k.stays().mealsRevenue()))},
-                new Object[]{"Jami daromad, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.stays().totalRevenue())},
-                new Object[]{"Tushgan to'lovlar, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.paymentsReceived())},
-                new Object[]{"Yangi bronlar", (Function<HotelKpi, String>) k -> String.valueOf(k.newBookings())},
-                new Object[]{"Bekor qilingan", (Function<HotelKpi, String>) k -> String.valueOf(k.cancellations())},
-                new Object[]{"Kelmagan (no-show)", (Function<HotelKpi, String>) k -> String.valueOf(k.stays().noShows())})) {
+                new Object[]{"Яшаш даромади, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.stays().roomRevenue())},
+                new Object[]{"Овқатланиш, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.stays().mealsRevenue())},
+                new Object[]{"Бошқа хизматлар, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.stays().extrasRevenue().subtract(k.stays().mealsRevenue()))},
+                new Object[]{"Жами даромад, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.stays().totalRevenue())},
+                new Object[]{"Тушган тўловлар, " + cur, (Function<HotelKpi, String>) k -> fmt.amount(k.paymentsReceived())},
+                new Object[]{"Янги бронлар", (Function<HotelKpi, String>) k -> String.valueOf(k.newBookings())},
+                new Object[]{"Бекор қилинган", (Function<HotelKpi, String>) k -> String.valueOf(k.cancellations())},
+                new Object[]{"Келмаган (no-show)", (Function<HotelKpi, String>) k -> String.valueOf(k.stays().noShows())})) {
             @SuppressWarnings("unchecked")
             Function<HotelKpi, String> f = (Function<HotelKpi, String>) r[1];
             t.row(r[0], f.apply(kd), f.apply(km), f.apply(ky));
         }
         List<Stay> around = data.overlapping(hotel.getId(), new Period("custom", d.minusDays(1), d.plusDays(1)));
-        t.row("Keladiganlar (kun)", around.stream().filter(s -> s.active() && s.arrival().equals(d)).count(), "", "");
-        t.row("Ketadiganlar (kun)", around.stream().filter(s -> s.active() && s.departure().equals(d)).count(), "", "");
-        t.note("Sana — davr oxiri (bugundan keyin bo'lsa — bugun).");
+        t.row("Келадиганлар (кун)", around.stream().filter(s -> s.active() && s.arrival().equals(d)).count(), "", "");
+        t.row("Кетадиганлар (кун)", around.stream().filter(s -> s.active() && s.departure().equals(d)).count(), "", "");
+        t.note("Сана — давр охири (бугундан кейин бўлса — бугун).");
         return t;
     }
 
@@ -313,44 +313,44 @@ public class ReportService {
             revenue.merge(type, rev.apply(s), BigDecimal::add);
         }
         BigDecimal total = revenue.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
-        ReportTable t = new ReportTable().col("Xona turi").num("Xonalar").num("Sotilgan kechalar").num("Bandlik")
-                .num("ADR, " + cur).num("RevPAR, " + cur).num("Daromad, " + cur).num("Ulushi");
+        ReportTable t = new ReportTable().col("Хона тури").num("Хоналар").num("Сотилган кечалар").num("Бандлик")
+                .num("ADR, " + cur).num("RevPAR, " + cur).num("Даромад, " + cur).num("Улуши");
         long totalNights = 0;
         int totalRooms = 0;
         for (String type : revenue.keySet().stream().sorted(Comparator.comparing(revenue::get).reversed()).toList()) {
             long n = nights.get(type)[0];
             int rooms = perType.getOrDefault(type, 0);
             BigDecimal r = revenue.get(type);
-            t.row(names.getOrDefault(type, type.equals("?") ? "Noma'lum" : "Tur " + type), rooms == 0 ? "—" : rooms, n,
+            t.row(names.getOrDefault(type, type.equals("?") ? "Номаълум" : "Тур " + type), rooms == 0 ? "—" : rooms, n,
                     rooms == 0 ? "—" : fmt.pct(ratio(n, (long) rooms * p.days())), fmt.amount(div(r, n)),
                     rooms == 0 ? "—" : fmt.amount(div(r, (long) rooms * p.days())), fmt.amount(r), fmt.pct(ratio(r, total)));
             totalNights += n;
             totalRooms += rooms;
         }
-        t.total("Jami", totalRooms, totalNights, totalRooms == 0 ? "" : fmt.pct(ratio(totalNights, (long) totalRooms * p.days())),
+        t.total("Жами", totalRooms, totalNights, totalRooms == 0 ? "" : fmt.pct(ratio(totalNights, (long) totalRooms * p.days())),
                 fmt.amount(div(total, totalNights)), "", fmt.amount(total), "100%");
-        t.note("Exely API bronning tarif rejasini bermaydi — shuning uchun daromad xona turlari bo'yicha. "
-                + "Daromad — yashash daromadi, bronlar ulushi bo'yicha taqsimlangan (asosiy ko'rsatkichlar bilan bir xil).");
+        t.note("Exely API броннинг тариф режасини бермайди — шунинг учун даромад хона турлари бўйича. "
+                + "Даромад — яшаш даромади, бронлар улуши бўйича тақсимланган (асосий кўрсаткичлар билан бир хил).");
         return t;
     }
 
     private ReportTable historyForecast(Hotel hotel, String cur) {
         LocalDate today = kpiService.today();
         YearMonth start = YearMonth.from(today).minusMonths(6);
-        ReportTable t = new ReportTable().col("Oy").col("Holat").num("Sotilgan kechalar").num("Bandlik")
-                .num("ADR, " + cur).num("RevPAR, " + cur).num("Jami daromad, " + cur).num("O'tgan yil daromadi, " + cur);
+        ReportTable t = new ReportTable().col("Ой").col("Ҳолат").num("Сотилган кечалар").num("Бандлик")
+                .num("ADR, " + cur).num("RevPAR, " + cur).num("Жами даромад, " + cur).num("Ўтган йил даромади, " + cur);
         for (int i = 0; i < 13; i++) {
             YearMonth m = start.plusMonths(i);
             Period mp = new Period("custom", m.atDay(1), m.atEndOfMonth());
             StayMetrics s = kpiService.metrics(hotel, mp);
             YearMonth ly = m.minusYears(1);
             StayMetrics l = kpiService.metrics(hotel, new Period("custom", ly.atDay(1), ly.atEndOfMonth()));
-            String state = m.isBefore(YearMonth.from(today)) ? "haqiqiy" : m.equals(YearMonth.from(today)) ? "joriy" : "bron qilingan";
+            String state = m.isBefore(YearMonth.from(today)) ? "ҳақиқий" : m.equals(YearMonth.from(today)) ? "жорий" : "брон қилинган";
             t.row(cell(MONTHS[m.getMonthValue() - 1] + " " + m.getYear(), m.equals(YearMonth.from(today)) ? "strong" : null),
                     state, s.soldRoomNights(), heat(s.occupancy()), fmt.amount(s.adr()), fmt.amount(s.revpar()),
                     fmt.amount(s.totalRevenue()), l.totalRevenue().signum() == 0 ? "—" : fmt.amount(l.totalRevenue()));
         }
-        t.note("Kelgusi oylar — bugungacha bron qilingani (on the books). O'tgan yil — Exely'da ma'lumot bo'lsa.");
+        t.note("Келгуси ойлар — бугунгача брон қилингани (on the books). Ўтган йил — Exely'да маълумот бўлса.");
         return t;
     }
 
@@ -359,13 +359,13 @@ public class ReportService {
         Period p = new Period("custom", today, today.plusDays(59));
         StayMetrics s = kpiService.metrics(hotel, p);
         int rooms = hotel.getRoomsCount();
-        ReportTable t = new ReportTable().col("Sana").col("Kun").num("Sotilgan").num("Bo'sh").num("Bandlik");
+        ReportTable t = new ReportTable().col("Сана").col("Кун").num("Сотилган").num("Бўш").num("Бандлик");
         for (StayMetrics.DailyPoint d : s.daily()) {
             t.row(cell(d.date().format(DAY), weekend(d.date()) ? "weekend" : null), weekday(d.date()), d.roomsSold(),
                     Math.max(0, rooms - d.roomsSold()), heat(d.occupancy()));
         }
-        t.total("60 kun", "", s.soldRoomNights(), Math.max(0, s.availableRoomNights() - s.soldRoomNights()), fmt.pct(s.occupancy()));
-        t.note("Bugundan boshlab 60 kun — hozirgacha bron qilingan xonalar. Rang — bandlik darajasi.");
+        t.total("60 кун", "", s.soldRoomNights(), Math.max(0, s.availableRoomNights() - s.soldRoomNights()), fmt.pct(s.occupancy()));
+        t.note("Бугундан бошлаб 60 кун — ҳозиргача брон қилинган хоналар. Ранг — бандлик даражаси.");
         return t;
     }
 
@@ -375,8 +375,8 @@ public class ReportService {
         StayMetrics s = kpiService.metrics(hotel, p);
         Map<LocalDate, Integer> d1 = data.snapshot(hotel.getId(), today.minusDays(1));
         Map<LocalDate, Integer> d7 = data.snapshot(hotel.getId(), today.minusDays(7));
-        ReportTable t = new ReportTable().col("Sana").col("Kun").num("Hozir sotilgan").num("Bo'sh")
-                .num("1 kunda o'zgarish").num("7 kunda o'zgarish");
+        ReportTable t = new ReportTable().col("Сана").col("Кун").num("Ҳозир сотилган").num("Бўш")
+                .num("1 кунда ўзгариш").num("7 кунда ўзгариш");
         int sum1 = 0, sum7 = 0;
         for (StayMetrics.DailyPoint d : s.daily()) {
             Integer a = d1.get(d.date()), b = d7.get(d.date());
@@ -385,9 +385,9 @@ public class ReportService {
             sum1 += a == null ? 0 : d.roomsSold() - a;
             sum7 += b == null ? 0 : d.roomsSold() - b;
         }
-        t.total("30 kun", "", s.soldRoomNights(), "", pickup(d1.isEmpty() ? null : sum1), pickup(d7.isEmpty() ? null : sum7));
-        t.note("Har kuni kelgusi kunlar holati saqlanadi (birinchi surat — shu funksiya yoqilgan kundan). "
-                + "\"+\" — shu davrda yangi sotilgan xonalar, \"−\" — bekor qilingan. \"—\" — hali surat yo'q.");
+        t.total("30 кун", "", s.soldRoomNights(), "", pickup(d1.isEmpty() ? null : sum1), pickup(d7.isEmpty() ? null : sum7));
+        t.note("Ҳар куни келгуси кунлар ҳолати сақланади (биринчи сурат — шу функция ёқилган кундан). "
+                + "\"+\" — шу даврда янги сотилган хоналар, \"−\" — бекор қилинган. \"—\" — ҳали сурат йўқ.");
         return t;
     }
 
@@ -397,8 +397,8 @@ public class ReportService {
         for (PaymentRow r : data.payments(hotel.getId(), p)) {
             paid.merge(r.paidAt().toLocalDate(), r.amount(), BigDecimal::add);
         }
-        ReportTable t = new ReportTable().col("Sana").num("Yashash, " + cur).num("Ovqatlanish, " + cur)
-                .num("Boshqa xizmatlar, " + cur).num("Jami daromad, " + cur).num("Tushgan to'lovlar, " + cur);
+        ReportTable t = new ReportTable().col("Сана").num("Яшаш, " + cur).num("Овқатланиш, " + cur)
+                .num("Бошқа хизматлар, " + cur).num("Жами даромад, " + cur).num("Тушган тўловлар, " + cur);
         BigDecimal tp = BigDecimal.ZERO;
         for (StayMetrics.DailyPoint d : s.daily()) {
             BigDecimal pd = paid.getOrDefault(d.date(), BigDecimal.ZERO);
@@ -406,14 +406,14 @@ public class ReportService {
             t.row(d.date().format(DAY), fmt.amount(d.roomRevenue()), fmt.amount(d.mealsRevenue()), fmt.amount(d.otherRevenue()),
                     fmt.amount(d.revenue()), fmt.amount(pd));
         }
-        t.total("Jami", fmt.amount(s.roomRevenue()), fmt.amount(s.mealsRevenue()),
+        t.total("Жами", fmt.amount(s.roomRevenue()), fmt.amount(s.mealsRevenue()),
                 fmt.amount(s.extrasRevenue().subtract(s.mealsRevenue())), fmt.amount(s.totalRevenue()), fmt.amount(tp));
         Period prev = p.previous();
         StayMetrics q = kpiService.metrics(hotel, prev);
         BigDecimal qp = data.payments(hotel.getId(), prev).stream().map(PaymentRow::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        t.rowOf("subtotal", "Oldingi davr (" + prev.label() + ")", fmt.amount(q.roomRevenue()), fmt.amount(q.mealsRevenue()),
+        t.rowOf("subtotal", "Олдинги давр (" + prev.label() + ")", fmt.amount(q.roomRevenue()), fmt.amount(q.mealsRevenue()),
                 fmt.amount(q.extrasRevenue().subtract(q.mealsRevenue())), fmt.amount(q.totalRevenue()), fmt.amount(qp));
-        t.rowOf("subtotal", "O'zgarish", nz(fmt.change(s.roomRevenue(), q.roomRevenue())), nz(fmt.change(s.mealsRevenue(), q.mealsRevenue())),
+        t.rowOf("subtotal", "Ўзгариш", nz(fmt.change(s.roomRevenue(), q.roomRevenue())), nz(fmt.change(s.mealsRevenue(), q.mealsRevenue())),
                 nz(fmt.change(s.extrasRevenue().subtract(s.mealsRevenue()), q.extrasRevenue().subtract(q.mealsRevenue()))),
                 nz(fmt.change(s.totalRevenue(), q.totalRevenue())), nz(fmt.change(tp, qp)));
         return t;
@@ -441,8 +441,8 @@ public class ReportService {
             }
         }
         BigDecimal total = rev.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
-        ReportTable t = new ReportTable().col("Manba").num("Yashashlar").num("Kechalar").num("Daromad, " + cur)
-                .num("Ulushi").num("ADR, " + cur).num("Bekor qilingan").num("Bekor %");
+        ReportTable t = new ReportTable().col("Манба").num("Яшашлар").num("Кечалар").num("Даромад, " + cur)
+                .num("Улуши").num("ADR, " + cur).num("Бекор қилинган").num("Бекор %");
         long ts = 0, tn = 0, tc = 0;
         for (String src : stat.keySet().stream().sorted(Comparator.comparing((String k) -> rev.getOrDefault(k, BigDecimal.ZERO)).reversed()).toList()) {
             long[] a = stat.get(src);
@@ -453,8 +453,8 @@ public class ReportService {
             tn += a[1];
             tc += a[2];
         }
-        t.total("Jami", ts, tn, fmt.amount(total), "100%", fmt.amount(div(total, tn)), tc, fmt.pct(ratio(tc, ts + tc)));
-        t.note("Daromad — yashash daromadi, bronlar ulushi bo'yicha taqsimlangan. Bekor qilingan — kelish sanasi shu davrda bo'lganlari.");
+        t.total("Жами", ts, tn, fmt.amount(total), "100%", fmt.amount(div(total, tn)), tc, fmt.pct(ratio(tc, ts + tc)));
+        t.note("Даромад — яшаш даромади, бронлар улуши бўйича тақсимланган. Бекор қилинган — келиш санаси шу даврда бўлганлари.");
         return t;
     }
 
@@ -463,14 +463,14 @@ public class ReportService {
         Function<Stay, BigDecimal> rev = roomRevenueOf(hotel, p, stays);
         Map<String, List<Stay>> by = stays.stream().filter(Stay::active)
                 .collect(Collectors.groupingBy(this::src, TreeMap::new, Collectors.toList()));
-        ReportTable t = new ReportTable().col("Manba / bron").col("Mehmon").col("Kelish").col("Ketish")
-                .num("Kechalar (davrda)").num("Daromad (davrda), " + cur).col("Holat");
+        ReportTable t = new ReportTable().col("Манба / брон").col("Меҳмон").col("Келиш").col("Кетиш")
+                .num("Кечалар (даврда)").num("Даромад (даврда), " + cur).col("Ҳолат");
         BigDecimal total = BigDecimal.ZERO;
         long nights = 0;
         for (Map.Entry<String, List<Stay>> e : by.entrySet()) {
             BigDecimal sr = e.getValue().stream().map(s -> rev.apply(s)).reduce(BigDecimal.ZERO, BigDecimal::add);
             long sn = e.getValue().stream().mapToLong(s -> s.roomNightsIn(p)).sum();
-            t.rowOf("section", e.getKey() + " — " + e.getValue().size() + " ta", "", "", "", sn, fmt.amount(sr), "");
+            t.rowOf("section", e.getKey() + " — " + e.getValue().size() + " та", "", "", "", sn, fmt.amount(sr), "");
             for (Stay s : e.getValue().stream().sorted(Comparator.comparing(Stay::arrival)).toList()) {
                 t.row(s.number(), nz(s.guest()), s.arrival().format(DAY), s.departure().format(DAY), s.roomNightsIn(p),
                         fmt.amount(rev.apply(s)), status(s.status()));
@@ -478,7 +478,7 @@ public class ReportService {
             total = total.add(sr);
             nights += sn;
         }
-        t.total("Jami", "", "", "", nights, fmt.amount(total), "");
+        t.total("Жами", "", "", "", nights, fmt.amount(total), "");
         return t;
     }
 
@@ -499,13 +499,13 @@ public class ReportService {
             count.merge(name, 1, Integer::sum);
             source.putIfAbsent(name, src(s));
         }
-        ReportTable t = new ReportTable().col("Mijoz").col("Asosiy manba").num("Yashashlar")
-                .num("Daromad (davrda), " + cur).num("Qarz (hozir), " + cur);
+        ReportTable t = new ReportTable().col("Мижоз").col("Асосий манба").num("Яшашлар")
+                .num("Даромад (даврда), " + cur).num("Қарз (ҳозир), " + cur);
         List<String> top = by.keySet().stream().sorted(Comparator.comparing((String k) -> by.get(k)[0]).reversed()).limit(100).toList();
         for (String name : top) {
             t.row(name, source.get(name), count.get(name), fmt.amount(by.get(name)[0]), debtCell(by.get(name)[1]));
         }
-        t.note("Eng ko'p daromad keltirgan 100 ta mijoz (bronni rasmiylashtirgan shaxs yoki kompaniya).");
+        t.note("Энг кўп даромад келтирган 100 та мижоз (бронни расмийлаштирган шахс ёки компания).");
         return t;
     }
 
@@ -522,8 +522,8 @@ public class ReportService {
                 a[2]++;
             }
         }
-        ReportTable t = new ReportTable().col("Manba").num("Yashashlar (kelishi davrda)").num("Bekor qilingan")
-                .num("Bekor %").num("Kelmagan").num("Yo'qotilgan summa, " + cur);
+        ReportTable t = new ReportTable().col("Манба").num("Яшашлар (келиши даврда)").num("Бекор қилинган")
+                .num("Бекор %").num("Келмаган").num("Йўқотилган сумма, " + cur);
         long ta = 0, tc = 0, tn = 0;
         BigDecimal tl = BigDecimal.ZERO;
         for (String src : stat.keySet().stream().sorted(Comparator.comparing((String k) -> stat.get(k)[1]).reversed()).toList()) {
@@ -535,12 +535,12 @@ public class ReportService {
             tn += a[2];
             tl = tl.add(l);
         }
-        t.total("Jami", ta, tc, fmt.pct(ratio(tc, ta)), tn, fmt.amount(tl));
+        t.total("Жами", ta, tc, fmt.pct(ratio(tc, ta)), tn, fmt.amount(tl));
         return t;
     }
 
     private ReportTable cancelWindow(Hotel hotel, Period p) {
-        String[] buckets = {"O'sha kuni", "1–3 kun", "4–7 kun", "8–14 kun", "15–30 kun", "31+ kun"};
+        String[] buckets = {"Ўша куни", "1–3 кун", "4–7 кун", "8–14 кун", "15–30 кун", "31+ кун"};
         Map<String, long[]> by = new TreeMap<>();
         long[] total = new long[buckets.length];
         long counted = 0, leadSum = 0;
@@ -555,11 +555,11 @@ public class ReportService {
             counted++;
             leadSum += lead;
         }
-        ReportTable t = new ReportTable().col("Manba");
+        ReportTable t = new ReportTable().col("Манба");
         for (String b : buckets) {
             t.num(b);
         }
-        t.num("Jami");
+        t.num("Жами");
         for (Map.Entry<String, long[]> e : by.entrySet()) {
             Object[] row = new Object[buckets.length + 2];
             row[0] = e.getKey();
@@ -572,15 +572,15 @@ public class ReportService {
             t.row(row);
         }
         Object[] tot = new Object[buckets.length + 2];
-        tot[0] = "Jami";
+        tot[0] = "Жами";
         for (int i = 0; i < buckets.length; i++) {
             tot[i + 1] = total[i] + " (" + fmt.pct(ratio(total[i], counted)) + ")";
         }
         tot[buckets.length + 1] = counted;
         t.total(tot);
-        t.note("Kelish sanasi davrda bo'lgan bekor qilingan yashashlar: kelishdan necha kun oldin bekor qilingan. "
-                + "O'rtacha: " + (counted == 0 ? "—" : fmt.number((double) leadSum / counted) + " kun") + ". "
-                + "Bekor qilish vaqti — Exely'da bron oxirgi o'zgargan vaqt.");
+        t.note("Келиш санаси даврда бўлган бекор қилинган яшашлар: келишдан неча кун олдин бекор қилинган. "
+                + "Ўртача: " + (counted == 0 ? "—" : fmt.number((double) leadSum / counted) + " кун") + ". "
+                + "Бекор қилиш вақти — Exely'да брон охирги ўзгарган вақт.");
         return t;
     }
 
@@ -601,8 +601,8 @@ public class ReportService {
                 a[1] = a[1].add(s.commission());
             }
         }
-        ReportTable t = new ReportTable().col("Agent / kanal").num("Yashashlar").num("Kechalar")
-                .num("Narx, " + cur).num("Komissiya, " + cur).num("Komissiya %").num("Sof daromad, " + cur);
+        ReportTable t = new ReportTable().col("Агент / канал").num("Яшашлар").num("Кечалар")
+                .num("Нарх, " + cur).num("Комиссия, " + cur).num("Комиссия %").num("Соф даромад, " + cur);
         BigDecimal tr = BigDecimal.ZERO, tc = BigDecimal.ZERO;
         long ts = 0, tn = 0;
         for (String src : sums.keySet().stream().sorted(Comparator.comparing((String k) -> sums.get(k)[1]).reversed()
@@ -615,15 +615,15 @@ public class ReportService {
             ts += stat.get(src)[0];
             tn += stat.get(src)[1];
         }
-        t.total("Jami", ts, tn, fmt.amount(tr), fmt.amount(tc), fmt.pct(ratio(tc, tr)), fmt.amount(tr.subtract(tc)));
-        t.note("Kelish sanasi davrda bo'lgan yashashlar. Komissiya — Exely bronidagi agent komissiyasi (mehmonxona valyutasida).");
+        t.total("Жами", ts, tn, fmt.amount(tr), fmt.amount(tc), fmt.pct(ratio(tc, tr)), fmt.amount(tr.subtract(tc)));
+        t.note("Келиш санаси даврда бўлган яшашлар. Комиссия — Exely бронидаги агент комиссияси (меҳмонхона валютасида).");
         return t;
     }
 
     private ReportTable managers(Hotel hotel, Period p, String cur) {
         Map<String, Object[]> by = new TreeMap<>();   // [soni, summa, qaytarish soni, qaytarish summasi]
         for (PaymentRow r : data.payments(hotel.getId(), p)) {
-            String u = r.username() == null || r.username().isBlank() ? "Noma'lum (Exely ko'rsatmagan)" : r.username();
+            String u = r.username() == null || r.username().isBlank() ? "Номаълум (Exely кўрсатмаган)" : r.username();
             Object[] a = by.computeIfAbsent(u, k -> new Object[]{0, BigDecimal.ZERO, 0, BigDecimal.ZERO});
             if (r.refund()) {
                 a[2] = (int) a[2] + 1;
@@ -633,8 +633,8 @@ public class ReportService {
                 a[1] = ((BigDecimal) a[1]).add(r.amount());
             }
         }
-        ReportTable t = new ReportTable().col("Xodim (Exely foydalanuvchisi)").num("To'lovlar").num("Summa, " + cur)
-                .num("Qaytarishlar").num("Qaytarish summasi, " + cur);
+        ReportTable t = new ReportTable().col("Ходим (Exely фойдаланувчиси)").num("Тўловлар").num("Сумма, " + cur)
+                .num("Қайтаришлар").num("Қайтариш суммаси, " + cur);
         int tc = 0, rc = 0;
         BigDecimal ts = BigDecimal.ZERO, rs = BigDecimal.ZERO;
         for (Map.Entry<String, Object[]> e : by.entrySet().stream()
@@ -646,8 +646,8 @@ public class ReportService {
             rc += (int) a[2];
             rs = rs.add((BigDecimal) a[3]);
         }
-        t.total("Jami", tc, fmt.amount(ts), rc, fmt.amount(rs));
-        t.note("Exely API to'lovni kim qabul qilganini beradi; bronni kim yaratganini bermaydi.");
+        t.total("Жами", tc, fmt.amount(ts), rc, fmt.amount(rs));
+        t.note("Exely API тўловни ким қабул қилганини беради; бронни ким яратганини бермайди.");
         return t;
     }
 
@@ -655,15 +655,15 @@ public class ReportService {
 
     private ReportTable payments(Hotel hotel, Period p, String cur) {
         List<PaymentRow> rows = data.payments(hotel.getId(), p);
-        ReportTable t = new ReportTable().col("Sana va vaqt").col("Bron").col("To'lov usuli").col("Qabul qildi")
-                .col("Turi").num("Summa, " + cur);
+        ReportTable t = new ReportTable().col("Сана ва вақт").col("Брон").col("Тўлов усули").col("Қабул қилди")
+                .col("Тури").num("Сумма, " + cur);
         BigDecimal total = BigDecimal.ZERO;
         for (PaymentRow r : rows) {
             t.row(r.paidAt().format(TIME), nz(r.bookingNumber()), nz(r.method()), nz(r.username()),
-                    r.refund() ? cell("qaytarish", "neg") : "to'lov", fmt.amount(r.amount()));
+                    r.refund() ? cell("қайтариш", "neg") : "тўлов", fmt.amount(r.amount()));
             total = total.add(r.amount());
         }
-        t.total("Jami: " + rows.size() + " ta", "", "", "", "", fmt.amount(total));
+        t.total("Жами: " + rows.size() + " та", "", "", "", "", fmt.amount(total));
         return t;
     }
 
@@ -675,7 +675,7 @@ public class ReportService {
             a[1] = ((BigDecimal) a[1]).add(r.amount());
         }
         BigDecimal total = by.values().stream().map(a -> (BigDecimal) a[1]).reduce(BigDecimal.ZERO, BigDecimal::add);
-        ReportTable t = new ReportTable().col("To'lov usuli").num("To'lovlar").num("Summa, " + cur).num("Ulushi");
+        ReportTable t = new ReportTable().col("Тўлов усули").num("Тўловлар").num("Сумма, " + cur).num("Улуши");
         int count = 0;
         for (Map.Entry<String, Object[]> e : by.entrySet().stream()
                 .sorted(Comparator.comparing((Map.Entry<String, Object[]> x) -> (BigDecimal) x.getValue()[1]).reversed()).toList()) {
@@ -683,7 +683,7 @@ public class ReportService {
             t.row(e.getKey(), e.getValue()[0], fmt.amount(s), fmt.pct(ratio(s, total)));
             count += (int) e.getValue()[0];
         }
-        t.total("Jami", count, fmt.amount(total), "100%");
+        t.total("Жами", count, fmt.amount(total), "100%");
         return t;
     }
 
@@ -695,7 +695,7 @@ public class ReportService {
             a[1] = ((BigDecimal) a[1]).add(r.amount());
         }
         BigDecimal total = by.values().stream().map(a -> (BigDecimal) a[1]).reduce(BigDecimal.ZERO, BigDecimal::add);
-        ReportTable t = new ReportTable().col("Xizmat").col("Toifa").num("Qatorlar").num("Summa, " + cur).num("Ulushi");
+        ReportTable t = new ReportTable().col("Хизмат").col("Тоифа").num("Қаторлар").num("Сумма, " + cur).num("Улуши");
         int count = 0;
         for (Map.Entry<String, Object[]> e : by.entrySet().stream()
                 .sorted(Comparator.comparing((Map.Entry<String, Object[]> x) -> (BigDecimal) x.getValue()[1]).reversed()).toList()) {
@@ -703,8 +703,8 @@ public class ReportService {
             t.row(e.getKey(), e.getValue()[2], e.getValue()[0], fmt.amount(s), fmt.pct(ratio(s, total)));
             count += (int) e.getValue()[0];
         }
-        t.total("Jami", "", count, fmt.amount(total), "100%");
-        t.note("Yashashdan tashqari xizmatlar (Exely PMS «Допуслуги»): nonushta, transfer, kir yuvish va h.k.");
+        t.total("Жами", "", count, fmt.amount(total), "100%");
+        t.note("Яшашдан ташқари хизматлар (Exely PMS «Допуслуги»): нонушта, transfer, кир ювиш ва ҳ.к.");
         return t;
     }
 
@@ -713,7 +713,7 @@ public class ReportService {
         for (ServiceRow r : data.extraServices(hotel.getId(), p)) {
             by.computeIfAbsent(r.date(), k -> new TreeMap<>()).merge(nz(r.name()), r.amount(), BigDecimal::add);
         }
-        ReportTable t = new ReportTable().col("Sana / xizmat").num("Summa, " + cur);
+        ReportTable t = new ReportTable().col("Сана / хизмат").num("Сумма, " + cur);
         BigDecimal total = BigDecimal.ZERO;
         for (Map.Entry<LocalDate, Map<String, BigDecimal>> e : by.entrySet()) {
             BigDecimal day = e.getValue().values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -721,22 +721,22 @@ public class ReportService {
             e.getValue().forEach((name, sum) -> t.row(name, fmt.amount(sum)));
             total = total.add(day);
         }
-        t.total("Jami", fmt.amount(total));
+        t.total("Жами", fmt.amount(total));
         return t;
     }
 
     private ReportTable balances(Hotel hotel, String cur) {
         DebtReport r = debtService.report(hotel, null, null, "debt");
         DebtReport.Summary s = r.summary();
-        ReportTable t = new ReportTable().col("Toifa / bron").col("Mehmon").num("Yashashlar").num("Qarz, " + cur);
-        t.rowOf("section", "Toifalar bo'yicha", "", s.count(), fmt.amount(s.total()));
+        ReportTable t = new ReportTable().col("Тоифа / брон").col("Меҳмон").num("Яшашлар").num("Қарз, " + cur);
+        t.rowOf("section", "Тоифалар бўйича", "", s.count(), fmt.amount(s.total()));
         t.row(DebtReport.Category.IN_HOUSE.getLabel(), "", s.inHouseCount(), fmt.amount(s.inHouse()));
         t.row(DebtReport.Category.CHECKED_OUT.getLabel(), "", s.checkedOutCount(), fmt.amount(s.checkedOut()));
         t.row(DebtReport.Category.NOT_CHECKED_OUT.getLabel(), "", s.notCheckedOutCount(), fmt.amount(s.notCheckedOut()));
-        t.rowOf("section", "Eng katta qarzdorlar", "", "", "");
+        t.rowOf("section", "Энг катта қарздорлар", "", "", "");
         r.rows().stream().limit(15).forEach(x -> t.row(x.bookingNumber(), nz(x.guestName()), 1, fmt.amount(x.debt())));
-        t.total("Jami qarz", "", s.count(), fmt.amount(s.total()));
-        t.note("To'liq ro'yxat, tahlil va topshiriqlar — mehmonxona → Qarzdorlik sahifasida; hisoblar — Xizmatlar → Hisob-fakturalar.");
+        t.total("Жами қарз", "", s.count(), fmt.amount(s.total()));
+        t.note("Тўлиқ рўйхат, таҳлил ва топшириқлар — меҳмонхона → Қарздорлик саҳифасида; ҳисоблар — Хизматлар → Ҳисоб-фактуралар.");
         return t;
     }
 
@@ -810,49 +810,49 @@ public class ReportService {
 
     private void usaliNotes(ReportTable t, Usali u, Period p) {
         if (!u.hasExpenses()) {
-            t.note("Xarajatlar hali kiritilmagan — faqat daromad (Exely). Kiritish: Hisobotlar → USALI xarajatlari.");
+            t.note("Харажатлар ҳали киритилмаган — фақат даромад (Exely). Киритиш: Ҳисоботлар → USALI харажатлари.");
         } else if (u.monthsEntered() < u.months()) {
-            t.note("Xarajatlar " + u.months() + " oydan " + u.monthsEntered() + " tasi uchun kiritilgan.");
+            t.note("Харажатлар " + u.months() + " ойдан " + u.monthsEntered() + " таси учун киритилган.");
         }
         if (!p.from().equals(p.from().withDayOfMonth(1)) || !p.to().equals(YearMonth.from(p.to()).atEndOfMonth())) {
-            t.note("Xarajatlar to'liq oylar bo'yicha olinadi — USALI uchun «Shu oy» / «O'tgan oy» yoki butun oylarni tanlang.");
+            t.note("Харажатлар тўлиқ ойлар бўйича олинади — USALI учун «Шу ой» / «Ўтган ой» ёки бутун ойларни танланг.");
         }
-        t.note("Rooms xarajatiga Exely'dagi OTA komissiyalari avtomatik qo'shiladi.");
+        t.note("Rooms харажатига Exely'даги OTA комиссиялари автоматик қўшилади.");
     }
 
     private ReportTable usaliSummary(Hotel hotel, Period p, String cur) {
         Usali u = usali(hotel, p);
         long avail = u.s().availableRoomNights(), sold = u.s().soldRoomNights();
-        ReportTable t = new ReportTable().col("Modda").num("Summa, " + cur).num("Daromaddan %").num("PAR, " + cur).num("POR, " + cur);
+        ReportTable t = new ReportTable().col("Модда").num("Сумма, " + cur).num("Даромаддан %").num("PAR, " + cur).num("POR, " + cur);
         Function<BigDecimal, Object[]> line = v -> new Object[]{fmt.amount(v), fmt.pct(ratio(v, u.revenue())),
                 fmt.amount(div(v, avail)), fmt.amount(div(v, sold))};
-        t.rowOf("section", "Operatsion daromad");
-        t.row(concat("Rooms (yashash)", line.apply(u.rooms())));
+        t.rowOf("section", "Операцион даромад");
+        t.row(concat("Rooms (яшаш)", line.apply(u.rooms())));
         t.row(concat("Food & Beverage", line.apply(u.fb())));
-        t.row(concat("Boshqa operatsion bo'limlar va daromadlar", line.apply(u.other())));
-        t.rowOf("subtotal", concat("Jami operatsion daromad", line.apply(u.revenue())));
-        t.rowOf("section", "Bo'lim xarajatlari");
+        t.row(concat("Бошқа операцион бўлимлар ва даромадлар", line.apply(u.other())));
+        t.rowOf("subtotal", concat("Жами операцион даромад", line.apply(u.revenue())));
+        t.rowOf("section", "Бўлим харажатлари");
         t.row(concat("Rooms", line.apply(u.dept(UsaliLine.Dept.ROOMS))));
         t.row(concat("Food & Beverage", line.apply(u.dept(UsaliLine.Dept.FB))));
-        t.row(concat("Boshqa operatsion bo'limlar", line.apply(u.dept(UsaliLine.Dept.OTHER))));
+        t.row(concat("Бошқа операцион бўлимлар", line.apply(u.dept(UsaliLine.Dept.OTHER))));
         BigDecimal deptTotal = u.dept(UsaliLine.Dept.ROOMS).add(u.dept(UsaliLine.Dept.FB)).add(u.dept(UsaliLine.Dept.OTHER));
-        t.rowOf("subtotal", concat("Jami bo'lim xarajatlari", line.apply(deptTotal)));
-        t.rowOf("subtotal", concat("Bo'limlar foydasi (Total departmental profit)", line.apply(u.departmentalProfit())));
-        t.rowOf("section", "Taqsimlanmagan operatsion xarajatlar");
+        t.rowOf("subtotal", concat("Жами бўлим харажатлари", line.apply(deptTotal)));
+        t.rowOf("subtotal", concat("Бўлимлар фойдаси (Total departmental profit)", line.apply(u.departmentalProfit())));
+        t.rowOf("section", "Тақсимланмаган операцион харажатлар");
         for (UsaliLine l : UsaliLine.of(UsaliLine.Dept.UNDISTRIBUTED)) {
             t.row(concat(l.getLabel(), line.apply(u.e(l))));
         }
-        t.rowOf("subtotal", concat("Jami taqsimlanmagan xarajatlar", line.apply(u.dept(UsaliLine.Dept.UNDISTRIBUTED))));
-        t.rowOf("subtotal", concat("GOP — yalpi operatsion foyda", line.apply(u.gop())));
+        t.rowOf("subtotal", concat("Жами тақсимланмаган харажатлар", line.apply(u.dept(UsaliLine.Dept.UNDISTRIBUTED))));
+        t.rowOf("subtotal", concat("GOP — ялпи операцион фойда", line.apply(u.gop())));
         t.row(concat(UsaliLine.MGMT_FEES.getLabel(), line.apply(u.dept(UsaliLine.Dept.FEES))));
-        t.rowOf("subtotal", concat("Nooperatsion xarajatlardan oldingi foyda", line.apply(u.gop().subtract(u.dept(UsaliLine.Dept.FEES)))));
-        t.rowOf("section", "Nooperatsion xarajatlar");
+        t.rowOf("subtotal", concat("Нооперацион харажатлардан олдинги фойда", line.apply(u.gop().subtract(u.dept(UsaliLine.Dept.FEES)))));
+        t.rowOf("section", "Нооперацион харажатлар");
         for (UsaliLine l : UsaliLine.of(UsaliLine.Dept.NON_OPERATING)) {
             t.row(concat(l.getLabel(), line.apply(u.e(l))));
         }
         t.total(concat("EBITDA", line.apply(u.ebitda())));
         usaliNotes(t, u, p);
-        t.note("PAR — mavjud xona-kecha boshiga, POR — sotilgan xona-kecha boshiga.");
+        t.note("PAR — мавжуд хона-кеча бошига, POR — сотилган хона-кеча бошига.");
         return t;
     }
 
@@ -865,40 +865,40 @@ public class ReportService {
             }
         }
         BigDecimal segTotal = seg.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
-        ReportTable t = new ReportTable().col("Modda").num("Summa, " + cur).num("Rooms daromadidan %");
-        t.rowOf("section", "Daromad — segmentlar (savdo kanallari) bo'yicha");
+        ReportTable t = new ReportTable().col("Модда").num("Сумма, " + cur).num("Rooms даромадидан %");
+        t.rowOf("section", "Даромад — сегментлар (савдо каналлари) бўйича");
         seg.entrySet().stream().sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed()).forEach(e -> {
             // Segment ulushi bron narxidan; summa haqiqiy yashash daromadiga moslanadi.
             BigDecimal v = segTotal.signum() == 0 ? BigDecimal.ZERO
                     : u.rooms().multiply(e.getValue()).divide(segTotal, 0, RoundingMode.HALF_UP);
             t.row(e.getKey(), fmt.amount(v), fmt.pct(ratio(v, u.rooms())));
         });
-        t.rowOf("subtotal", "Jami Rooms daromadi", fmt.amount(u.rooms()), "100%");
-        t.rowOf("section", "Xarajatlar");
+        t.rowOf("subtotal", "Жами Rooms даромади", fmt.amount(u.rooms()), "100%");
+        t.rowOf("section", "Харажатлар");
         t.row(UsaliLine.ROOMS_PAYROLL.getLabel(), fmt.amount(u.e(UsaliLine.ROOMS_PAYROLL)), fmt.pct(ratio(u.e(UsaliLine.ROOMS_PAYROLL), u.rooms())));
-        t.row("OTA komissiyalari (Exely)", fmt.amount(u.otaCommission()), fmt.pct(ratio(u.otaCommission(), u.rooms())));
+        t.row("OTA комиссиялари (Exely)", fmt.amount(u.otaCommission()), fmt.pct(ratio(u.otaCommission(), u.rooms())));
         t.row(UsaliLine.ROOMS_OTHER.getLabel(), fmt.amount(u.e(UsaliLine.ROOMS_OTHER)), fmt.pct(ratio(u.e(UsaliLine.ROOMS_OTHER), u.rooms())));
         BigDecimal exp = u.dept(UsaliLine.Dept.ROOMS);
-        t.rowOf("subtotal", "Jami Rooms xarajatlari", fmt.amount(exp), fmt.pct(ratio(exp, u.rooms())));
-        t.total("Rooms bo'limi foydasi", fmt.amount(u.rooms().subtract(exp)), fmt.pct(ratio(u.rooms().subtract(exp), u.rooms())));
-        t.note("CPOR (sotilgan xona-kecha boshiga xarajat): " + fmt.amount(div(exp, u.s().soldRoomNights())) + " " + cur + ".");
+        t.rowOf("subtotal", "Жами Rooms харажатлари", fmt.amount(exp), fmt.pct(ratio(exp, u.rooms())));
+        t.total("Rooms бўлими фойдаси", fmt.amount(u.rooms().subtract(exp)), fmt.pct(ratio(u.rooms().subtract(exp), u.rooms())));
+        t.note("CPOR (сотилган хона-кеча бошига харажат): " + fmt.amount(div(exp, u.s().soldRoomNights())) + " " + cur + ".");
         usaliNotes(t, u, p);
         return t;
     }
 
     private ReportTable usaliFb(Hotel hotel, Period p, String cur) {
         Usali u = usali(hotel, p);
-        ReportTable t = new ReportTable().col("Modda").num("Summa, " + cur).num("F&B daromadidan %");
-        t.row("Ovqatlanish daromadi (Exely: Meals / Food service)", fmt.amount(u.fb()), "100%");
+        ReportTable t = new ReportTable().col("Модда").num("Сумма, " + cur).num("F&B даромадидан %");
+        t.row("Овқатланиш даромади (Exely: Meals / Food service)", fmt.amount(u.fb()), "100%");
         t.row(UsaliLine.FB_COST.getLabel(), fmt.amount(u.e(UsaliLine.FB_COST)), fmt.pct(ratio(u.e(UsaliLine.FB_COST), u.fb())));
-        t.rowOf("subtotal", "Yalpi foyda", fmt.amount(u.fb().subtract(u.e(UsaliLine.FB_COST))),
+        t.rowOf("subtotal", "Ялпи фойда", fmt.amount(u.fb().subtract(u.e(UsaliLine.FB_COST))),
                 fmt.pct(ratio(u.fb().subtract(u.e(UsaliLine.FB_COST)), u.fb())));
         t.row(UsaliLine.FB_PAYROLL.getLabel(), fmt.amount(u.e(UsaliLine.FB_PAYROLL)), fmt.pct(ratio(u.e(UsaliLine.FB_PAYROLL), u.fb())));
         t.row(UsaliLine.FB_OTHER.getLabel(), fmt.amount(u.e(UsaliLine.FB_OTHER)), fmt.pct(ratio(u.e(UsaliLine.FB_OTHER), u.fb())));
         BigDecimal profit = u.fb().subtract(u.dept(UsaliLine.Dept.FB));
-        t.total("F&B bo'limi foydasi", fmt.amount(profit), fmt.pct(ratio(profit, u.fb())));
-        t.note("Sotilgan xona-kecha boshiga F&B daromadi: " + fmt.amount(div(u.fb(), u.s().soldRoomNights())) + " " + cur
-                + "; mehmon-kecha boshiga: " + fmt.amount(div(u.fb(), u.guestNights())) + " " + cur + ".");
+        t.total("F&B бўлими фойдаси", fmt.amount(profit), fmt.pct(ratio(profit, u.fb())));
+        t.note("Сотилган хона-кеча бошига F&B даромади: " + fmt.amount(div(u.fb(), u.s().soldRoomNights())) + " " + cur
+                + "; меҳмон-кеча бошига: " + fmt.amount(div(u.fb(), u.guestNights())) + " " + cur + ".");
         usaliNotes(t, u, p);
         return t;
     }
@@ -911,16 +911,16 @@ public class ReportService {
                 by.merge(nz(r.name()), r.amount(), BigDecimal::add);
             }
         }
-        ReportTable t = new ReportTable().col("Modda").num("Summa, " + cur).num("Ulushi");
-        t.rowOf("section", "Daromad — xizmatlar bo'yicha");
+        ReportTable t = new ReportTable().col("Модда").num("Сумма, " + cur).num("Улуши");
+        t.rowOf("section", "Даромад — хизматлар бўйича");
         BigDecimal listed = by.values().stream().reduce(BigDecimal.ZERO, BigDecimal::add);
         by.entrySet().stream().sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
                 .forEach(e -> t.row(e.getKey(), fmt.amount(e.getValue()), fmt.pct(ratio(e.getValue(), listed))));
-        t.rowOf("subtotal", "Jami boshqa daromad", fmt.amount(u.other()), "");
+        t.rowOf("subtotal", "Жами бошқа даромад", fmt.amount(u.other()), "");
         t.row(UsaliLine.OTHER_COST.getLabel(), fmt.amount(u.e(UsaliLine.OTHER_COST)), fmt.pct(ratio(u.e(UsaliLine.OTHER_COST), u.other())));
         t.row(UsaliLine.OTHER_PAYROLL.getLabel(), fmt.amount(u.e(UsaliLine.OTHER_PAYROLL)), fmt.pct(ratio(u.e(UsaliLine.OTHER_PAYROLL), u.other())));
         BigDecimal profit = u.other().subtract(u.dept(UsaliLine.Dept.OTHER));
-        t.total("Bo'limlar foydasi", fmt.amount(profit), fmt.pct(ratio(profit, u.other())));
+        t.total("Бўлимлар фойдаси", fmt.amount(profit), fmt.pct(ratio(profit, u.other())));
         usaliNotes(t, u, p);
         return t;
     }
@@ -931,27 +931,27 @@ public class ReportService {
         long avail = s.availableRoomNights(), sold = s.soldRoomNights();
         BigDecimal payroll = u.exp().entrySet().stream().filter(e -> e.getKey().isPayroll()).map(Map.Entry::getValue)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        String na = "— (xarajat kiritilmagan)";
-        ReportTable t = new ReportTable().col("Ko'rsatkich").num("Qiymat");
-        t.rowOf("section", "Xonalar");
-        t.row("Mavjud xona-kechalar", avail);
-        t.row("Sotilgan xona-kechalar", sold);
-        t.row("Bandlik (Occupancy)", fmt.pct(s.occupancy()));
+        String na = "— (харажат киритилмаган)";
+        ReportTable t = new ReportTable().col("Кўрсаткич").num("Қиймат");
+        t.rowOf("section", "Хоналар");
+        t.row("Мавжуд хона-кечалар", avail);
+        t.row("Сотилган хона-кечалар", sold);
+        t.row("Бандлик (Occupancy)", fmt.pct(s.occupancy()));
         t.row("ADR, " + cur, fmt.amount(s.adr()));
         t.row("RevPAR, " + cur, fmt.amount(s.revpar()));
-        t.row("TRevPAR (jami daromad / mavjud xona-kecha), " + cur, fmt.amount(div(u.revenue(), avail)));
-        t.row("Sotilgan xona-kecha boshiga jami daromad, " + cur, fmt.amount(div(u.revenue(), sold)));
-        t.rowOf("section", "Mehmonlar");
-        t.row("Mehmon-kechalar", u.guestNights());
-        t.row("Band xonadagi o'rtacha mehmonlar", fmt.number(sold == 0 ? 0 : (double) u.guestNights() / sold));
-        t.row("O'rtacha yashash (ALOS), kecha", fmt.number(s.avgLengthOfStay()));
-        t.row("Kelmagan (no-show)", s.noShows());
-        t.rowOf("section", "Foyda va xarajat");
+        t.row("TRevPAR (жами даромад / мавжуд хона-кеча), " + cur, fmt.amount(div(u.revenue(), avail)));
+        t.row("Сотилган хона-кеча бошига жами даромад, " + cur, fmt.amount(div(u.revenue(), sold)));
+        t.rowOf("section", "Меҳмонлар");
+        t.row("Меҳмон-кечалар", u.guestNights());
+        t.row("Банд хонадаги ўртача меҳмонлар", fmt.number(sold == 0 ? 0 : (double) u.guestNights() / sold));
+        t.row("Ўртача яшаш (ALOS), кеча", fmt.number(s.avgLengthOfStay()));
+        t.row("Келмаган (no-show)", s.noShows());
+        t.rowOf("section", "Фойда ва харажат");
         t.row("GOP, " + cur, u.hasExpenses() ? fmt.amount(u.gop()) : na);
-        t.row("GOP marjasi", u.hasExpenses() ? fmt.pct(ratio(u.gop(), u.revenue())) : na);
+        t.row("GOP маржаси", u.hasExpenses() ? fmt.pct(ratio(u.gop(), u.revenue())) : na);
         t.row("GOPPAR, " + cur, u.hasExpenses() ? fmt.amount(div(u.gop(), avail)) : na);
-        t.row("CPOR (Rooms xarajati / sotilgan xona-kecha), " + cur, fmt.amount(div(u.dept(UsaliLine.Dept.ROOMS), sold)));
-        t.row("Ish haqi daromaddan %", u.hasExpenses() ? fmt.pct(ratio(payroll, u.revenue())) : na);
+        t.row("CPOR (Rooms харажати / сотилган хона-кеча), " + cur, fmt.amount(div(u.dept(UsaliLine.Dept.ROOMS), sold)));
+        t.row("Иш ҳақи даромаддан %", u.hasExpenses() ? fmt.pct(ratio(payroll, u.revenue())) : na);
         t.row("EBITDA, " + cur, u.hasExpenses() ? fmt.amount(u.ebitda()) : na);
         usaliNotes(t, u, p);
         return t;
@@ -979,7 +979,7 @@ public class ReportService {
     }
 
     private String src(Stay s) {
-        return s.source() == null || s.source().isBlank() ? "Noma'lum" : s.source();
+        return s.source() == null || s.source().isBlank() ? "Номаълум" : s.source();
     }
 
     private ReportTable.Cell debtCell(BigDecimal v) {
@@ -1012,11 +1012,11 @@ public class ReportService {
 
     static String status(BookingStatus s) {
         return switch (s) {
-            case CONFIRMED -> "Tasdiqlangan";
-            case CHECKED_IN -> "Yashayapti";
-            case CHECKED_OUT -> "Ketgan";
-            case CANCELLED -> "Bekor qilingan";
-            case NO_SHOW -> "Kelmagan";
+            case CONFIRMED -> "Тасдиқланган";
+            case CHECKED_IN -> "Яшаяпти";
+            case CHECKED_OUT -> "Кетган";
+            case CANCELLED -> "Бекор қилинган";
+            case NO_SHOW -> "Келмаган";
         };
     }
 

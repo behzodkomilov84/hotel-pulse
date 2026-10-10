@@ -107,7 +107,7 @@ public class ReportController {
                                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
                                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
         ReportDef def = ReportCatalog.find(key).filter(ReportDef::isTable)
-                .orElseThrow(() -> new NotFoundException("Hisobot topilmadi"));
+                .orElseThrow(() -> new NotFoundException("Ҳисобот топилмади"));
         Hotel h = hotelService.getAccessible(user, hotel);
         Period p = Period.resolve(period, from, to, kpiService.today());
         ReportTable t = reportService.build(key, h, p);
@@ -125,7 +125,7 @@ public class ReportController {
     public String saveLayout(@AuthenticationPrincipal CustomUserDetails user, @RequestParam(defaultValue = "") String keys,
                              @RequestParam(required = false) String back, RedirectAttributes ra) {
         layoutService.save(user.getId(), Arrays.asList(keys.split(",")));
-        ra.addFlashAttribute("success", "Hisobotlar tartibi saqlandi");
+        ra.addFlashAttribute("success", "Ҳисоботлар тартиби сақланди");
         return "redirect:" + TaskController.safeBack(back);
     }
 
@@ -135,7 +135,7 @@ public class ReportController {
                               @RequestParam(required = false) String keys, @RequestParam(required = false) String back,
                               RedirectAttributes ra) {
         if (!ReportCatalog.isPlaceable(key)) {
-            ra.addFlashAttribute("error", "Bu hisobotni qo'shib bo'lmaydi");
+            ra.addFlashAttribute("error", "Бу ҳисоботни қўшиб бўлмайди");
             return "redirect:" + TaskController.safeBack(back);
         }
         List<String> current = new ArrayList<>(keys != null ? Arrays.asList(keys.split(",")) : layoutService.get(user.getId()));
@@ -150,7 +150,7 @@ public class ReportController {
     public String resetLayout(@AuthenticationPrincipal CustomUserDetails user, @RequestParam(required = false) String back,
                               RedirectAttributes ra) {
         layoutService.reset(user.getId());
-        ra.addFlashAttribute("success", "Standart tarkib tiklandi");
+        ra.addFlashAttribute("success", "Стандарт таркиб тикланди");
         return "redirect:" + TaskController.safeBack(back);
     }
 
@@ -190,9 +190,9 @@ public class ReportController {
                 }
             }
             expenseService.save(h.getId(), month, values, user.getId());
-            ra.addFlashAttribute("success", h.getName() + ": " + month + " xarajatlari saqlandi");
+            ra.addFlashAttribute("success", h.getName() + ": " + month + " харажатлари сақланди");
         } catch (NumberFormatException e) {
-            ra.addFlashAttribute("error", "Summalar faqat raqam bo'lsin (masalan: 12 500 000)");
+            ra.addFlashAttribute("error", "Суммалар фақат рақам бўлсин (масалан: 12 500 000)");
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
         }
@@ -210,7 +210,7 @@ public class ReportController {
 
     private static void requireManager(CustomUserDetails user) {
         if (!TaskService.canAssign(user)) {
-            throw new AccessDeniedException("USALI xarajatlarini egasi yoki boshqaruv kompaniyasi kiritadi");
+            throw new AccessDeniedException("USALI харажатларини эгаси ёки бошқарув компанияси киритади");
         }
     }
 }

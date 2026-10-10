@@ -113,7 +113,7 @@ public class DebtService {
     }
 
     private static List<DebtReport.AgingBucket> aging(List<DebtReport.Row> rows, BigDecimal total) {
-        String[] labels = {"0–30 kun", "31–60 kun", "61–90 kun", "90+ kun"};
+        String[] labels = {"0–30 кун", "31–60 кун", "61–90 кун", "90+ кун"};
         BigDecimal[] sums = {BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO};
         long[] counts = new long[4];
         for (DebtReport.Row r : rows) {

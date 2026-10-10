@@ -141,48 +141,48 @@ class ExelyPmsSyncDbTest {
 
         assertTrue(r.ok(), r.message());
         assertTrue(r.message().contains("Exely PMS"), r.message());
-        assertTrue(r.message().contains("demo"), "demo o'chirilgani haqida xabar: " + r.message());
+        assertTrue(r.message().contains("демо"), "демо ўчирилгани ҳақида хабар: " + r.message());
 
         List<Booking> rows = hotelBookings();
-        assertTrue(rows.stream().allMatch(b -> b.getOrigin() == DataOrigin.EXELY_PMS), "demo qolmasligi kerak");
-        assertEquals(4, rows.size(), "1001 (1 xona) + 1002 (2 xona) + 1003 (bekor)");
+        assertTrue(rows.stream().allMatch(b -> b.getOrigin() == DataOrigin.EXELY_PMS), "демо қолмаслиги керак");
+        assertEquals(4, rows.size(), "1001 (1 хона) + 1002 (2 хона) + 1003 (бекор)");
         assertEquals(2, rows.stream().filter(b -> b.getStatus() == BookingStatus.CHECKED_IN).count());
         assertEquals(1, rows.stream().filter(b -> b.getStatus() == BookingStatus.CANCELLED).count());
 
         var payments = paymentRepository.findAll().stream().filter(p -> p.getHotelId().equals(hotel.getId())).toList();
-        assertEquals(3, payments.size(), "2 to'lov + 1 qaytarish; bekor qilinganlar hisobga olinmaydi");
+        assertEquals(3, payments.size(), "2 тўлов + 1 қайтариш; бекор қилинганлар ҳисобга олинмайди");
         BigDecimal net = payments.stream().map(p -> p.getAmount()).reduce(BigDecimal.ZERO, BigDecimal::add);
         assertEquals(0, new BigDecimal("3150000").compareTo(net), "900 000 + 2 400 000 − 150 000");
 
         Hotel h = hotelRepository.findById(hotel.getId()).orElseThrow();
-        assertTrue(kpiService.paymentsComplete(h), "PMS — to'lovlar to'liq");
+        assertTrue(kpiService.paymentsComplete(h), "PMS — тўловлар тўлиқ");
         TodaySnapshot t = kpiService.todaySnapshot(h);
-        assertEquals(0, new BigDecimal("300000").compareTo(t.debt()), "qarz = PMS toPayAmount");
+        assertEquals(0, new BigDecimal("300000").compareTo(t.debt()), "қарз = PMS toPayAmount");
         assertEquals(1, t.debtorCount());
         assertNotNull(h.getPmsBookingsSyncedUntil());
         assertNotNull(h.getPmsPaymentsSyncedUntil());
         assertEquals(Boolean.TRUE, h.getExelyLastSyncOk());
-        assertEquals(3, h.getRoomsCount(), "xonalar soni Exely /rooms dan");
+        assertEquals(3, h.getRoomsCount(), "хоналар сони Exely /rooms дан");
 
         // Xizmatlar: 01.10 — yashash 600 000 + nonushta 90 000; 02.10 — yashash 600 000.
         var svc = serviceRevenueRepository.findAll().stream().filter(x -> x.getHotelId().equals(hotel.getId())).toList();
-        assertEquals(5, svc.size(), "har qator faqat o'z oynasida yoziladi");
+        assertEquals(5, svc.size(), "ҳар қатор фақат ўз ойнасида ёзилади");
         assertNotNull(h.getPmsServicesFrom());
-        assertTrue(h.getPmsServicesUntil().isAfter(java.time.LocalDate.now()), "kelajak ham qamraladi");
+        assertTrue(h.getPmsServicesUntil().isAfter(java.time.LocalDate.now()), "келажак ҳам қамралади");
         var day = kpiService.report(h, new behzoddev.hotelpulse.kpi.Period("custom",
                 java.time.LocalDate.of(2026, 10, 1), java.time.LocalDate.of(2026, 10, 1))).stays();
-        assertEquals(0, new BigDecimal("650000").compareTo(day.roomRevenue()), "yashash + kech chiqish (DRR kabi)");
-        assertEquals(0, new BigDecimal("110000").compareTo(day.extrasRevenue()), "nonushta + kir yuvish");
-        assertEquals(0, new BigDecimal("90000").compareTo(day.mealsRevenue()), "nonushta (Meals)");
+        assertEquals(0, new BigDecimal("650000").compareTo(day.roomRevenue()), "яшаш + кеч чиқиш (DRR каби)");
+        assertEquals(0, new BigDecimal("110000").compareTo(day.extrasRevenue()), "нонушта + кир ювиш");
+        assertEquals(0, new BigDecimal("90000").compareTo(day.mealsRevenue()), "нонушта (Meals)");
 
         // Xom arxiv: Exely bergan hamma narsa saqlanadi.
         var archive = rawStore.counts(hotel.getId());
-        assertEquals(3L, archive.get(ExelyRawStore.BOOKING), "3 ta bron");
+        assertEquals(3L, archive.get(ExelyRawStore.BOOKING), "3 та брон");
         assertEquals(3L, archive.get(ExelyRawStore.INVOICES));
-        assertEquals(5L, archive.get(ExelyRawStore.SERVICE), "xizmat qatorlari");
+        assertEquals(5L, archive.get(ExelyRawStore.SERVICE), "хизмат қаторлари");
         assertEquals(1L, archive.get(ExelyRawStore.RESERVATION));
-        assertEquals(5L, archive.get(ExelyRawStore.PAYMENT), "xomda bekor qilingan to'lovlar ham bor");
-        assertTrue(archive.get(ExelyRawStore.GUEST) >= 1, "mehmon profillari");
+        assertEquals(5L, archive.get(ExelyRawStore.PAYMENT), "хомда бекор қилинган тўловлар ҳам бор");
+        assertTrue(archive.get(ExelyRawStore.GUEST) >= 1, "меҳмон профиллари");
 
         // Solishtirish: sinxronlashdan keyin sayt = Exely.
         ExelyVerifyService.Report report = verifyService.verify(hotel.getId());
@@ -191,17 +191,17 @@ class ExelyPmsSyncDbTest {
         assertEquals(4, report.checks().size());
         Hotel verified = hotelRepository.findById(hotel.getId()).orElseThrow();
         assertEquals(Boolean.TRUE, verified.getExelyVerifyOk());
-        assertTrue(ExelyVerifyService.read(verified).ok(), "saqlangan natija o'qiladi");
+        assertTrue(ExelyVerifyService.read(verified).ok(), "сақланган натижа ўқилади");
 
         // Saytdan bitta xizmat qatori o'chsa — farq topiladi.
         serviceRevenueRepository.delete(serviceRevenueRepository.findAll().stream()
                 .filter(x -> x.getHotelId().equals(hotel.getId())).findFirst().orElseThrow());
         ExelyVerifyService.Report broken = verifyService.verify(hotel.getId());
         assertFalse(broken.ok());
-        assertTrue(broken.checks().stream().anyMatch(c -> c.name().startsWith("Xizmatlar") && !c.ok() && !c.details().isEmpty()));
+        assertTrue(broken.checks().stream().anyMatch(c -> c.name().startsWith("Хизматлар") && !c.ok() && !c.details().isEmpty()));
         assertEquals(3L, archive.get(ExelyRawStore.ROOM));
         assertEquals(1L, archive.get(ExelyRawStore.COMPANY));
-        assertTrue(r.message().contains("xonalar soni: 20 → 3"), r.message());
+        assertTrue(r.message().contains("хоналар сони: 20 → 3"), r.message());
     }
 
     @Test
@@ -212,7 +212,7 @@ class ExelyPmsSyncDbTest {
 
         assertTrue(syncService.sync(hotel.getId()).ok());
 
-        assertEquals(4, hotelBookings().size(), "takror qator yo'q");
+        assertEquals(4, hotelBookings().size(), "такрор қатор йўқ");
         assertEquals(3, paymentRepository.findAll().stream().filter(p -> p.getHotelId().equals(hotel.getId())).count());
         assertEquals(firstSeen, hotelBookings().stream().filter(b -> b.getExternalId().endsWith("#rs1")).findFirst().orElseThrow().getBookedAt());
     }
@@ -243,14 +243,14 @@ class ExelyPmsSyncDbTest {
         // Qidiruv.
         String found = mvc.perform(get.apply("/admin/hotels/" + hotel.getId() + "/exely/data/service?q=Laundry"))
                 .andExpect(ok).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
-        assertTrue(found.contains("1 ta yozuv"), "faqat kir yuvish xizmati");
+        assertTrue(found.contains("1 та ёзув"), "фақат кир ювиш хизмати");
         // Excel: BOM, barcha maydonlar (ichma-ich ham), barcha yozuvlar.
         byte[] csv = mvc.perform(get.apply("/admin/hotels/" + hotel.getId() + "/exely/data/booking.csv")).andExpect(ok)
                 .andReturn().getResponse().getContentAsByteArray();
         String text = new String(csv, java.nio.charset.StandardCharsets.UTF_8);
-        assertTrue(text.startsWith("﻿Kalit;Bron raqami;Sana;Olingan;"), text.lines().findFirst().orElse(""));
-        assertTrue(text.lines().findFirst().orElseThrow().contains("roomStays[0].totalPrice.amount"), "ichma-ich maydon ustuni");
-        assertEquals(1 + 3, text.lines().count(), "sarlavha + 3 bron");
+        assertTrue(text.startsWith("﻿Калит;Брон рақами;Сана;Олинган;"), text.lines().findFirst().orElse(""));
+        assertTrue(text.lines().findFirst().orElseThrow().contains("roomStays[0].totalPrice.amount"), "ичма-ич майдон устуни");
+        assertEquals(1 + 3, text.lines().count(), "сарлавҳа + 3 брон");
         // Noma'lum tur — 404.
         mvc.perform(get.apply("/admin/hotels/" + hotel.getId() + "/exely/data/nope"))
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.status().isNotFound());
@@ -267,8 +267,8 @@ class ExelyPmsSyncDbTest {
         ExelySyncService.SyncResult r = syncService.sync(hotel.getId());
 
         assertTrue(r.ok(), r.message());
-        assertEquals(98, hotelRepository.findById(hotel.getId()).orElseThrow().getRoomsCount(), "qo'lda kiritilgan son saqlanadi");
-        assertFalse(r.message().contains("xonalar soni"), r.message());
+        assertEquals(98, hotelRepository.findById(hotel.getId()).orElseThrow().getRoomsCount(), "қўлда киритилган сон сақланади");
+        assertFalse(r.message().contains("хоналар сони"), r.message());
     }
 
     @Test

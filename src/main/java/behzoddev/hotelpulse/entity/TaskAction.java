@@ -2,14 +2,14 @@ package behzoddev.hotelpulse.entity;
 
 /** Topshiriq tarixidagi amal. */
 public enum TaskAction {
-    CREATED("Topshiriq berildi"),
-    STARTED("Bajarishni boshladi"),
-    COMPLETED("Bajarildi deb belgiladi"),
-    ACCEPTED("Bajarilganini tasdiqladi"),
-    RETURNED("Qayta bajarishga qaytardi"),
-    CANCELLED("Bekor qildi"),
-    COMMENT("Izoh"),
-    REMINDED("Muddat eslatmasi yuborildi");
+    CREATED("Топшириқ берилди"),
+    STARTED("Бажаришни бошлади"),
+    COMPLETED("Бажарилди деб белгилади"),
+    ACCEPTED("Бажарилганини тасдиқлади"),
+    RETURNED("Қайта бажаришга қайтарди"),
+    CANCELLED("Бекор қилди"),
+    COMMENT("Изоҳ"),
+    REMINDED("Муддат эслатмаси юборилди");
 
     private final String label;
 

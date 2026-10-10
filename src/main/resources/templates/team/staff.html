@@ -1,29 +1,29 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Xodimlar')}"></head>
+<head th:replace="~{fragments/layout :: head('Ходимлар')}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('team-staff')}"></header>
 <main class="container">
     <div class="page-head reveal">
         <div>
-            <h1>Xodimlar</h1>
-            <p class="subtitle" th:text="'Mehmonxona xodimlari: ' + ${staff.size()} + ' ta · topshiriqlar shularga beriladi'"></p>
+            <h1>Ходимлар</h1>
+            <p class="subtitle" th:text="'Меҳмонхона ходимлари: ' + ${staff.size()} + ' та · топшириқлар шуларга берилади'"></p>
         </div>
         <div class="head-actions">
-            <a class="btn btn-secondary" th:href="@{/team/departments}">Bo'limlar</a>
-            <a class="btn btn-primary" th:href="@{/team/staff/new}" th:if="${hasDepartments}">+ Xodim qo'shish</a>
+            <a class="btn btn-secondary" th:href="@{/team/departments}">Бўлимлар</a>
+            <a class="btn btn-primary" th:href="@{/team/staff/new}" th:if="${hasDepartments}">+ Ходим қўшиш</a>
         </div>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
     <div class="alert alert-info reveal" th:unless="${hasDepartments}">
-        Avval <a th:href="@{/team/departments}"><b>bo'lim</b></a> yarating — xodim bo'limga biriktiriladi.
+        Аввал <a th:href="@{/team/departments}"><b>бўлим</b></a> яратинг — ходим бўлимга бириктирилади.
     </div>
 
     <div class="card table-wrap reveal" th:if="${!staff.isEmpty()}">
         <table class="task-table">
             <thead>
-            <tr><th>Xodim</th><th>Login</th><th>Bo'limlar</th><th>Telegram</th><th>Holati</th><th></th></tr>
+            <tr><th>Ходим</th><th>Логин</th><th>Бўлимлар</th><th>Telegram</th><th>Ҳолати</th><th></th></tr>
             </thead>
             <tbody>
             <tr th:each="u : ${staff}">
@@ -34,19 +34,19 @@
                     <div class="dept-chips">
                         <span class="dept-chip" th:each="d : ${u.departments}"
                               th:text="${d.name} + (${u.hotels.size() > 1} ? ' · ' + ${d.hotel.name} : '')"></span>
-                        <span class="badge badge-warn" th:if="${u.departments.isEmpty()}">Bo'lim yo'q</span>
+                        <span class="badge badge-warn" th:if="${u.departments.isEmpty()}">Бўлим йўқ</span>
                     </div>
                     <div class="muted task-meta" th:if="${u.hotels.size() == 1}" th:text="${u.hotels.iterator().next().name}"></div>
                 </td>
                 <td>
-                    <span class="badge badge-ok" th:if="${u.telegramChatId != null}">Ulangan</span>
-                    <span class="badge badge-off" th:unless="${u.telegramChatId != null}">Ulanmagan</span>
+                    <span class="badge badge-ok" th:if="${u.telegramChatId != null}">Уланган</span>
+                    <span class="badge badge-off" th:unless="${u.telegramChatId != null}">Уланмаган</span>
                 </td>
                 <td>
-                    <span class="badge badge-ok" th:if="${u.enabled}">Faol</span>
-                    <span class="badge badge-off" th:unless="${u.enabled}">Bloklangan</span>
+                    <span class="badge badge-ok" th:if="${u.enabled}">Фаол</span>
+                    <span class="badge badge-off" th:unless="${u.enabled}">Блокланган</span>
                 </td>
-                <td><a class="btn btn-secondary btn-sm" th:href="@{/team/staff/{id}(id=${u.id})}">Tahrirlash</a></td>
+                <td><a class="btn btn-secondary btn-sm" th:href="@{/team/staff/{id}(id=${u.id})}">Таҳрирлаш</a></td>
             </tr>
             </tbody>
         </table>
@@ -56,8 +56,8 @@
         <div class="empty-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
-        <p><strong>Hali xodim yo'q</strong></p>
-        <p>Xodim qo'shing va bo'limga biriktiring — keyin unga tahlil tavsiyalaridan topshiriq berish mumkin.</p>
+        <p><strong>Ҳали ходим йўқ</strong></p>
+        <p>Ходим қўшинг ва бўлимга бириктиринг — кейин унга таҳлил тавсияларидан топшириқ бериш мумкин.</p>
     </div>
 </main>
 </body>

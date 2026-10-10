@@ -39,10 +39,10 @@ public class Formats {
         }
         BigDecimal abs = amount.abs();
         if (abs.compareTo(BigDecimal.valueOf(1_000_000_000)) >= 0) {
-            return decimal(amount.divide(BigDecimal.valueOf(1_000_000_000), 1, RoundingMode.HALF_UP)) + " mlrd " + currencyLabel(currency);
+            return decimal(amount.divide(BigDecimal.valueOf(1_000_000_000), 1, RoundingMode.HALF_UP)) + " млрд " + currencyLabel(currency);
         }
         if (abs.compareTo(BigDecimal.valueOf(1_000_000)) >= 0) {
-            return decimal(amount.divide(BigDecimal.valueOf(1_000_000), 1, RoundingMode.HALF_UP)) + " mln " + currencyLabel(currency);
+            return decimal(amount.divide(BigDecimal.valueOf(1_000_000), 1, RoundingMode.HALF_UP)) + " млн " + currencyLabel(currency);
         }
         return money(amount, currency);
     }
@@ -58,9 +58,9 @@ public class Formats {
     /** Farq izohi: musbat — to'lanmagan qism, manfiy — oldindan to'langan. */
     public String gapNote(BigDecimal gap) {
         if (gap == null || gap.signum() == 0) {
-            return "daromad to'liq to'langan";
+            return "даромад тўлиқ тўланган";
         }
-        return gap.signum() > 0 ? "hali to'lanmagan qism" : "oldindan to'lovlar ko'proq";
+        return gap.signum() > 0 ? "ҳали тўланмаган қисм" : "олдиндан тўловлар кўпроқ";
     }
 
     /** Butun summa, valyutasiz ("1 234 567") — jadvallar uchun (valyuta ustun nomida). */
@@ -92,7 +92,7 @@ public class Formats {
     /** Bandlik kabi ulushlar uchun foiz punkti farqi: "+4,2 p.p." */
     public String pointChange(double currentRatio, double previousRatio) {
         double delta = (currentRatio - previousRatio) * 100;
-        return sign(delta) + new DecimalFormat("0.0", SYMBOLS).format(Math.abs(delta)) + " p.p.";
+        return sign(delta) + new DecimalFormat("0.0", SYMBOLS).format(Math.abs(delta)) + " п.п.";
     }
 
     /** O'zgarish yo'nalishi CSS klassi uchun: up / down / flat. */
@@ -113,7 +113,7 @@ public class Formats {
 
     public String currencyLabel(String currency) {
         if (currency == null || currency.equals("UZS")) {
-            return "so'm";
+            return "сўм";
         }
         return currency;
     }
@@ -140,9 +140,9 @@ public class Formats {
             } else if (mln.abs().compareTo(BigDecimal.valueOf(1000)) >= 0) {
                 // 1 mlrd va undan katta qism — mlrd'da, 2 xona aniqlikda ("1,23 mlrd").
                 result.add(new DecimalFormat("#,##0.00", SYMBOLS).format(mln.divide(BigDecimal.valueOf(1000), 2, RoundingMode.HALF_UP))
-                        + " mlrd " + currencyLabel(currency));
+                        + " млрд " + currencyLabel(currency));
             } else {
-                result.add(decimal(mln) + " mln " + currencyLabel(currency));
+                result.add(decimal(mln) + " млн " + currencyLabel(currency));
             }
         }
         return result;

@@ -1,26 +1,26 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Kirish')}"></head>
+<head th:replace="~{fragments/layout :: head('Кириш')}"></head>
 <body>
 <main class="login-page">
     <div class="card login-card reveal">
         <div class="brand"><span class="brand-dot"></span>HotelPulse</div>
-        <p class="subtitle">Mehmonxonangiz ko'rsatkichlari bir joyda</p>
+        <p class="subtitle">Меҳмонхонангиз кўрсаткичлари бир жойда</p>
 
-        <div class="alert alert-error" role="alert" th:if="${param.error}">Login yoki parol noto'g'ri</div>
-        <div class="alert alert-info" role="status" th:if="${param.logout}">Tizimdan chiqdingiz</div>
-        <div class="alert alert-info" role="status" th:if="${param.expired}">Sessiya muddati tugadi — iltimos, qayta kiring</div>
+        <div class="alert alert-error" role="alert" th:if="${param.error}">Логин ёки парол нотўғри</div>
+        <div class="alert alert-info" role="status" th:if="${param.logout}">Тизимдан чиқдингиз</div>
+        <div class="alert alert-info" role="status" th:if="${param.expired}">Сессия муддати тугади — илтимос, қайта киринг</div>
 
         <form class="form" th:action="@{/login}" method="post">
             <div class="field">
-                <label for="username">Login</label>
+                <label for="username">Логин</label>
                 <input type="text" id="username" name="username" autocomplete="username" required autofocus>
             </div>
             <div class="field">
-                <label for="password">Parol</label>
+                <label for="password">Парол</label>
                 <input type="password" id="password" name="password" autocomplete="current-password" required>
             </div>
-            <button type="submit" class="btn btn-primary btn-block">Kirish</button>
+            <button type="submit" class="btn btn-primary btn-block">Кириш</button>
         </form>
     </div>
 </main>

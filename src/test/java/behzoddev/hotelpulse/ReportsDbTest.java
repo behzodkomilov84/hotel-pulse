@@ -117,7 +117,7 @@ class ReportsDbTest {
             assertNotNull(t, d.key());
             assertFalse(t.getColumns().isEmpty(), d.key());
             String page = html("/reports/" + d.key() + "?hotel=" + hotel.getId() + "&period=month", owner);
-            assertTrue(page.contains("class=\"rt\"") || page.contains("ma'lumot yo'q"), d.key());
+            assertTrue(page.contains("class=\"rt\"") || page.contains("маълумот йўқ"), d.key());
             var csv = mvc.perform(get("/reports/" + d.key() + "/export.csv").param("hotel", hotel.getId().toString())
                     .param("period", "30d").with(user(owner))).andReturn().getResponse();
             assertEquals(200, csv.getStatus(), d.key());
@@ -137,15 +137,15 @@ class ReportsDbTest {
             ReportTable rt = reportService.build(key, hotel, month);
             int revCol = key.equals("room-types") ? 6 : 3, adrCol = key.equals("room-types") ? 4 : 5;
             long total = Long.parseLong(rt.getTotal().cells().get(revCol).text().replaceAll("\\D", ""));
-            assertTrue(Math.abs(total - metrics.roomRevenue().longValue()) <= rt.getRows().size(), key + " daromad: " + total);
+            assertTrue(Math.abs(total - metrics.roomRevenue().longValue()) <= rt.getRows().size(), key + " даромад: " + total);
             long adr = Long.parseLong(rt.getTotal().cells().get(adrCol).text().replaceAll("\\D", ""));
-            assertTrue(Math.abs(adr - metrics.adr().longValue()) <= 1, key + " ADR: " + adr + " vs " + metrics.adr());
+            assertTrue(Math.abs(adr - metrics.adr().longValue()) <= 1, key + " ADR: " + adr + " вс " + metrics.adr());
         }
 
         // Katalog: barcha hisobotlar, Exely bermaydiganlari belgilangan.
         String catalog = html("/reports", owner);
-        assertTrue(catalog.contains("Xonalarni tozalash") && catalog.contains("Exely bermaydi"));
-        assertTrue(html("/reports/housekeeping", owner).contains("API orqali"));
+        assertTrue(catalog.contains("Хоналарни тозалаш") && catalog.contains("Exely бермайди"));
+        assertTrue(html("/reports/housekeeping", owner).contains("API орқали"));
         // Menyu barcha sahifalarda.
         assertTrue(html("/", owner).contains("/reports/usali-summary"));
     }
@@ -159,7 +159,7 @@ class ReportsDbTest {
         // Standart: davr paneli "Bugun"dan keyin (avvalgi sahifa kabi).
         assertTrue(page.indexOf("class=\"period-bar") > page.indexOf("id=\"block-today\"")
                 && page.indexOf("class=\"period-bar") < page.indexOf("id=\"block-kpi\""));
-        assertEquals(1, page.split("class=\"period-bar", -1).length - 1, "davr paneli bitta");
+        assertEquals(1, page.split("class=\"period-bar", -1).length - 1, "давр панели битта");
 
         // Ro'yxatdan qo'shish — joriy (tahrirlangan) tartib bilan.
         String back = "/hotels/" + hotel.getId();
@@ -168,9 +168,9 @@ class ReportsDbTest {
         assertEquals(List.of("flow", "today", "kpi", "arrivals"), layoutService.get(owner.getId()));
         page = html(back, owner);
         assertTrue(page.contains("id=\"block-arrivals\""));
-        assertTrue(page.indexOf("id=\"block-flow\"") < page.indexOf("id=\"block-today\""), "tartib saqlangan");
-        assertFalse(page.contains("dailyChart\""), "olib tashlangan grafik yo'q");
-        assertTrue(page.indexOf("class=\"period-bar") < page.indexOf("id=\"block-flow\""), "Bugun birinchi emas — panel tepada");
+        assertTrue(page.indexOf("id=\"block-flow\"") < page.indexOf("id=\"block-today\""), "тартиб сақланган");
+        assertFalse(page.contains("dailyChart\""), "олиб ташланган график йўқ");
+        assertTrue(page.indexOf("class=\"period-bar") < page.indexOf("id=\"block-flow\""), "Бугун биринчи эмас — панел тепада");
 
         // Tartib saqlash: noma'lum va mavjud bo'lmagan kalitlar tashlanadi.
         mvc.perform(post("/reports/layout").with(user(owner)).with(csrf())
@@ -235,7 +235,7 @@ class ReportsDbTest {
         ReportTable t = reportService.build("demand-intensity", hotel, Period.resolve("month", null, null, today));
         ReportTable.Row tomorrow = t.getRows().get(1);
         assertEquals("+1", tomorrow.cells().get(4).text());
-        assertEquals("—", tomorrow.cells().get(5).text(), "7 kunlik surat yo'q");
+        assertEquals("—", tomorrow.cells().get(5).text(), "7 кунлик сурат йўқ");
     }
 
     // ---------------------------------------------------------------- yordamchilar

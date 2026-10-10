@@ -70,7 +70,7 @@ public class TelegramTaskHandler {
     /** Bitta mehmonxona bo'lsa — darhol, bir nechta bo'lsa — tanlash tugmalari. */
     public void askAnalysis(long chatId, User user, List<Hotel> hotels) {
         if (hotels.isEmpty()) {
-            send(chatId, "Sizga hali mehmonxona biriktirilmagan.", null);
+            send(chatId, "Сизга ҳали меҳмонхона бириктирилмаган.", null);
             return;
         }
         if (hotels.size() == 1) {
@@ -81,35 +81,35 @@ public class TelegramTaskHandler {
         for (Hotel h : hotels) {
             rows.add(List.of(button("🏨 " + h.getName(), "an:" + h.getId())));
         }
-        send(chatId, "🧠 Qaysi mehmonxona qarzdorligini tahlil qilay?", Map.of("inline_keyboard", rows));
+        send(chatId, "🧠 Қайси меҳмонхона қарздорлигини таҳлил қилай?", Map.of("inline_keyboard", rows));
     }
 
     void sendAnalysis(long chatId, User user, Hotel hotel) {
         DebtAnalysis a = analysis(hotel);
-        StringBuilder sb = new StringBuilder("🧠 <b>Qarzdorlik tahlili</b> · ").append(esc(hotel.getName())).append("\n\n");
+        StringBuilder sb = new StringBuilder("🧠 <b>Қарздорлик таҳлили</b> · ").append(esc(hotel.getName())).append("\n\n");
         if (a.warning() != null) {
             sb.append("⚠️ <i>").append(esc(a.warning())).append("</i>\n\n");
         }
         sb.append(esc(a.summary())).append("\n");
         if (!a.risks().isEmpty()) {
-            sb.append("\n<b>Xavfli nuqtalar</b>\n");
+            sb.append("\n<b>Хавфли нуқталар</b>\n");
             for (DebtAnalysis.Point p : a.risks()) {
                 sb.append(levelIcon(p.level())).append(" <b>").append(esc(p.title())).append("</b> — ").append(esc(p.text())).append("\n");
             }
         }
         if (!a.actions().isEmpty()) {
-            sb.append("\n<b>Tavsiyalar</b>\n");
+            sb.append("\n<b>Тавсиялар</b>\n");
             int i = 1;
             for (DebtAnalysis.Point p : a.actions()) {
                 sb.append(i++).append(". <b>").append(esc(p.title())).append(":</b> ").append(esc(p.text()));
                 if (p.listSize() > 0) {
-                    sb.append(" <i>(📎 ").append(p.listSize()).append(" ta ro'yxat)</i>");
+                    sb.append(" <i>(📎 ").append(p.listSize()).append(" та рўйхат)</i>");
                 }
                 sb.append("\n");
             }
         }
         if (!a.priorities().isEmpty()) {
-            sb.append("\n<b>Birinchi navbatda tekshirish kerak</b>\n");
+            sb.append("\n<b>Биринчи навбатда текшириш керак</b>\n");
             int i = 1;
             for (DebtAnalysis.Priority r : a.priorities()) {
                 sb.append("B").append(i++).append(". <code>").append(esc(r.bookingNumber())).append("</code> ")
@@ -120,7 +120,7 @@ public class TelegramTaskHandler {
         Map<String, Object> markup = null;
         CustomUserDetails u = new CustomUserDetails(user);
         if (TaskService.canAssign(u) && (!a.actions().isEmpty() || !a.priorities().isEmpty())) {
-            sb.append("\n📌 Tavsiyani xodimga topshiriq qilib berish uchun pastdagi tugmani bosing.");
+            sb.append("\n📌 Тавсияни ходимга топшириқ қилиб бериш учун пастдаги тугмани босинг.");
             List<List<Map<String, Object>>> rows = new ArrayList<>();
             List<Map<String, Object>> row = new ArrayList<>();
             for (int i = 0; i < a.actions().size(); i++) {
@@ -131,7 +131,7 @@ public class TelegramTaskHandler {
                 }
             }
             for (int i = 0; i < a.priorities().size(); i++) {
-                row.add(button("📌 B" + (i + 1), "ta:p:" + hotel.getId() + ":" + i));
+                row.add(button("📌 Б" + (i + 1), "ta:p:" + hotel.getId() + ":" + i));
                 if (row.size() == 4) {
                     rows.add(row);
                     row = new ArrayList<>();
@@ -157,9 +157,9 @@ public class TelegramTaskHandler {
         Suggestion s = suggestion(hotel, kind, index);
         List<User> staff = taskService.staff(hotel.getId());
         if (staff.isEmpty()) {
-            send(chatId, "👥 " + esc(hotel.getName()) + " ga hali <b>xodim</b> biriktirilmagan.\n\n"
-                    + "Saytda <b>Boshqaruv → Bo'limlar</b>da bo'lim yarating, keyin <b>Boshqaruv → Xodimlar</b>da "
-                    + "xodim qo'shib, bo'limga biriktiring — keyin topshiriq berish mumkin.", null);
+            send(chatId, "👥 " + esc(hotel.getName()) + " га ҳали <b>ходим</b> бириктирилмаган.\n\n"
+                    + "Сайтда <b>Бошқарув → Бўлимлар</b>да бўлим яратинг, кейин <b>Бошқарув → Ходимлар</b>да "
+                    + "ходим қўшиб, бўлимга бириктиринг — кейин топшириқ бериш мумкин.", null);
             return;
         }
         // Tavsiyadagi bo'lim (Buxgalteriya, Resepshn, ...) mehmonxonada bo'lsa — avval shu bo'lim xodimlari.
@@ -171,16 +171,16 @@ public class TelegramTaskHandler {
                 .orElse(List.of());
         List<User> shown = inDept.isEmpty() ? staff : inDept;
         String deptLine = dept.isEmpty() ? ""
-                : inDept.isEmpty() ? "\n🏷 «" + esc(dept.get().getName()) + "» bo'limida xodim yo'q — barcha xodimlar:"
-                : "\n🏷 Bo'lim: <b>" + esc(dept.get().getName()) + "</b>";
+                : inDept.isEmpty() ? "\n🏷 «" + esc(dept.get().getName()) + "» бўлимида ходим йўқ — барча ходимлар:"
+                : "\n🏷 Бўлим: <b>" + esc(dept.get().getName()) + "</b>";
         List<List<Map<String, Object>>> rows = new ArrayList<>();
         for (User st : shown) {
-            rows.add(List.of(button("👤 " + TaskNotifier.name(st) + (st.getTelegramChatId() != null ? "" : " (Telegram yo'q)"),
+            rows.add(List.of(button("👤 " + TaskNotifier.name(st) + (st.getTelegramChatId() != null ? "" : " (Telegram йўқ)"),
                     "tb:" + kind + ":" + hotel.getId() + ":" + index + ":" + st.getId())));
         }
-        send(chatId, "📌 <b>Topshiriq:</b> " + esc(s.title())
-                + (s.listSize() > 0 ? "\n📎 Ilova: " + s.listSize() + " ta yashash ro'yxati" : "") + deptLine
-                + "\n\nKimga beramiz?", Map.of("inline_keyboard", rows));
+        send(chatId, "📌 <b>Топшириқ:</b> " + esc(s.title())
+                + (s.listSize() > 0 ? "\n📎 Илова: " + s.listSize() + " та яшаш рўйхати" : "") + deptLine
+                + "\n\nКимга берамиз?", Map.of("inline_keyboard", rows));
     }
 
     /** tb:… → muddat tanlash. */
@@ -188,9 +188,9 @@ public class TelegramTaskHandler {
         LocalDate today = taskService.today();
         List<Map<String, Object>> row = new ArrayList<>();
         for (int d : DUE_DAYS) {
-            row.add(button(d + " kun (" + today.plusDays(d).format(TaskNotifier.DAY).substring(0, 5) + ")", "tc:" + base + ":" + d));
+            row.add(button(d + " кун (" + today.plusDays(d).format(TaskNotifier.DAY).substring(0, 5) + ")", "tc:" + base + ":" + d));
         }
-        send(chatId, "📅 Muddat?", Map.of("inline_keyboard", List.of(row, List.of(button("Muddatsiz", "tc:" + base + ":0")))));
+        send(chatId, "📅 Муддат?", Map.of("inline_keyboard", List.of(row, List.of(button("Муддатсиз", "tc:" + base + ":0")))));
     }
 
     /** tc:{kind}:{hotel}:{i}:{staff}:{days} → topshiriq beriladi. */
@@ -199,9 +199,9 @@ public class TelegramTaskHandler {
         Task task = taskService.create(u, new TaskService.NewTask(hotel.getId(), staffId, s.title(), s.description(),
                 s.department(), s.booking(), days > 0 ? taskService.today().plusDays(days) : null,
                 Task.SOURCE_DEBT_ANALYSIS, s.listKey()), TaskEvent.BOT);
-        String tg = task.getAssignee().getTelegramChatId() != null ? "Xodimga botda xabar yuborildi."
-                : "Xodim Telegram'ni ulamagan — topshiriqni saytda ko'radi.";
-        send(chatId, "✅ <b>Topshiriq berildi.</b> " + tg + "\n\n" + notifier.card(task)
+        String tg = task.getAssignee().getTelegramChatId() != null ? "Ходимга ботда хабар юборилди."
+                : "Ходим Telegram'ни уламаган — топшириқни сайтда кўради.";
+        send(chatId, "✅ <b>Топшириқ берилди.</b> " + tg + "\n\n" + notifier.card(task)
                 + notifier.itemsBlock(task, taskService.items(u, task.getId())), null);
     }
 
@@ -218,13 +218,13 @@ public class TelegramTaskHandler {
         if (kind.equals("p") && index >= 0 && index < a.priorities().size()) {
             DebtAnalysis.Priority r = a.priorities().get(index);
             String cur = hotel.getCurrency();
-            return new Suggestion("Bron " + r.bookingNumber() + (r.guestName() != null ? " (" + r.guestName() + ")" : "")
-                    + ": qarzni tekshirish va undirish",
-                    r.reason() + ". Qarz: " + fmt.money(r.debt(), cur) + ", to'langan " + fmt.moneyShort(r.paid(), cur)
+            return new Suggestion("Брон " + r.bookingNumber() + (r.guestName() != null ? " (" + r.guestName() + ")" : "")
+                    + ": қарзни текшириш ва ундириш",
+                    r.reason() + ". Qarz: " + fmt.money(r.debt(), cur) + ", тўланган " + fmt.moneyShort(r.paid(), cur)
                             + " / " + fmt.moneyShort(r.total(), cur) + ".", null, r.bookingNumber(),
                     DebtAnalyzer.LIST_BOOKING + r.bookingNumber(), 1);
         }
-        throw new TaskException("Tahlil yangilangan — 🧠 Tahlil'ni qayta oching.");
+        throw new TaskException("Таҳлил янгиланган — 🧠 Таҳлилни қайта очинг.");
     }
 
     // ---------------------------------------------------------------- Topshiriqlar ro'yxati
@@ -238,9 +238,9 @@ public class TelegramTaskHandler {
         List<List<Map<String, Object>>> rows = new ArrayList<>();
 
         if (!mine.isEmpty() || !TaskService.canAssign(u)) {
-            sb.append("📌 <b>Sizning topshiriqlaringiz</b>");
+            sb.append("📌 <b>Сизнинг топшириқларингиз</b>");
             if (mine.isEmpty()) {
-                sb.append("\n\nOchiq topshiriq yo'q ✅");
+                sb.append("\n\nОчиқ топшириқ йўқ ✅");
             } else {
                 sb.append(" (").append(mine.size()).append(")\n\n");
                 appendList(sb, rows, mine, today, false);
@@ -253,20 +253,20 @@ public class TelegramTaskHandler {
             if (!sb.isEmpty()) {
                 sb.append("\n");
             }
-            sb.append("🗂 <b>Xodimlar topshiriqlari</b>\n")
-                    .append("Bajarilmoqda: ").append(open)
-                    .append(" · tekshiruvda: <b>").append(review.size()).append("</b>")
-                    .append(" · muddati o'tgan: <b>").append(overdue.size()).append("</b>\n");
+            sb.append("🗂 <b>Ходимлар топшириқлари</b>\n")
+                    .append("Бажарилмоқда: ").append(open)
+                    .append(" · текширувда: <b>").append(review.size()).append("</b>")
+                    .append(" · муддати ўтган: <b>").append(overdue.size()).append("</b>\n");
             if (!review.isEmpty()) {
-                sb.append("\n✅ <b>Tekshirish kerak</b>\n");
+                sb.append("\n✅ <b>Текшириш керак</b>\n");
                 appendList(sb, rows, review, today, true);
             }
             if (!overdue.isEmpty()) {
-                sb.append("\n⏰ <b>Muddati o'tgan</b>\n");
+                sb.append("\n⏰ <b>Муддати ўтган</b>\n");
                 appendList(sb, rows, overdue, today, true);
             }
             if (visible.isEmpty()) {
-                sb.append("\nHali topshiriq berilmagan. 🧠 <b>Tahlil</b> → 📌 tugmasi orqali bering.");
+                sb.append("\nҲали топшириқ берилмаган. 🧠 <b>Таҳлил</b> → 📌 тугмаси орқали беринг.");
             }
         }
         send(chatId, truncate(sb.toString()), rows.isEmpty() ? null : Map.of("inline_keyboard", rows));
@@ -296,7 +296,7 @@ public class TelegramTaskHandler {
             rows.add(row);
         }
         if (tasks.size() > LIST_LIMIT) {
-            sb.append("… yana ").append(tasks.size() - LIST_LIMIT).append(" ta — saytda: Xizmatlar → Topshiriqlar\n");
+            sb.append("… яна ").append(tasks.size() - LIST_LIMIT).append(" та — сайтда: Хизматлар → Топшириқлар\n");
         }
     }
 
@@ -323,7 +323,7 @@ public class TelegramTaskHandler {
                     chooseDue(chatId, String.join(":", parts[1], parts[2], parts[3], parts[4]));
                 }
                 case "tc" -> {
-                    answer(cbId, "Topshiriq berilmoqda…");
+                    answer(cbId, "Топшириқ берилмоқда…");
                     requireAssigner(u);
                     createFromAnalysis(chatId, u, parts[1], hotelService.getAccessible(u, Long.parseLong(parts[2])),
                             Integer.parseInt(parts[3]), Long.parseLong(parts[4]), Integer.parseInt(parts[5]));
@@ -339,11 +339,11 @@ public class TelegramTaskHandler {
         } catch (TaskException e) {
             send(chatId, "⚠️ " + esc(e.getMessage()), null);
         } catch (AccessDeniedException e) {
-            send(chatId, "⛔ Ruxsat yo'q.", null);
+            send(chatId, "⛔ Рухсат йўқ.", null);
         } catch (NotFoundException e) {
-            send(chatId, "Topshiriq topilmadi.", null);
+            send(chatId, "Топшириқ топилмади.", null);
         } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-            send(chatId, "Tugma eskirgan — qayta oching.", null);
+            send(chatId, "Тугма эскирган — қайта очинг.", null);
         }
         return true;
     }
@@ -358,29 +358,29 @@ public class TelegramTaskHandler {
             }
             case TaskNotifier.START -> {
                 Task t = taskService.start(u, id, TaskEvent.BOT);
-                send(chatId, "▶️ <b>Bajarilmoqda</b>\n\n" + notifier.card(t), notifier.assigneeButtons(t));
+                send(chatId, "▶️ <b>Бажарилмоқда</b>\n\n" + notifier.card(t), notifier.assigneeButtons(t));
             }
             case TaskNotifier.COMPLETE -> {
                 Task t = taskService.complete(u, id, null, TaskEvent.BOT);
                 pending.put(chatId, new Pending("note", id, Instant.now(clock).plus(PENDING_MINUTES, ChronoUnit.MINUTES)));
-                send(chatId, "✅ <b>#" + t.getId() + " bajarildi deb belgilandi</b> — topshiriq beruvchi tekshiradi.\n\n"
-                        + "Nima qilinganini yozmoqchi bo'lsangiz — shu yerga xabar yozing (ixtiyoriy).", null);
+                send(chatId, "✅ <b>#" + t.getId() + " бажарилди деб белгиланди</b> — топшириқ берувчи текширади.\n\n"
+                        + "Нима қилинганини ёзмоқчи бўлсангиз — шу ерга хабар ёзинг (ихтиёрий).", null);
             }
             case TaskNotifier.ACCEPT -> {
                 Task t = taskService.accept(u, id, null, TaskEvent.BOT);
-                send(chatId, "👍 <b>#" + t.getId() + " tasdiqlandi.</b> Xodimga xabar yuborildi.", null);
+                send(chatId, "👍 <b>#" + t.getId() + " тасдиқланди.</b> Ходимга хабар юборилди.", null);
             }
             case TaskNotifier.RETURN -> {
                 Task t = taskService.get(u, id);
                 if (!taskService.canReview(u, t)) {
-                    throw new AccessDeniedException("ruxsat yo'q");
+                    throw new AccessDeniedException("рухсат йўқ");
                 }
                 if (t.getStatus() != TaskStatus.REVIEW) {
-                    throw new TaskException("Topshiriq holati: " + t.getStatus().getLabel() + " — qaytarib bo'lmaydi.");
+                    throw new TaskException("Топшириқ ҳолати: " + t.getStatus().getLabel() + " — қайтариб бўлмайди.");
                 }
                 pending.put(chatId, new Pending("return", id, Instant.now(clock).plus(PENDING_MINUTES, ChronoUnit.MINUTES)));
-                send(chatId, "↩️ <b>#" + id + "</b> ni qaytarish sababini yozing — xodim nimani tuzatishini bilsin.\n"
-                        + "Bekor qilish: /bekor", Map.of("force_reply", true));
+                send(chatId, "↩️ <b>#" + id + "</b> ни қайтариш сабабини ёзинг — ходим нимани тузатишини билсин.\n"
+                        + "Бекор қилиш: /bekor", Map.of("force_reply", true));
             }
             default -> {
             }
@@ -401,22 +401,22 @@ public class TelegramTaskHandler {
         }
         pending.remove(chatId);
         if (text.equals("/bekor")) {
-            send(chatId, "Bekor qilindi.", null);
+            send(chatId, "Бекор қилинди.", null);
             return true;
         }
         CustomUserDetails u = new CustomUserDetails(user);
         try {
             if (p.kind().equals("return")) {
                 taskService.returnTask(u, p.taskId(), text, TaskEvent.BOT);
-                send(chatId, "↩️ <b>#" + p.taskId() + " qaytarildi.</b> Xodimga sabab bilan xabar yuborildi.", null);
+                send(chatId, "↩️ <b>#" + p.taskId() + " қайтарилди.</b> Ходимга сабаб билан хабар юборилди.", null);
             } else {
                 taskService.comment(u, p.taskId(), text, TaskEvent.BOT);
-                send(chatId, "💬 Izoh #" + p.taskId() + " ga qo'shildi va topshiriq beruvchiga yuborildi.", null);
+                send(chatId, "💬 Изоҳ #" + p.taskId() + " га қўшилди ва топшириқ берувчига юборилди.", null);
             }
         } catch (TaskException e) {
             send(chatId, "⚠️ " + esc(e.getMessage()), null);
         } catch (AccessDeniedException | NotFoundException e) {
-            send(chatId, "⛔ Bu topshiriqqa ruxsat yo'q.", null);
+            send(chatId, "⛔ Бу топшириққа рухсат йўқ.", null);
         }
         return true;
     }
@@ -430,7 +430,7 @@ public class TelegramTaskHandler {
 
     private static void requireAssigner(CustomUserDetails u) {
         if (!TaskService.canAssign(u)) {
-            throw new AccessDeniedException("topshiriq berishga ruxsat yo'q");
+            throw new AccessDeniedException("топшириқ беришга рухсат йўқ");
         }
     }
 

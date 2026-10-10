@@ -1,27 +1,27 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('USALI xarajatlari')}"></head>
+<head th:replace="~{fragments/layout :: head('USALI харажатлари')}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('reports')}"></header>
 <main class="container container-narrow">
     <div class="page-head reveal">
         <div>
-            <a class="back-link" th:href="@{/reports(hotel=${hotel?.id})}">← Hisobotlar</a>
-            <h1>USALI xarajatlari</h1>
-            <p class="subtitle">Oyma-oy kiritiladi — daromad Exely'dan avtomatik olinadi; GOP, GOPPAR, EBITDA shundan hisoblanadi</p>
+            <a class="back-link" th:href="@{/reports(hotel=${hotel?.id})}">← Ҳисоботлар</a>
+            <h1>USALI харажатлари</h1>
+            <p class="subtitle">Ойма-ой киритилади — даромад Exely'дан автоматик олинади; GOP, GOPPAR, EBITDA шундан ҳисобланади</p>
         </div>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
-    <div class="card empty reveal" th:if="${hotel == null}"><p><strong>Sizga hali mehmonxona biriktirilmagan</strong></p></div>
+    <div class="card empty reveal" th:if="${hotel == null}"><p><strong>Сизга ҳали меҳмонхона бириктирилмаган</strong></p></div>
 
     <th:block th:if="${hotel != null}">
         <form method="get" class="period-bar reveal">
-            <select name="hotel" aria-label="Mehmonxona" th:if="${hotels.size() > 1}" onchange="this.form.submit()">
+            <select name="hotel" aria-label="Меҳмонхона" th:if="${hotels.size() > 1}" onchange="this.form.submit()">
                 <option th:each="h : ${hotels}" th:value="${h.id}" th:text="${h.name}" th:selected="${h.id == hotel.id}"></option>
             </select>
             <input type="hidden" name="hotel" th:value="${hotel.id}" th:unless="${hotels.size() > 1}">
-            <input type="month" name="month" th:value="${month}" aria-label="Oy" onchange="this.form.submit()">
+            <input type="month" name="month" th:value="${month}" aria-label="Ой" onchange="this.form.submit()">
             <a class="btn btn-secondary" th:href="@{/reports/usali-summary(hotel=${hotel.id}, period='custom', from=${month.atDay(1)}, to=${month.atEndOfMonth()})}">
                 Summary Operating Statement →</a>
         </form>
@@ -37,12 +37,12 @@
                     <input type="text" inputmode="decimal" th:id="'line_' + ${l.name()}" th:name="'line_' + ${l.name()}"
                            th:value="${values.get(l)} ? ${@fmt.amount(values.get(l))} : ''" placeholder="0">
                 </div>
-                <p class="note" th:if="${d.name() == 'ROOMS'}">OTA komissiyalari Exely'dan avtomatik qo'shiladi — bu yerga kiritmang.</p>
+                <p class="note" th:if="${d.name() == 'ROOMS'}">OTA комиссиялари Exely'дан автоматик қўшилади — бу ерга киритманг.</p>
             </fieldset>
-            <p class="note">Valyuta — mehmonxona valyutasi. Bo'sh qoldirilgan modda — 0. Keyinchalik 1C ulansa, xarajatlar avtomatik keladi.</p>
+            <p class="note">Валюта — меҳмонхона валютаси. Бўш қолдирилган модда — 0. Кейинчалик 1C уланса, харажатлар автоматик келади.</p>
             <div class="form-actions">
-                <a class="btn btn-secondary" th:href="@{/reports(hotel=${hotel.id})}">Bekor qilish</a>
-                <button type="submit" class="btn btn-primary">Saqlash</button>
+                <a class="btn btn-secondary" th:href="@{/reports(hotel=${hotel.id})}">Бекор қилиш</a>
+                <button type="submit" class="btn btn-primary">Сақлаш</button>
             </div>
         </form>
     </th:block>

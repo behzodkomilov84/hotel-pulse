@@ -124,12 +124,12 @@ public class ExelySyncService {
     /** Bitta mehmonxonani sinxronlaydi. Natija hotels jadvalidagi holat maydonlariga yoziladi. */
     public SyncResult sync(Long hotelId) {
         if (!running.add(hotelId)) {
-            return new SyncResult(false, 0, "Sinxronlash allaqachon ishlayapti");
+            return new SyncResult(false, 0, "Синхронлаш аллақачон ишлаяпти");
         }
         try {
             Hotel hotel = writer.load(hotelId);
             if (hotel == null || !hotel.isExelyConnected()) {
-                return new SyncResult(false, 0, "Exely ulanmagan");
+                return new SyncResult(false, 0, "Exely уланмаган");
             }
             if (hotel.hasPmsKey()) {
                 // Tavsiya etilgan yo'l: PMS Universal API (to'lovlar va qarzdorlik bilan).
@@ -175,8 +175,8 @@ public class ExelySyncService {
             }
 
             String message = processed == 0 && failed == 0
-                    ? "Yangi o'zgarish yo'q"
-                    : processed + " ta bron yangilandi" + (failed > 0 ? ", " + failed + " tasi o'tkazib yuborildi" : "");
+                    ? "Янги ўзгариш йўқ"
+                    : processed + " та брон янгиланди" + (failed > 0 ? ", " + failed + " таси ўтказиб юборилди" : "");
             writer.saveStatus(hotelId, true, message);
             log.info("Exely sinxronlash (mehmonxona {}): {}", hotelId, message);
             return new SyncResult(true, processed, message);
@@ -185,7 +185,7 @@ public class ExelySyncService {
             log.warn("Exely sinxronlash xatosi (mehmonxona {}): {}", hotelId, e.getMessage());
             return new SyncResult(false, 0, e.getMessage());
         } catch (RuntimeException e) {
-            writer.saveStatus(hotelId, false, "Kutilmagan xatolik: " + e.getClass().getSimpleName());
+            writer.saveStatus(hotelId, false, "Кутилмаган хатолик: " + e.getClass().getSimpleName());
             log.error("Exely sinxronlash kutilmagan xatosi (mehmonxona {})", hotelId, e);
             return new SyncResult(false, 0, e.getMessage());
         } finally {
@@ -214,7 +214,7 @@ public class ExelySyncService {
 
         // --- Ma'lumotnomalar: xonalar va kompaniyalar ---
         syncRooms(hotel, key, note);
-        optional(hotelId, "kompaniyalar", () -> {
+        optional(hotelId, "компаниялар", () -> {
             String json = pmsClient.companiesJson(key);
             if (json != null) {
                 raw.replaceAll(hotelId, ExelyRawStore.COMPANY, ExelyRawRows.list(json, "id"));
@@ -223,7 +223,7 @@ public class ExelySyncService {
 
         int purged = writer.purgeNonPmsData(hotelId);
         if (purged > 0) {
-            note.append(", ").append(purged).append(" ta eski (demo/Read Reservation) bron o'chirildi");
+            note.append(", ").append(purged).append(" та эски (демо/Read Reservation) брон ўчирилди");
         }
 
         // --- Bronlar (+ hisob-fakturalar va mehmonlar) ---
@@ -294,7 +294,7 @@ public class ExelySyncService {
 
             LocalDate cancelledFrom = svcFrom;
             LocalDate cancelledTo = end;
-            optional(hotelId, "bekor qilingan xizmatlar", () -> {
+            optional(hotelId, "бекор қилинган хизматлар", () -> {
                 pause();
                 archiveServices(hotelId, ExelyRawStore.SERVICE_CANCELLED, cancelledFrom, cancelledTo,
                         pmsClient.servicesJson(key, cancelledFrom, cancelledTo, true));
@@ -302,13 +302,13 @@ public class ExelySyncService {
             svcFrom = end.plusDays(1);
         }
         if (services > 0) {
-            note.append(", ").append(services).append(" ta xizmat qatori");
+            note.append(", ").append(services).append(" та хизмат қатори");
         }
 
         String message = (bookings == 0 && payments == 0 && failed == 0 && purged == 0)
-                ? "Yangi o'zgarish yo'q (Exely PMS)"
-                : "Exely PMS: " + bookings + " ta bron, " + payments + " ta to'lov yangilandi"
-                  + (failed > 0 ? ", " + failed + " tasi o'tkazib yuborildi" : "") + note;
+                ? "Янги ўзгариш йўқ (Exely PMS)"
+                : "Exely PMS: " + bookings + " та брон, " + payments + " та тўлов янгиланди"
+                  + (failed > 0 ? ", " + failed + " таси ўтказиб юборилди" : "") + note;
         writer.saveStatus(hotelId, true, message);
         log.info("Exely PMS sinxronlash (mehmonxona {}): {}", hotelId, message);
         return new SyncResult(true, bookings, message);
@@ -326,7 +326,7 @@ public class ExelySyncService {
 
     /** Bron hisob-fakturalari va mehmonlar profillari — xom arxivga (xatosi bronni to'xtatmaydi). */
     private void archiveBookingDetails(Long hotelId, String key, String number, String bookingJson, Set<String> guestsSeen) {
-        optional(hotelId, number + " hisob-fakturalari", () -> {
+        optional(hotelId, number + " ҳисоб-фактуралари", () -> {
             pause();
             String invoices = pmsClient.invoicesJson(key, number);
             if (invoices != null) {
@@ -337,7 +337,7 @@ public class ExelySyncService {
             if (!guestsSeen.add(guestId)) {
                 continue;
             }
-            optional(hotelId, "mehmon " + guestId, () -> {
+            optional(hotelId, "меҳмон " + guestId, () -> {
                 pause();
                 String guest = pmsClient.guestJson(key, guestId);
                 if (guest != null) {
@@ -363,7 +363,7 @@ public class ExelySyncService {
 
     /** Xonalar ro'yxati — arxivga; xonalar soni (admin qo'lda belgilamagan bo'lsa) shundan. */
     private void syncRooms(Hotel hotel, String key, StringBuilder note) {
-        optional(hotel.getId(), "xonalar ro'yxati", () -> {
+        optional(hotel.getId(), "хоналар рўйхати", () -> {
             String json = pmsClient.roomsJson(key);
             if (json == null) {
                 return;
@@ -372,7 +372,7 @@ public class ExelySyncService {
             raw.replaceAll(hotel.getId(), ExelyRawStore.ROOM, rooms);
             if (!hotel.isRoomsCountManual() && !rooms.isEmpty() && rooms.size() != hotel.getRoomsCount()) {
                 writer.saveRoomsCount(hotel.getId(), rooms.size());
-                note.append(", xonalar soni: ").append(hotel.getRoomsCount()).append(" → ").append(rooms.size());
+                note.append(", хоналар сони: ").append(hotel.getRoomsCount()).append(" → ").append(rooms.size());
             }
         });
     }
@@ -408,7 +408,7 @@ public class ExelySyncService {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new ExelyException("Sinxronlash to'xtatildi");
+            throw new ExelyException("Синхронлаш тўхтатилди");
         }
     }
 

@@ -101,10 +101,10 @@ class DebtReportDbTest {
         DebtReport r = debtService.report(hotel, null, null, null);
         DebtReport.Summary s = r.summary();
 
-        assertEquals(4, s.count(), "kelmagan, bekor qilingan va to'langanlar kirmaydi");
+        assertEquals(4, s.count(), "келмаган, бекор қилинган ва тўланганлар кирмайди");
         assertEquals(0, new BigDecimal("1300000").compareTo(s.total()));
         assertEquals(0, new BigDecimal("200000").compareTo(s.inHouse()));
-        assertEquals(0, new BigDecimal("600000").compareTo(s.checkedOut()), "PMS 300 000 + qo'lda 300 000");
+        assertEquals(0, new BigDecimal("600000").compareTo(s.checkedOut()), "PMS 300 000 + қўлда 300 000");
         assertEquals(0, new BigDecimal("500000").compareTo(s.notCheckedOut()));
         assertEquals(1, s.notCheckedOutCount());
 
@@ -123,7 +123,7 @@ class DebtReportDbTest {
     void filterSearchAndSort() {
         assertEquals(1, debtService.report(hotel, DebtReport.Category.NOT_CHECKED_OUT, null, null).rows().size());
         assertEquals("Smith", debtService.report(hotel, null, "smi", null).rows().get(0).guestName());
-        assertEquals(1, debtService.report(hotel, null, "pms-num-1", null).rows().size(), "bron raqami bo'yicha");
+        assertEquals(1, debtService.report(hotel, null, "pms-num-1", null).rows().size(), "брон рақами бўйича");
         var byAge = debtService.report(hotel, null, null, "age").rows();
         assertEquals("Valiyev", byAge.get(0).guestName());
         assertEquals("Karimov", byAge.get(1).guestName());
@@ -139,9 +139,9 @@ class DebtReportDbTest {
 
         mvc.perform(get("/hotels/{id}/debts", hotel.getId()).with(user(owner)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Vyselenie qilinmagan")))
+                .andExpect(content().string(containsString("Выселение қилинмаган")))
                 .andExpect(content().string(containsString("Valiyev")))
-                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Begona"))));
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Бегона"))));
 
         mvc.perform(get("/hotels/{id}", hotel.getId()).with(user(owner)))
                 .andExpect(content().string(containsString("/hotels/" + hotel.getId() + "/debts")));
@@ -151,8 +151,8 @@ class DebtReportDbTest {
                 .andExpect(header().string("Content-Disposition", containsString("qarzdorlik-")))
                 .andReturn().getResponse().getContentAsByteArray();
         String text = new String(csv, StandardCharsets.UTF_8);
-        assertTrue(text.startsWith("﻿Bron raqami;Mehmon"), "BOM + sarlavha");
-        assertEquals(5, text.lines().count(), "sarlavha + 4 qator");
+        assertTrue(text.startsWith("﻿Брон рақами;Меҳмон"), "BOM + сарлавҳа");
+        assertEquals(5, text.lines().count(), "сарлавҳа + 4 қатор");
         assertTrue(text.contains("pms-num-3;Valiyev;"));
 
         CustomUserDetails stranger = new CustomUserDetails(saveUser("stranger", Role.HOTEL_OWNER, Set.of(other)));
@@ -167,14 +167,14 @@ class DebtReportDbTest {
 
         // Sahifaning o'zida tahlil yo'q — faqat tugma (tahlil qo'lda boshlanadi).
         mvc.perform(get("/hotels/{id}/debts", hotel.getId()).with(user(owner)))
-                .andExpect(content().string(containsString("Qarzdorlik tahlili")))
-                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("<h4>Asosiy xulosa"))));
+                .andExpect(content().string(containsString("Қарздорлик таҳлили")))
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("<h4>Асосий хулоса"))));
 
         mvc.perform(get("/hotels/{id}/debts/analysis", hotel.getId()).with(user(owner)))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.not(containsString("<html"))))
-                .andExpect(content().string(containsString("Asosiy xulosa")))
-                .andExpect(content().string(containsString("Vyselenie qilinmagan")))
+                .andExpect(content().string(containsString("Асосий хулоса")))
+                .andExpect(content().string(containsString("Выселение қилинмаган")))
                 .andExpect(content().string(containsString("pms-num-3")));
 
         CustomUserDetails stranger = new CustomUserDetails(saveUser("stranger-an", Role.HOTEL_OWNER, Set.of(other)));
@@ -199,10 +199,10 @@ class DebtReportDbTest {
                 .andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
         assertTrue(html.contains("INV-1") && html.contains("Tour LLC"));
-        assertTrue(html.contains("INV-X"), "bron qatorida — bronning barcha hisoblari");
-        assertTrue(html.contains("3 ta bron"));
-        assertTrue(html.contains("rasmiy hisob-faktura emas"), "Exely hisobi nima ekani ochiq aytiladi");
-        assertFalse(html.contains("Yozilmagan"), "noto'g'ri yozilgan/yozilmagan belgisi yo'q");
+        assertTrue(html.contains("INV-X"), "брон қаторида — броннинг барча ҳисоблари");
+        assertTrue(html.contains("3 та брон"));
+        assertTrue(html.contains("расмий ҳисоб-фактура эмас"), "Exely ҳисоби нима экани очиқ айтилади");
+        assertFalse(html.contains("Ёзилмаган"), "нотўғри ёзилган/ёзилмаган белгиси йўқ");
 
         // Qidiruv — to'lovchi bo'yicha.
         String byPayer = mvc.perform(get("/services/invoices").param("hotel", hotel.getId().toString())
@@ -220,24 +220,24 @@ class DebtReportDbTest {
         String csv = new String(mvc.perform(get("/services/invoices.csv").param("hotel", hotel.getId().toString())
                         .with(user(owner))).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
-        assertTrue(csv.startsWith("﻿Mehmonxona;Bron raqami"));
+        assertTrue(csv.startsWith("﻿Меҳмонхона;Брон рақами"));
         assertEquals(1 + 3, csv.lines().count());
-        assertTrue(csv.lines().findFirst().orElseThrow().contains("Exely hisob raqamlari"));
+        assertTrue(csv.lines().findFirst().orElseThrow().contains("Exely ҳисоб рақамлари"));
         assertTrue(csv.contains("pms-num-1;Karimov;") && csv.contains(";1;1;300000;40;1;INV-1;Tour LLC;1000000;"), csv);
         String roomsCsv = new String(mvc.perform(get("/services/invoices.csv").param("hotel", hotel.getId().toString())
                         .param("level", "rooms").with(user(owner))).andExpect(status().isOk())
                 .andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
-        assertTrue(roomsCsv.lines().findFirst().orElseThrow().contains("Xona hisob raqamlari"));
-        assertTrue(roomsCsv.contains("pms-num-3;Valiyev;") && !roomsCsv.contains("INV-X"), "xona darajasida — faqat o'z hisoblari");
+        assertTrue(roomsCsv.lines().findFirst().orElseThrow().contains("Хона ҳисоб рақамлари"));
+        assertTrue(roomsCsv.contains("pms-num-3;Valiyev;") && !roomsCsv.contains("INV-X"), "хона даражасида — фақат ўз ҳисоблари");
 
         // Qarz bosilganda — tafsilot: narx, to'langan, qarz, Exely hisobi.
-        assertTrue(html.contains("data-detail-url"), "qarz summasi bosiladigan");
+        assertTrue(html.contains("data-detail-url"), "қарз суммаси босиладиган");
         String detail = mvc.perform(get("/services/invoices/detail").param("hotel", hotel.getId().toString())
                         .param("stay", "pms:pms-num-1#rs1").with(user(owner)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-        assertTrue(detail.contains("Karimov") && detail.contains("Jami — xona narxi") && detail.contains("INV-1")
-                && detail.contains("xonaning o&#39;z hisobi"), detail);
-        assertFalse(detail.contains("<html"), "faqat HTML parcha");
+        assertTrue(detail.contains("Karimov") && detail.contains("Жами — хона нархи") && detail.contains("INV-1")
+                && detail.contains("хонанинг ўз ҳисоби"), detail);
+        assertFalse(detail.contains("<html"), "фақат HTML парча");
 
         // Boshqa mehmonxona egasi bu mehmonxonani ko'rmaydi (hotel parametri bilan ham).
         CustomUserDetails stranger = new CustomUserDetails(saveUser("stranger-inv", Role.HOTEL_OWNER, Set.of(other)));
@@ -277,14 +277,14 @@ class DebtReportDbTest {
         String html = mvc.perform(get("/services/invoices").param("hotel", hotel.getId().toString())
                         .param("q", "GRP-1").with(user(owner)))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-        assertTrue(html.contains("1 ta bron"), "ikki xona — bitta bron qatori");
-        assertTrue(html.contains("▸ 2 xona"), "xonalarni ochish tugmasi");
-        assertEquals(2, html.split("class=\"stay-row\"", -1).length - 1, "ikki xona qatori (yashirin)");
+        assertTrue(html.contains("1 та брон"), "икки хона — битта брон қатори");
+        assertTrue(html.contains("▸ 2 хона"), "хоналарни очиш тугмаси");
+        assertEquals(2, html.split("class=\"stay-row\"", -1).length - 1, "икки хона қатори (яширин)");
 
         String csv = new String(mvc.perform(get("/services/invoices.csv").param("hotel", hotel.getId().toString())
                         .param("q", "GRP-1").with(user(owner)))
                 .andReturn().getResponse().getContentAsByteArray(), StandardCharsets.UTF_8);
-        assertEquals(2, csv.lines().count(), "sarlavha + bitta bron");
+        assertEquals(2, csv.lines().count(), "сарлавҳа + битта брон");
         assertTrue(csv.contains(";2;2;300000;2;2;GRP-1-34, GRP-1-35;Rahbar;550000;"), csv);
 
         String rooms = new String(mvc.perform(get("/services/invoices.csv").param("hotel", hotel.getId().toString())

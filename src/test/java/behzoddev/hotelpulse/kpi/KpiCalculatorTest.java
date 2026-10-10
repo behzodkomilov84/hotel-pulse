@@ -58,13 +58,13 @@ class KpiCalculatorTest {
 
         StayMetrics m = KpiCalculator.calculate(bookings, 10, p, services);
 
-        assertEquals(4, m.soldRoomNights(), "bandlik baribir bronlardan");
+        assertEquals(4, m.soldRoomNights(), "бандлик барибир бронлардан");
         // 700 000 (1-kun, yashash) + 0 (2-kun) + 300 000 (3-kun, bron) = 1 000 000
         assertEquals(0, new BigDecimal("1000000").compareTo(m.roomRevenue()));
         assertEquals(0, new BigDecimal("100000").compareTo(m.extrasRevenue()));
         assertEquals(0, new BigDecimal("1100000").compareTo(m.totalRevenue()));
-        assertEquals(0, BigDecimal.valueOf(250_000).compareTo(m.adr()), "ADR — faqat yashashdan: 1M / 4");
-        assertEquals(0, new BigDecimal("800000").compareTo(m.daily().get(0).revenue()), "grafik — jami");
+        assertEquals(0, BigDecimal.valueOf(250_000).compareTo(m.adr()), "ADR — фақат яшашдан: 1M / 4");
+        assertEquals(0, new BigDecimal("800000").compareTo(m.daily().get(0).revenue()), "график — жами");
         // Manbalar ulushi bronlardan, summasi yashash daromadiga moslangan.
         BigDecimal sourcesSum = m.sources().stream().map(StayMetrics.SourceShare::revenue).reduce(BigDecimal.ZERO, BigDecimal::add);
         assertEquals(0, new BigDecimal("1000000").compareTo(sourcesSum));

@@ -40,7 +40,7 @@ public class TeamController {
                                    @RequestParam String name, RedirectAttributes ra) {
         try {
             Department d = teamService.createDepartment(user, hotelId, name);
-            ra.addFlashAttribute("success", "\"" + d.getName() + "\" bo'limi qo'shildi");
+            ra.addFlashAttribute("success", "\"" + d.getName() + "\" бўлими қўшилди");
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
         }
@@ -52,7 +52,7 @@ public class TeamController {
                                    @RequestParam String name, RedirectAttributes ra) {
         try {
             teamService.renameDepartment(user, id, name);
-            ra.addFlashAttribute("success", "Bo'lim nomi o'zgartirildi");
+            ra.addFlashAttribute("success", "Бўлим номи ўзгартирилди");
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
         }
@@ -63,7 +63,7 @@ public class TeamController {
     public String deleteDepartment(@AuthenticationPrincipal CustomUserDetails user, @PathVariable Long id,
                                    RedirectAttributes ra) {
         String name = teamService.deleteDepartment(user, id);
-        ra.addFlashAttribute("success", "\"" + name + "\" bo'limi o'chirildi");
+        ra.addFlashAttribute("success", "\"" + name + "\" бўлими ўчирилди");
         return "redirect:/team/departments";
     }
 
@@ -96,7 +96,7 @@ public class TeamController {
                               @RequestParam(required = false) List<Long> departmentIds, RedirectAttributes ra) {
         try {
             User u = teamService.createStaff(user, username, password, fullName, phone, departmentIds);
-            ra.addFlashAttribute("success", "Xodim qo'shildi: " + u.getUsername()
+            ra.addFlashAttribute("success", "Ходим қўшилди: " + u.getUsername()
                     + ". Endi u saytga kirib, Profil → Telegram'ni ulashi mumkin — topshiriqlar botda ham keladi.");
             return "redirect:/team/staff";
         } catch (IllegalArgumentException e) {
@@ -115,7 +115,7 @@ public class TeamController {
                               @RequestParam(required = false) String newPassword, RedirectAttributes ra) {
         try {
             teamService.updateStaff(user, id, username, fullName, phone, enabled, departmentIds, newPassword);
-            ra.addFlashAttribute("success", "Saqlandi");
+            ra.addFlashAttribute("success", "Сақланди");
             return "redirect:/team/staff";
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());

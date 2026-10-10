@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Topshiriq #' + ${t.id})}"></head>
+<head th:replace="~{fragments/layout :: head('Топшириқ #' + ${t.id})}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('svc-tasks')}"></header>
 <main class="container container-narrow">
     <div class="page-head reveal">
         <div>
-            <a class="back-link" th:href="@{/services/tasks}">← Topshiriqlar</a>
+            <a class="back-link" th:href="@{/services/tasks}">← Топшириқлар</a>
             <h1 class="task-title"><span class="muted" th:text="'#' + ${t.id}"></span> <span th:text="${t.title}"></span></h1>
             <p class="subtitle">
                 <span th:replace="~{fragments/task-form :: status(${t.status})}"></span>
-                <span class="badge badge-danger" th:if="${t.isOverdue(today)}" th:text="'muddati ' + ${t.daysOverdue(today)} + ' kun o\'tdi'"></span>
-                <span class="badge badge-warn" th:if="${t.isDueToday(today)}">muddat — bugun</span>
+                <span class="badge badge-danger" th:if="${t.isOverdue(today)}" th:text="'муддати ' + ${t.daysOverdue(today)} + ' кун ўтди'"></span>
+                <span class="badge badge-warn" th:if="${t.isDueToday(today)}">муддат — бугун</span>
             </p>
         </div>
     </div>
@@ -21,18 +21,18 @@
     <section class="card reveal">
         <p class="task-desc" th:if="${t.description}" th:text="${t.description}"></p>
         <dl class="task-facts">
-            <div><dt>Mehmonxona</dt><dd th:text="${t.hotel.name}"></dd></div>
-            <div th:if="${t.department}"><dt>Bo'lim</dt><dd th:text="${t.department}"></dd></div>
-            <div th:if="${t.bookingNumber}"><dt>Bron</dt>
+            <div><dt>Меҳмонхона</dt><dd th:text="${t.hotel.name}"></dd></div>
+            <div th:if="${t.department}"><dt>Бўлим</dt><dd th:text="${t.department}"></dd></div>
+            <div th:if="${t.bookingNumber}"><dt>Брон</dt>
                 <dd><a class="mono" th:href="@{/services/invoices(hotel=${t.hotel.id}, q=${t.bookingNumber})}" th:text="${t.bookingNumber}"></a></dd></div>
-            <div><dt>Bajaruvchi</dt><dd>
+            <div><dt>Бажарувчи</dt><dd>
                 <span th:text="${t.assignee.fullName} ?: ${t.assignee.username}"></span>
-                <span class="muted" th:text="${t.assignee.telegramChatId != null} ? ' · Telegram ✓' : ' · Telegram ulanmagan'"></span></dd></div>
-            <div><dt>Topshiriq berdi</dt><dd th:text="${t.assignedBy} ? (${t.assignedBy.fullName} ?: ${t.assignedBy.username}) : '—'"></dd></div>
-            <div><dt>Berilgan</dt><dd th:text="${#temporals.format(t.createdAt, 'dd.MM.yyyy HH:mm')}"></dd></div>
-            <div><dt>Muddat</dt><dd th:text="${t.dueDate} ? ${#temporals.format(t.dueDate, 'dd.MM.yyyy')} : '—'"></dd></div>
-            <div th:if="${t.completedAt}"><dt>Bajarildi deb belgilangan</dt><dd th:text="${#temporals.format(t.completedAt, 'dd.MM.yyyy HH:mm')}"></dd></div>
-            <div th:if="${t.reviewedAt}"><dt>Tekshirilgan</dt><dd th:text="${#temporals.format(t.reviewedAt, 'dd.MM.yyyy HH:mm')}"></dd></div>
+                <span class="muted" th:text="${t.assignee.telegramChatId != null} ? ' · Telegram ✓' : ' · Telegram уланмаган'"></span></dd></div>
+            <div><dt>Топшириқ берди</dt><dd th:text="${t.assignedBy} ? (${t.assignedBy.fullName} ?: ${t.assignedBy.username}) : '—'"></dd></div>
+            <div><dt>Берилган</dt><dd th:text="${#temporals.format(t.createdAt, 'dd.MM.yyyy HH:mm')}"></dd></div>
+            <div><dt>Муддат</dt><dd th:text="${t.dueDate} ? ${#temporals.format(t.dueDate, 'dd.MM.yyyy')} : '—'"></dd></div>
+            <div th:if="${t.completedAt}"><dt>Бажарилди деб белгиланган</dt><dd th:text="${#temporals.format(t.completedAt, 'dd.MM.yyyy HH:mm')}"></dd></div>
+            <div th:if="${t.reviewedAt}"><dt>Текширилган</dt><dd th:text="${#temporals.format(t.reviewedAt, 'dd.MM.yyyy HH:mm')}"></dd></div>
         </dl>
     </section>
 
@@ -41,11 +41,11 @@
              th:with="cur=${t.hotel.currency}, doneCount=${items.?[done].size()}, canTick=${isAssignee and t.status.open}">
         <div class="items-head">
             <div>
-                <h3 class="card-title">📎 Ilova: <span th:text="${items.size()} + ' ta yashash'"></span></h3>
+                <h3 class="card-title">📎 Илова: <span th:text="${items.size()} + ' та яшаш'"></span></h3>
                 <p class="muted items-sub">
-                    <span th:text="'qarz ' + ${@fmt.moneyShort(#aggregates.sum(items.![debt]), cur)}"></span>
-                    · <span th:text="'bajarilgan ' + ${doneCount} + ' / ' + ${items.size()}"></span>
-                    · <span th:text="'topshiriq berilgan paytdagi holat (' + ${#temporals.format(t.createdAt, 'dd.MM.yyyy')} + ')'"></span>
+                    <span th:text="'қарз ' + ${@fmt.moneyShort(#aggregates.sum(items.![debt]), cur)}"></span>
+                    · <span th:text="'бажарилган ' + ${doneCount} + ' / ' + ${items.size()}"></span>
+                    · <span th:text="'топшириқ берилган пайтдаги ҳолат (' + ${#temporals.format(t.createdAt, 'dd.MM.yyyy')} + ')'"></span>
                 </p>
                 <div class="meter"><div class="meter-fill" th:style="'width:' + ${100.0 * doneCount / items.size()} + '%'"></div></div>
             </div>
@@ -54,16 +54,16 @@
                 Excel
             </a>
         </div>
-        <p class="note" th:if="${canTick}">Har bir bronni bajargach ☐ ni bosib belgilang — topshiriq beruvchi qaysilari bajarilganini ko'radi.</p>
+        <p class="note" th:if="${canTick}">Ҳар бир бронни бажаргач ☐ ни босиб белгиланг — топшириқ берувчи қайсилари бажарилганини кўради.</p>
         <div class="table-wrap items-wrap">
             <table class="items-table">
                 <thead>
                 <tr>
                     <th></th>
                     <th class="num">№</th>
-                    <th>Bron / mehmon</th>
-                    <th>Holat</th>
-                    <th class="num">Qarz</th>
+                    <th>Брон / меҳмон</th>
+                    <th>Ҳолат</th>
+                    <th class="num">Қарз</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -71,7 +71,7 @@
                     <td>
                         <form th:if="${canTick}" method="post" th:action="@{/services/tasks/{id}/items/{item}(id=${t.id}, item=${i.id})}">
                             <button type="submit" class="tick" th:text="${i.done} ? '☑' : '☐'"
-                                    th:attr="aria-label=${i.done} ? 'Belgini olib tashlash' : 'Bajarildi deb belgilash'"></button>
+                                    th:attr="aria-label=${i.done} ? 'Белгини олиб ташлаш' : 'Бажарилди деб белгилаш'"></button>
                         </form>
                         <span th:unless="${canTick}" class="tick-static" th:text="${i.done} ? '☑' : '☐'"></span>
                     </td>
@@ -82,11 +82,11 @@
                     <td>
                         <span th:text="${i.category}"></span>
                         <div class="muted task-meta">
-                            <span th:if="${i.departure}" th:text="'ketish ' + ${#temporals.format(i.departure, 'dd.MM.yy')}"></span>
-                            <span th:if="${i.ageDays > 0}" th:text="${i.ageDays} + ' kun o\'tdi'"></span>
+                            <span th:if="${i.departure}" th:text="'кетиш ' + ${#temporals.format(i.departure, 'dd.MM.yy')}"></span>
+                            <span th:if="${i.ageDays > 0}" th:text="${i.ageDays} + ' кун ўтди'"></span>
                         </div></td>
                     <td class="num"><b th:text="${@fmt.money(i.debt, cur)}"></b>
-                        <div class="muted task-meta items-paid" th:text="'to\'langan ' + ${@fmt.moneyShort(i.paid, cur)} + ' / ' + ${@fmt.moneyShort(i.total, cur)}"></div></td>
+                        <div class="muted task-meta items-paid" th:text="'тўланган ' + ${@fmt.moneyShort(i.paid, cur)} + ' / ' + ${@fmt.moneyShort(i.total, cur)}"></div></td>
                 </tr>
                 </tbody>
             </table>
@@ -95,44 +95,44 @@
 
     <!-- ===== Bajaruvchi amallari ===== -->
     <section class="card reveal task-actions" th:if="${isAssignee and t.status.open}">
-        <h3 class="card-title">Bajarish</h3>
+        <h3 class="card-title">Бажариш</h3>
         <form method="post" th:action="@{/services/tasks/{id}/start(id=${t.id})}"
               th:if="${t.status.name() == 'NEW' or t.status.name() == 'RETURNED'}" class="inline-form">
-            <button type="submit" class="btn btn-secondary">▶️ Bajarishni boshladim</button>
+            <button type="submit" class="btn btn-secondary">▶️ Бажаришни бошладим</button>
         </form>
         <form method="post" th:action="@{/services/tasks/{id}/complete(id=${t.id})}" class="form">
             <div class="field">
-                <label for="doneComment">Nima qilindi? <span class="muted">(ixtiyoriy)</span></label>
+                <label for="doneComment">Нима қилинди? <span class="muted">(ихтиёрий)</span></label>
                 <textarea id="doneComment" name="comment" rows="3" maxlength="4000"
-                          placeholder="Masalan: 3 ta yashash vyselenie qilindi, 2 mehmon to'lov qildi"></textarea>
+                          placeholder="Масалан: 3 та яшаш выселение қилинди, 2 меҳмон тўлов қилди"></textarea>
             </div>
-            <button type="submit" class="btn btn-primary">✅ Bajarildi</button>
+            <button type="submit" class="btn btn-primary">✅ Бажарилди</button>
         </form>
     </section>
 
     <!-- ===== Tekshiruvchi amallari ===== -->
     <section class="card reveal task-actions" th:if="${canReview and t.status.name() == 'REVIEW'}">
-        <h3 class="card-title">Tekshirish</h3>
-        <p class="muted">Xodim topshiriqni bajarildi deb belgiladi. Natijani tekshirib, tasdiqlang yoki sababini yozib qaytaring.</p>
+        <h3 class="card-title">Текшириш</h3>
+        <p class="muted">Ходим топшириқни бажарилди деб белгилади. Натижани текшириб, тасдиқланг ёки сабабини ёзиб қайтаринг.</p>
         <form method="post" class="form" th:action="@{/services/tasks/{id}/accept(id=${t.id})}">
             <div class="field">
-                <label for="reviewComment">Izoh <span class="muted">(qaytarishda — majburiy)</span></label>
+                <label for="reviewComment">Изоҳ <span class="muted">(қайтаришда — мажбурий)</span></label>
                 <textarea id="reviewComment" name="comment" rows="3" maxlength="4000"></textarea>
             </div>
             <div class="form-actions form-actions-start">
-                <button type="submit" class="btn btn-primary">👍 Tasdiqlash</button>
-                <button type="submit" class="btn btn-danger" th:formaction="@{/services/tasks/{id}/return(id=${t.id})}">↩️ Qayta bajarishga qaytarish</button>
+                <button type="submit" class="btn btn-primary">👍 Тасдиқлаш</button>
+                <button type="submit" class="btn btn-danger" th:formaction="@{/services/tasks/{id}/return(id=${t.id})}">↩️ Қайта бажаришга қайтариш</button>
             </div>
         </form>
     </section>
 
     <!-- ===== Tarix ===== -->
     <section class="card reveal">
-        <h3 class="card-title">Tarix</h3>
+        <h3 class="card-title">Тарих</h3>
         <ol class="timeline">
             <li th:each="e : ${history}" th:classappend="'ev-' + ${#strings.toLowerCase(e.action.name())}">
                 <div class="tl-head">
-                    <b th:text="${e.user} ? (${e.user.fullName} ?: ${e.user.username}) : 'Tizim'"></b>
+                    <b th:text="${e.user} ? (${e.user.fullName} ?: ${e.user.username}) : 'Тизим'"></b>
                     <span th:text="${e.action.label}"></span>
                     <span class="muted tl-time" th:text="${#temporals.format(e.createdAt, 'dd.MM.yyyy HH:mm')} + (${e.channel == 'BOT'} ? ' · Telegram' : '')"></span>
                 </div>
@@ -142,15 +142,15 @@
 
         <form method="post" class="form tl-form" th:action="@{/services/tasks/{id}/comment(id=${t.id})}" th:unless="${t.status.finished}">
             <div class="field">
-                <label for="comment">Izoh qo'shish</label>
+                <label for="comment">Изоҳ қўшиш</label>
                 <textarea id="comment" name="comment" rows="2" maxlength="4000" required
-                          th:placeholder="${isAssignee} ? 'Savol yoki holat haqida — topshiriq beruvchiga boradi' : 'Xodimga izoh'"></textarea>
+                          th:placeholder="${isAssignee} ? 'Савол ёки ҳолат ҳақида — топшириқ берувчига боради' : 'Ходимга изоҳ'"></textarea>
             </div>
             <div class="form-actions form-actions-start">
-                <button type="submit" class="btn btn-secondary">Yuborish</button>
+                <button type="submit" class="btn btn-secondary">Юбориш</button>
                 <button type="submit" class="btn btn-danger" th:if="${canReview}" formnovalidate
                         th:formaction="@{/services/tasks/{id}/cancel(id=${t.id})}"
-                        onclick="return confirm('Topshiriq bekor qilinsinmi?')">Topshiriqni bekor qilish</button>
+                        onclick="return confirm('Топшириқ бекор қилинсинми?')">Топшириқни бекор қилиш</button>
             </div>
         </form>
     </section>

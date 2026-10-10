@@ -26,14 +26,14 @@ class FormatsPartsTest {
         List<String> parts = fmt.moneyShortParts(total, List.of(in, out, not), "UZS");
         double sum = parts.stream().mapToDouble(FormatsPartsTest::number).sum();
         assertThat(Math.round(sum * 10)).isEqualTo(9836);
-        assertThat(parts).allMatch(p -> p.endsWith("mln so'm"));
+        assertThat(parts).allMatch(p -> p.endsWith("млн сўм"));
     }
 
     @Test
     void zeroPartAndSmallTotals() {
         List<String> parts = fmt.moneyShortParts(new BigDecimal("5000000"),
                 List.of(new BigDecimal("5000000"), BigDecimal.ZERO), "UZS");
-        assertThat(parts.get(0)).startsWith("5").contains("mln");
+        assertThat(parts.get(0)).startsWith("5").contains("млн");
         assertThat(parts.get(1)).isEqualTo(fmt.money(BigDecimal.ZERO, "UZS"));
 
         // 1 mln dan kichik — aniq summalar, yig'indisi o'z-o'zidan to'g'ri.
@@ -48,15 +48,15 @@ class FormatsPartsTest {
         BigDecimal out = new BigDecimal("829100000"), not = new BigDecimal("118400000"), in = new BigDecimal("52500000");
         BigDecimal total = out.add(not).add(in);
         List<String> parts = fmt.moneyShortParts(total, List.of(in, out, not), "UZS");
-        assertThat(parts.get(1)).startsWith("829,1").contains("mln");
-        assertThat(parts.get(2)).startsWith("118,4").contains("mln");
+        assertThat(parts.get(1)).startsWith("829,1").contains("млн");
+        assertThat(parts.get(2)).startsWith("118,4").contains("млн");
         assertThat(Math.round(parts.stream().mapToDouble(FormatsPartsTest::number).sum() * 10)).isEqualTo(10000);
 
         // 1 mlrd'dan katta qism — mlrd'da.
         List<String> big = fmt.moneyShortParts(new BigDecimal("1500000000"),
                 List.of(new BigDecimal("1234000000"), new BigDecimal("266000000")), "UZS");
-        assertThat(big.get(0)).startsWith("1,23").contains("mlrd");
-        assertThat(big.get(1)).startsWith("266").contains("mln");
+        assertThat(big.get(0)).startsWith("1,23").contains("млрд");
+        assertThat(big.get(1)).startsWith("266").contains("млн");
     }
 
     @Test

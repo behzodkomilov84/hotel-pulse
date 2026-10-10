@@ -66,7 +66,7 @@ public class HotelAdminController {
         try {
             Hotel saved = hotelService.save(id, name, city, roomsCount, roomsCountManual, currency,
                     exelyPropertyId, exelyClientId, exelyClientSecret, exelyPmsKey, active, dailyReportTime);
-            ra.addFlashAttribute("success", "Mehmonxona saqlandi");
+            ra.addFlashAttribute("success", "Меҳмонхона сақланди");
             return "redirect:/admin/hotels/" + saved.getId();
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
@@ -79,16 +79,16 @@ public class HotelAdminController {
     public String testExely(@PathVariable Long id, RedirectAttributes ra) {
         Hotel hotel = hotelService.getById(id);
         if (!hotel.isExelyConnected()) {
-            ra.addFlashAttribute("error", "Avval Exely PMS kalitini (yoki Connect ma'lumotlarini) kiriting va saqlang");
+            ra.addFlashAttribute("error", "Аввал Exely PMS калитини (ёки Connect маълумотларини) киритинг ва сақланг");
             return "redirect:/admin/hotels/" + id;
         }
         try {
             if (hotel.hasPmsKey()) {
                 exelySyncService.testPmsKey(hotel.getExelyPmsKey());
-                ra.addFlashAttribute("success", "Exely PMS bilan ulanish muvaffaqiyatli ✓");
+                ra.addFlashAttribute("success", "Exely PMS билан уланиш муваффақиятли ✓");
             } else {
                 exelySyncService.testConnection(hotel.getExelyPropertyId(), hotel.getExelyClientId(), hotel.getExelyClientSecret());
-                ra.addFlashAttribute("success", "Exely bilan ulanish muvaffaqiyatli ✓");
+                ra.addFlashAttribute("success", "Exely билан уланиш муваффақиятли ✓");
             }
         } catch (ExelyException e) {
             ra.addFlashAttribute("error", e.getMessage());
@@ -100,11 +100,11 @@ public class HotelAdminController {
     public String syncExely(@PathVariable Long id, RedirectAttributes ra) {
         Hotel hotel = hotelService.getById(id);
         if (!hotel.isExelyConnected()) {
-            ra.addFlashAttribute("error", "Exely ulanmagan");
+            ra.addFlashAttribute("error", "Exely уланмаган");
         } else if (exelySyncService.startAsync(id)) {
-            ra.addFlashAttribute("success", "Sinxronlash fonda boshlandi — natija shu sahifada ko'rinadi");
+            ra.addFlashAttribute("success", "Синхронлаш фонда бошланди — натижа шу саҳифада кўринади");
         } else {
-            ra.addFlashAttribute("error", "Sinxronlash allaqachon ishlayapti");
+            ra.addFlashAttribute("error", "Синхронлаш аллақачон ишлаяпти");
         }
         return "redirect:/admin/hotels/" + id;
     }
@@ -113,11 +113,11 @@ public class HotelAdminController {
     public String verifyExely(@PathVariable Long id, RedirectAttributes ra) {
         Hotel hotel = hotelService.getById(id);
         if (!hotel.hasPmsKey()) {
-            ra.addFlashAttribute("error", "Solishtirish uchun Exely PMS kaliti kerak");
+            ra.addFlashAttribute("error", "Солиштириш учун Exely PMS калити керак");
         } else if (exelySyncService.startVerifyAsync(id)) {
-            ra.addFlashAttribute("success", "Sinxronlash va Exely bilan solishtirish fonda boshlandi — natija shu sahifada ko'rinadi");
+            ra.addFlashAttribute("success", "Синхронлаш ва Exely билан солиштириш фонда бошланди — натижа шу саҳифада кўринади");
         } else {
-            ra.addFlashAttribute("error", "Sinxronlash ishlayapti — tugagach qayta urinib ko'ring");
+            ra.addFlashAttribute("error", "Синхронлаш ишлаяпти — тугагач қайта уриниб кўринг");
         }
         return "redirect:/admin/hotels/" + id;
     }
@@ -126,32 +126,32 @@ public class HotelAdminController {
     public String resetExely(@PathVariable Long id, RedirectAttributes ra) {
         hotelService.resetExelySync(id);
         if (exelySyncService.startAsync(id)) {
-            ra.addFlashAttribute("success", "Exely'dagi barcha ma'lumotlar boshidan yuklanmoqda — bir necha daqiqa davom etadi");
+            ra.addFlashAttribute("success", "Exely'даги барча маълумотлар бошидан юкланмоқда — бир неча дақиқа давом этади");
         } else {
-            ra.addFlashAttribute("success", "Joriy sinxronlash tugagach, keyingisi hammasini boshidan yuklaydi");
+            ra.addFlashAttribute("success", "Жорий синхронлаш тугагач, кейингиси ҳаммасини бошидан юклайди");
         }
         return "redirect:/admin/hotels/" + id;
     }
 
     /** Xom arxiv turlarining nomlari (admin sahifasi). */
     private static final java.util.Map<String, String> ARCHIVE_LABELS = java.util.Map.ofEntries(
-            java.util.Map.entry(ExelyRawStore.BOOKING, "Bronlar"),
-            java.util.Map.entry(ExelyRawStore.RESERVATION, "Yashashlar"),
-            java.util.Map.entry(ExelyRawStore.SERVICE, "Xizmatlar (kunlik)"),
-            java.util.Map.entry(ExelyRawStore.SERVICE_CANCELLED, "Bekor qilingan xizmatlar"),
-            java.util.Map.entry(ExelyRawStore.PAYMENT, "To'lovlar"),
-            java.util.Map.entry(ExelyRawStore.INVOICES, "Exely hisoblari (bronlar bo'yicha)"),
-            java.util.Map.entry(ExelyRawStore.GUEST, "Mehmonlar"),
-            java.util.Map.entry(ExelyRawStore.CUSTOMER, "To'lovchilar"),
-            java.util.Map.entry(ExelyRawStore.AGENT, "Agentlar"),
-            java.util.Map.entry(ExelyRawStore.COMPANY, "Kompaniyalar"),
-            java.util.Map.entry(ExelyRawStore.ROOM_TYPE, "Xona turlari"),
-            java.util.Map.entry(ExelyRawStore.ROOM, "Xonalar"));
+            java.util.Map.entry(ExelyRawStore.BOOKING, "Бронлар"),
+            java.util.Map.entry(ExelyRawStore.RESERVATION, "Яшашлар"),
+            java.util.Map.entry(ExelyRawStore.SERVICE, "Хизматлар (кунлик)"),
+            java.util.Map.entry(ExelyRawStore.SERVICE_CANCELLED, "Бекор қилинган хизматлар"),
+            java.util.Map.entry(ExelyRawStore.PAYMENT, "Тўловлар"),
+            java.util.Map.entry(ExelyRawStore.INVOICES, "Exely ҳисоблари (бронлар бўйича)"),
+            java.util.Map.entry(ExelyRawStore.GUEST, "Меҳмонлар"),
+            java.util.Map.entry(ExelyRawStore.CUSTOMER, "Тўловчилар"),
+            java.util.Map.entry(ExelyRawStore.AGENT, "Агентлар"),
+            java.util.Map.entry(ExelyRawStore.COMPANY, "Компаниялар"),
+            java.util.Map.entry(ExelyRawStore.ROOM_TYPE, "Хона турлари"),
+            java.util.Map.entry(ExelyRawStore.ROOM, "Хоналар"));
 
     @PostMapping("/{id}/exely/disconnect")
     public String disconnectExely(@PathVariable Long id, RedirectAttributes ra) {
         hotelService.disconnectExely(id);
-        ra.addFlashAttribute("success", "Exely ulanishi o'chirildi (olingan bronlar saqlanib qoldi)");
+        ra.addFlashAttribute("success", "Exely уланиши ўчирилди (олинган бронлар сақланиб қолди)");
         return "redirect:/admin/hotels/" + id;
     }
 }

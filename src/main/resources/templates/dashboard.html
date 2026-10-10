@@ -1,47 +1,47 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head('Mehmonxonalar')}"></head>
+<head th:replace="~{fragments/layout :: head('Меҳмонхоналар')}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('dashboard')}"></header>
 <main class="container">
     <div class="page-head reveal">
         <div>
-            <h1>Mehmonxonalar</h1>
-            <p class="subtitle" sec:authorize="hasRole('OWNER')">Platformadagi barcha mehmonxonalar</p>
-            <p class="subtitle" sec:authorize="!hasRole('OWNER')">Sizga biriktirilgan mehmonxonalar</p>
+            <h1>Меҳмонхоналар</h1>
+            <p class="subtitle" sec:authorize="hasRole('OWNER')">Платформадаги барча меҳмонхоналар</p>
+            <p class="subtitle" sec:authorize="!hasRole('OWNER')">Сизга бириктирилган меҳмонхоналар</p>
         </div>
         <a sec:authorize="hasRole('OWNER')" class="btn btn-primary" th:href="@{/admin/hotels/new}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-            Mehmonxona qo'shish
+            Меҳмонхона қўшиш
         </a>
     </div>
 
     <!-- Jami — faqat shu foydalanuvchiga ochiq mehmonxonalar bo'yicha -->
     <div class="card flow-card reveal" th:each="p : ${portfolio}" th:if="${p.hotels > 1}">
-        <h3 class="card-title">Jami — shu oy
-            <span class="muted" th:text="'(' + ${p.hotels} + ' ta mehmonxona)'"></span>
+        <h3 class="card-title">Жами — шу ой
+            <span class="muted" th:text="'(' + ${p.hotels} + ' та меҳмонхона)'"></span>
             <span th:replace="~{fragments/layout :: tip(#{tip.home.portfolio})}"></span></h3>
         <div class="flow-grid">
             <div class="flow-item">
-                <div class="k">Bandlik</div>
+                <div class="k">Бандлик</div>
                 <div class="v" th:text="${@fmt.pct(p.occupancy())}">0%</div>
-                <div class="sub" th:text="${p.soldRoomNights} + ' / ' + ${p.availableRoomNights} + ' xona-kecha'"></div>
+                <div class="sub" th:text="${p.soldRoomNights} + ' / ' + ${p.availableRoomNights} + ' хона-кеча'"></div>
             </div>
             <div class="flow-item">
-                <div class="k">O'rtacha ADR<span th:replace="~{fragments/layout :: tip(#{tip.adr})}"></span></div>
+                <div class="k">Ўртача ADR<span th:replace="~{fragments/layout :: tip(#{tip.adr})}"></span></div>
                 <div class="v" th:text="${@fmt.money(p.adr(), p.currency)}">0</div>
                 <div class="sub" th:text="'RevPAR ' + ${@fmt.money(p.revpar(), p.currency)}"></div>
             </div>
             <div class="flow-item">
-                <div class="k">Daromad<span th:replace="~{fragments/layout :: tip(#{tip.flow.revenue})}"></span></div>
+                <div class="k">Даромад<span th:replace="~{fragments/layout :: tip(#{tip.flow.revenue})}"></span></div>
                 <div class="v" th:text="${@fmt.moneyShort(p.revenue, p.currency)}">0</div>
             </div>
             <div class="flow-item">
-                <div class="k">Tushum<span th:replace="~{fragments/layout :: tip(#{tip.flow.payments})}"></span></div>
+                <div class="k">Тушум<span th:replace="~{fragments/layout :: tip(#{tip.flow.payments})}"></span></div>
                 <div class="v" th:text="${@fmt.moneyShort(p.payments, p.currency)}">0</div>
             </div>
             <div class="flow-item" th:classappend="${p.gap.signum() > 0} ? 'gap-pos' : (${p.gap.signum() < 0} ? 'gap-neg' : '')">
-                <div class="k">Farq<span th:replace="~{fragments/layout :: tip(#{tip.flow.gap})}"></span></div>
+                <div class="k">Фарқ<span th:replace="~{fragments/layout :: tip(#{tip.flow.gap})}"></span></div>
                 <div class="v" th:text="${@fmt.signedMoneyShort(p.gap, p.currency)}">0</div>
                 <div class="sub" th:text="${@fmt.gapNote(p.gap)}"></div>
             </div>
@@ -51,24 +51,24 @@
     <div class="hotel-grid stagger" th:if="${!hotels.isEmpty()}">
         <a class="card hotel-card" th:each="h : ${hotels}" th:href="@{/hotels/{id}(id=${h.id})}">
             <svg class="arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            <h3 th:text="${h.name}">Mehmonxona</h3>
+            <h3 th:text="${h.name}">Меҳмонхона</h3>
             <div class="hotel-meta">
-                <span th:if="${h.city}" th:text="${h.city}">Shahar</span>
-                <span th:text="${h.roomsCount} + ' ta xona'">0 ta xona</span>
+                <span th:if="${h.city}" th:text="${h.city}">Шаҳар</span>
+                <span th:text="${h.roomsCount} + ' та хона'">0 та хона</span>
             </div>
             <div>
-                <span class="badge badge-ok" th:if="${h.exelyConnected}">Exely ulangan</span>
-                <span class="badge badge-warn" th:unless="${h.exelyConnected}">Exely ulanmagan</span>
-                <span class="badge badge-off" th:unless="${h.active}">Nofaol</span>
+                <span class="badge badge-ok" th:if="${h.exelyConnected}">Exely уланган</span>
+                <span class="badge badge-warn" th:unless="${h.exelyConnected}">Exely уланмаган</span>
+                <span class="badge badge-off" th:unless="${h.active}">Нофаол</span>
             </div>
             <div class="hotel-stats" th:if="${summaries[h.id].soldRoomNights > 0}" th:with="m=${summaries[h.id]}">
                 <div>
-                    <div class="k">Bandlik (shu oy)<span th:replace="~{fragments/layout :: tip(#{tip.home.occupancy})}"></span></div>
+                    <div class="k">Бандлик (шу ой)<span th:replace="~{fragments/layout :: tip(#{tip.home.occupancy})}"></span></div>
                     <div class="v" data-count th:text="${@fmt.pct(m.occupancy)}">0%</div>
                     <div class="meter"><div class="meter-fill" th:attr="data-fill=${m.occupancy}"></div></div>
                 </div>
                 <div>
-                    <div class="k">Daromad (shu oy)<span th:replace="~{fragments/layout :: tip(#{tip.home.revenue})}"></span></div>
+                    <div class="k">Даромад (шу ой)<span th:replace="~{fragments/layout :: tip(#{tip.home.revenue})}"></span></div>
                     <div class="v" data-count th:text="${@fmt.moneyShort(m.totalRevenue(), h.currency)}">0</div>
                 </div>
             </div>
@@ -80,13 +80,13 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4M9 9v.01M9 12v.01M9 15v.01M9 18v.01"/></svg>
         </div>
         <th:block sec:authorize="hasRole('OWNER')">
-            <p><strong>Hali mehmonxona qo'shilmagan</strong></p>
-            <p>Birinchi mehmonxonani qo'shing — keyin uning ko'rsatkichlari shu yerda ko'rinadi.</p>
-            <a class="btn btn-primary" th:href="@{/admin/hotels/new}">Mehmonxona qo'shish</a>
+            <p><strong>Ҳали меҳмонхона қўшилмаган</strong></p>
+            <p>Биринчи меҳмонхонани қўшинг — кейин унинг кўрсаткичлари шу ерда кўринади.</p>
+            <a class="btn btn-primary" th:href="@{/admin/hotels/new}">Меҳмонхона қўшиш</a>
         </th:block>
         <th:block sec:authorize="!hasRole('OWNER')">
-            <p><strong>Sizga hali mehmonxona biriktirilmagan</strong></p>
-            <p>Administrator bilan bog'laning.</p>
+            <p><strong>Сизга ҳали меҳмонхона бириктирилмаган</strong></p>
+            <p>Администратор билан боғланинг.</p>
         </th:block>
     </div>
 </main>

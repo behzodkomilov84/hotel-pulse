@@ -114,7 +114,7 @@ public class PageController {
         Hotel hotel = hotelService.getAccessible(user, id);
         DebtReport report = debtService.report(hotel, category, q, sort);
         StringBuilder sb = new StringBuilder("﻿");
-        sb.append("Bron raqami;Mehmon;Manba;Kelish;Ketish;Kechalar;Holat;Narx;To'langan;Qarz;Kun o'tdi\n");
+        sb.append("Брон рақами;Меҳмон;Манба;Келиш;Кетиш;Кечалар;Ҳолат;Нарх;Тўланган;Қарз;Кун ўтди\n");
         DateTimeFormatter d = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         for (DebtReport.Row r : report.rows()) {
             sb.append(csv(r.bookingNumber())).append(';')

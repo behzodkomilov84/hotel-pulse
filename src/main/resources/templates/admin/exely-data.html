@@ -6,22 +6,22 @@
 <main class="container">
     <div class="page-head reveal">
         <div>
-            <a class="back-link" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">← <span th:text="${hotel.name}">Mehmonxona</span></a>
-            <h1 th:text="${kind.title}">Ma'lumotlar</h1>
+            <a class="back-link" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">← <span th:text="${hotel.name}">Меҳмонхона</span></a>
+            <h1 th:text="${kind.title}">Маълумотлар</h1>
             <p class="subtitle">
-                <span th:text="${@fmt.number(total)} + ' ta yozuv'"></span>
-                <span th:if="${q != null and !q.isBlank()}" th:text="'· «' + ${q} + '» bo\'yicha'"></span>
-                <span>· Exely'dan o'zgarishsiz saqlangan</span>
+                <span th:text="${@fmt.number(total)} + ' та ёзув'"></span>
+                <span th:if="${q != null and !q.isBlank()}" th:text="'· «' + ${q} + '» бўйича'"></span>
+                <span>· Exely'дан ўзгаришсиз сақланган</span>
             </p>
         </div>
         <a class="btn btn-secondary" th:href="@{/admin/hotels/{id}/exely/data/{k}.csv(id=${hotel.id}, k=${kind.key}, q=${q})}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
-            Excel'ga yuklash
+            Excel'га юклаш
         </a>
     </div>
 
     <!-- Turlar orasida o'tish -->
-    <nav class="kind-tabs reveal" aria-label="Ma'lumot turlari">
+    <nav class="kind-tabs reveal" aria-label="Маълумот турлари">
         <a th:each="k : ${kinds}" class="kind-tab" th:classappend="${k.key == kind.key} ? 'active'"
            th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${k.key})}">
             <span th:text="${k.title}"></span>
@@ -32,15 +32,15 @@
     <form class="debt-filter reveal" method="get" th:action="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${kind.key})}">
         <div class="search-wrap">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="search" name="q" th:value="${q}" placeholder="Bron raqami, ism, xizmat nomi yoki istalgan qiymat" aria-label="Qidiruv">
+            <input type="search" name="q" th:value="${q}" placeholder="Брон рақами, исм, хизмат номи ёки исталган қиймат" aria-label="Қидирув">
         </div>
-        <button type="submit" class="btn btn-primary">Qidirish</button>
+        <button type="submit" class="btn btn-primary">Қидириш</button>
         <a class="btn btn-secondary" th:if="${q != null and !q.isBlank()}"
-           th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${kind.key})}">Tozalash</a>
+           th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${kind.key})}">Тозалаш</a>
     </form>
 
     <div class="card table-wrap reveal" th:if="${!rows.isEmpty()}">
-        <p class="table-caption">Qatorni bosing — Exely'dan kelgan to'liq ma'lumot ochiladi.</p>
+        <p class="table-caption">Қаторни босинг — Exely'дан келган тўлиқ маълумот очилади.</p>
         <table class="raw-table">
             <thead>
             <tr>
@@ -50,13 +50,13 @@
             </thead>
             <tbody>
             <th:block th:each="r : ${rows}">
-                <tr class="raw-row" tabindex="0" th:attr="aria-controls='raw-' + ${r.id}" aria-expanded="false">
+                <tr class="raw-row" tabindex="0" th:attr="aria-controls='рав-' + ${r.id}" aria-expanded="false">
                     <td th:each="v, st : ${r.cells}" th:text="${v}"
                         th:classappend="${kind.columns[st.index].type.name() == 'MONEY' or kind.columns[st.index].type.name() == 'COUNT'} ? 'num'"></td>
                 </tr>
                 <tr class="raw-detail" th:id="'raw-' + ${r.id}" hidden>
                     <td th:attr="colspan=${kind.columns.size()}">
-                        <div class="raw-meta muted" th:text="'Olingan: ' + ${r.fetchedAt}"></div>
+                        <div class="raw-meta muted" th:text="'Олинган: ' + ${r.fetchedAt}"></div>
                         <pre class="raw-json" th:text="${r.json}"></pre>
                     </td>
                 </tr>
@@ -66,15 +66,15 @@
     </div>
 
     <div class="card empty reveal" th:if="${rows.isEmpty()}">
-        <p><strong>Yozuv topilmadi</strong></p>
+        <p><strong>Ёзув топилмади</strong></p>
     </div>
 
-    <nav class="pager reveal" th:if="${pages > 1}" aria-label="Sahifalar">
+    <nav class="pager reveal" th:if="${pages > 1}" aria-label="Саҳифалар">
         <a class="btn btn-secondary" th:classappend="${page <= 1} ? 'disabled'" th:attr="aria-disabled=${page <= 1}"
-           th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${kind.key}, q=${q}, page=${page - 1})}">← Oldingi</a>
+           th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${kind.key}, q=${q}, page=${page - 1})}">← Олдинги</a>
         <span class="pager-info" th:text="${page} + ' / ' + ${pages}"></span>
         <a class="btn btn-secondary" th:classappend="${page >= pages} ? 'disabled'" th:attr="aria-disabled=${page >= pages}"
-           th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${kind.key}, q=${q}, page=${page + 1})}">Keyingi →</a>
+           th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${kind.key}, q=${q}, page=${page + 1})}">Кейинги →</a>
     </nav>
 </main>
 <script>

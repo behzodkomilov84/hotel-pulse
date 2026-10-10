@@ -93,7 +93,7 @@ public class InvoiceReportService {
         if (n <= 2) {
             return joined;
         }
-        return joined.substring(0, joined.indexOf(", ")) + " · +" + (n - 1) + " ta";
+        return joined.substring(0, joined.indexOf(", ")) + " · +" + (n - 1) + " та";
     }
 
     private static int count(String joined) {
@@ -250,7 +250,7 @@ public class InvoiceReportService {
             String stay = stayId(b);
             int rooms = bookingRepository.findByHotelIdAndOriginAndExternalIdStartingWith(
                     hotel.getId(), b.getOrigin(), stayKey.substring(0, stayKey.lastIndexOf('#') + 1)).size();
-            String generalScope = rooms > 1 ? "guruhning umumiy hisobi" : "bron hisobi";
+            String generalScope = rooms > 1 ? "гуруҳнинг умумий ҳисоби" : "брон ҳисоби";
 
             // Exely hisoblari: xonaning o'zi va umumiy (xonasi ko'rsatilmagan).
             List<Account> accounts = new ArrayList<>();
@@ -278,7 +278,7 @@ public class InvoiceReportService {
                     String n = text(inv.get("number"));
                     (isOwn ? own : general).add(n == null ? "—" : n);
                     accounts.add(new Account(n == null ? "—" : n, text(inv.path("payer").get("name")),
-                            isOwn ? "xonaning o'z hisobi" : generalScope, sum));
+                            isOwn ? "хонанинг ўз ҳисоби" : generalScope, sum));
                 }
             }
 
@@ -317,27 +317,27 @@ public class InvoiceReportService {
         for (int i = 0; i < ownItems.size(); i++) {
             if (ownItems.get(i).subtract(amount).abs().compareTo(BigDecimal.ONE) <= 0) {
                 ownItems.remove(i);
-                return String.join(", ", own) + " (xonaning o'z hisobi)";
+                return String.join(", ", own) + " (хонанинг ўз ҳисоби)";
             }
         }
         if (!general.isEmpty()) {
             return String.join(", ", general) + " (" + generalScope + ")";
         }
-        return own.isEmpty() ? null : String.join(", ", own) + " (xonaning o'z hisobi)";
+        return own.isEmpty() ? null : String.join(", ", own) + " (хонанинг ўз ҳисоби)";
     }
 
     /** Exely xizmat turi → tushunarli nom (yashash, erta kirish, kech chiqish); qolganlari — Exely nomi. */
     static String label(int kind, String name) {
         return switch (kind) {
-            case 0 -> "Yashash";
-            case 3 -> "Erta kirish";
-            case 4 -> "Kech chiqish";
+            case 0 -> "Яшаш";
+            case 3 -> "Эрта кириш";
+            case 4 -> "Кеч чиқиш";
             default -> {
                 String n = name == null ? "" : name.toLowerCase(Locale.ROOT);
                 if (n.contains("breakfast") || n.contains("завтрак")) {
-                    yield "Nonushta";
+                    yield "Нонушта";
                 }
-                yield name == null || name.isBlank() ? "Xizmat" : name;
+                yield name == null || name.isBlank() ? "Хизмат" : name;
             }
         };
     }

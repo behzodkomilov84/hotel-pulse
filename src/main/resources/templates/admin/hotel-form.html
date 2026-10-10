@@ -1,136 +1,136 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${hotel == null} ? 'Yangi mehmonxona' : ${hotel.name})}"></head>
+<head th:replace="~{fragments/layout :: head(${hotel == null} ? 'Янги меҳмонхона' : ${hotel.name})}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('admin-hotels')}"></header>
 <main class="container">
     <div class="page-head reveal">
-        <h1 th:text="${hotel == null} ? 'Yangi mehmonxona' : ${hotel.name}">Mehmonxona</h1>
-        <a class="btn btn-secondary" th:href="@{/admin/hotels}">← Ro'yxatga qaytish</a>
+        <h1 th:text="${hotel == null} ? 'Янги меҳмонхона' : ${hotel.name}">Меҳмонхона</h1>
+        <a class="btn btn-secondary" th:href="@{/admin/hotels}">← Рўйхатга қайтиш</a>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
     <form class="card form reveal" method="post"
           th:action="${hotel == null} ? @{/admin/hotels} : @{/admin/hotels/{id}(id=${hotel.id})}">
-        <div class="form-section">Asosiy ma'lumotlar</div>
+        <div class="form-section">Асосий маълумотлар</div>
         <div class="form-grid">
             <div class="field">
-                <label for="name">Nomi *</label>
+                <label for="name">Номи *</label>
                 <input type="text" id="name" name="name" maxlength="150" required th:value="${hotel?.name}">
             </div>
             <div class="field">
-                <label for="city">Shahar</label>
+                <label for="city">Шаҳар</label>
                 <input type="text" id="city" name="city" maxlength="100" th:value="${hotel?.city}">
             </div>
             <div class="field">
-                <label for="roomsCount">Xonalar soni</label>
+                <label for="roomsCount">Хоналар сони</label>
                 <input type="number" id="roomsCount" name="roomsCount" min="0"
                        th:value="${hotel != null} ? ${hotel.roomsCount} : 0">
-                <span class="hint">Bandlik foizi va RevPAR shu son asosida hisoblanadi. Exely PMS ulangan bo'lsa —
-                    har sinxronlashda Exely'dagi xonalar ro'yxatidan avtomatik yangilanadi.</span>
+                <span class="hint">Бандлик фоизи ва RevPAR шу сон асосида ҳисобланади. Exely PMS уланган бўлса —
+                    ҳар синхронлашда Exely'даги хоналар рўйхатидан автоматик янгиланади.</span>
                 <label class="check check-sm">
                     <input type="checkbox" name="roomsCountManual" value="true"
                            th:checked="${hotel != null and hotel.roomsCountManual}">
-                    Qo'lda — Exely'dan yangilanmasin (ro'yxatda sotilmaydigan xonalar bo'lsa)
+                    Қўлда — Exely'дан янгиланмасин (рўйхатда сотилмайдиган хоналар бўлса)
                 </label>
             </div>
             <div class="field">
-                <label for="currency">Valyuta</label>
+                <label for="currency">Валюта</label>
                 <select id="currency" name="currency">
                     <option th:each="c : ${currencies}" th:value="${c}" th:text="${c}"
                             th:selected="${hotel != null ? hotel.currency == c : c == 'UZS'}"></option>
                 </select>
-                <span class="hint">Barcha summalar shu valyutada ko'rsatiladi</span>
+                <span class="hint">Барча суммалар шу валютада кўрсатилади</span>
             </div>
         </div>
 
-        <div class="form-section">Telegram hisoboti</div>
+        <div class="form-section">Telegram ҳисоботи</div>
         <div class="form-grid">
             <div class="field">
-                <label for="dailyReportTime">Kunlik hisobot vaqti</label>
+                <label for="dailyReportTime">Кунлик ҳисобот вақти</label>
                 <input type="time" id="dailyReportTime" name="dailyReportTime" step="60" required
                        th:value="${hotel != null} ? ${#temporals.format(hotel.dailyReportTime, 'HH:mm')} : '05:00'">
-                <span class="hint">Har kuni shu vaqtda (Toshkent vaqti) kechagi kun hisoboti Telegram'ga yuboriladi —
-                    mehmonxonani ko'ra oladigan va Telegram'ni ulagan foydalanuvchilarga. Kuniga bir marta.</span>
+                <span class="hint">Ҳар куни шу вақтда (Тошкент вақти) кечаги кун ҳисоботи Telegram'га юборилади —
+                    меҳмонхонани кўра оладиган ва Telegram'ни улаган фойдаланувчиларга. Кунига бир марта.</span>
             </div>
             <div class="field" th:if="${hotel != null and hotel.dailyReportSentOn != null}">
-                <label>Oxirgi yuborilgan</label>
+                <label>Охирги юборилган</label>
                 <div class="readonly-value" th:text="${#temporals.format(hotel.dailyReportSentOn, 'dd.MM.yyyy')}"></div>
-                <span class="hint">Bugun yuborilgan bo'lsa, vaqt o'zgartirilganda bugun qayta yuborilmaydi — ertadan yangi vaqtda.</span>
+                <span class="hint">Бугун юборилган бўлса, вақт ўзгартирилганда бугун қайта юборилмайди — эртадан янги вақтда.</span>
             </div>
         </div>
 
-        <div class="form-section">Exely integratsiyasi</div>
+        <div class="form-section">Exely интеграцияси</div>
 
         <!-- 1-usul (tavsiya): Exely PMS Universal API kaliti -->
         <div class="integration-option recommended">
             <div class="option-head">
-                <span class="option-title">Exely PMS kaliti</span>
-                <span class="badge badge-ok">Tavsiya etiladi</span>
+                <span class="option-title">Exely PMS калити</span>
+                <span class="badge badge-ok">Тавсия этилади</span>
             </div>
-            <p class="hint">Bronlar, haqiqiy holat (zaselenie/vyselenie), <b>to'lovlar va qarzdorlik</b> keladi. Mehmonxonada Exely PMS (STANDART yoki yuqori obuna) bo'lishi kerak.</p>
+            <p class="hint">Бронлар, ҳақиқий ҳолат (заселение/выселение), <b>тўловлар ва қарздорлик</b> келади. Меҳмонхонада Exely PMS (STANDART ёки юқори обуна) бўлиши керак.</p>
             <details class="howto">
-                <summary>Kalit qayerda?</summary>
+                <summary>Калит қаерда?</summary>
                 <ol>
-                    <li>Exely extranet'da chap menyuda <b>Управление отелем → Настройки</b>.</li>
-                    <li>Yuqoridagi <b>Интеграции</b> yorlig'i.</li>
-                    <li><b>Доступ к Универсальному API Exely PMS</b> bo'limidagi <b>Ключ интеграции</b>ni nusxalab, shu yerga joylashtiring.</li>
+                    <li>Exely эхтранетъда чап менюда <b>Управление отелем → Настройки</b>.</li>
+                    <li>Юқоридаги <b>Интеграции</b> ёрлиғи.</li>
+                    <li><b>Доступ к Универсальному API Exely PMS</b> бўлимидаги <b>Ключ интеграции</b>ни нусхалаб, шу ерга жойлаштиринг.</li>
                 </ol>
-                <p>⚠️ Bu kalit bilan bron va to'lovlarni o'zgartirish ham mumkin — uni faqat shu formaga kiriting, boshqa joyga yubormang.</p>
+                <p>⚠️ Бу калит билан брон ва тўловларни ўзгартириш ҳам мумкин — уни фақат шу формага киритинг, бошқа жойга юборманг.</p>
             </details>
             <div class="field">
                 <label for="exelyPmsKey">Ключ интеграции</label>
                 <input type="password" id="exelyPmsKey" name="exelyPmsKey" maxlength="128" autocomplete="off"
-                       th:placeholder="${hotel != null and hotel.hasPmsKey()} ? 'Saqlangan — almashtirish uchun yangisini kiriting' : 'masalan: 6ac19413-0a62-…'">
-                <span class="hint">Bazada shifrlangan holda saqlanadi va sahifada hech qachon ko'rsatilmaydi.</span>
+                       th:placeholder="${hotel != null and hotel.hasPmsKey()} ? 'Сақланган — алмаштириш учун янгисини киритинг' : 'масалан: 6ac19413-0a62-…'">
+                <span class="hint">Базада шифрланган ҳолда сақланади ва саҳифада ҳеч қачон кўрсатилмайди.</span>
             </div>
         </div>
 
         <!-- 2-usul: Exely Connect (Read Reservation API) — PMS bo'lmasa -->
         <details class="integration-option" th:open="${hotel != null and hotel.usesConnectApi() and !hotel.hasPmsKey()}">
             <summary class="option-head">
-                <span class="option-title">Exely PMS yo'qmi? Exely Connect orqali ulash</span>
-                <span class="badge badge-off">faqat bronlar</span>
+                <span class="option-title">Exely PMS йўқми? Exely Connect орқали улаш</span>
+                <span class="badge badge-off">фақат бронлар</span>
             </summary>
-            <p class="hint">Faqat bronlar va oldindan to'lovlar keladi — qarzdorlik ko'rinmaydi. PMS kaliti kiritilsa, u ustun turadi.</p>
+            <p class="hint">Фақат бронлар ва олдиндан тўловлар келади — қарздорлик кўринмайди. PMS калити киритилса, у устун туради.</p>
             <details class="howto">
-                <summary>Mehmonxona bu ma'lumotlarni qayerdan oladi?</summary>
+                <summary>Меҳмонхона бу маълумотларни қаердан олади?</summary>
                 <ol>
-                    <li>Exely extranet'da <b>Property settings → API connections</b> bo'limiga kirib, <b>Create a connection</b> tugmasini bosadi.</li>
-                    <li>Ulanishga nom beradi (masalan, "HotelPulse").</li>
-                    <li><b>Public APIs</b> yorlig'ida <b>Read Reservation API</b>'ni belgilaydi.</li>
-                    <li><b>Save</b> → <b>Save and enable access</b> tugmalarini bosadi.</li>
-                    <li>Ochilgan sahifadagi <b>client_id</b> va <b>client_secret</b>'ni sizga yuboradi.</li>
+                    <li>Exely extranet'да <b>Property settings → API connections</b> бўлимига кириб, <b>Create a connection</b> тугмасини босади.</li>
+                    <li>Уланишга ном беради (масалан, "HotelPulse").</li>
+                    <li><b>Публик APIs</b> ёрлиғида <b>Read Reservation API</b>'ни белгилайди.</li>
+                    <li><b>Save</b> → <b>Save and enable access</b> тугмаларини босади.</li>
+                    <li>Очилган саҳифадаги <b>клиент_ид</b> ва <b>клиент_секрет</b>'ни сизга юборади.</li>
                 </ol>
-                <p>Mehmonxona ID — Exely'dagi raqamli identifikator (bron raqamining o'rtasidagi son ham shu: 20210325-<b>500360</b>-6987835).</p>
+                <p>Меҳмонхона ID — Exely'даги рақамли идентификатор (брон рақамининг ўртасидаги сон ҳам шу: 20210325-<b>500360</b>-6987835).</p>
             </details>
             <div class="form-grid">
                 <div class="field">
-                    <label for="exelyPropertyId">Mehmonxona ID (property ID)</label>
+                    <label for="exelyPropertyId">Меҳмонхона ID (property ID)</label>
                     <input type="text" id="exelyPropertyId" name="exelyPropertyId" maxlength="64" inputmode="numeric"
-                           placeholder="masalan, 500360" th:value="${hotel?.exelyPropertyId}">
+                           placeholder="масалан, 500360" th:value="${hotel?.exelyPropertyId}">
                 </div>
                 <div class="field">
-                    <label for="exelyClientId">Client ID</label>
+                    <label for="exelyClientId">Клиент ID</label>
                     <input type="text" id="exelyClientId" name="exelyClientId" maxlength="128" autocomplete="off"
                            th:value="${hotel?.exelyClientId}">
                 </div>
                 <div class="field field-wide">
-                    <label for="exelyClientSecret">Client Secret</label>
+                    <label for="exelyClientSecret">Клиент Секрет</label>
                     <input type="password" id="exelyClientSecret" name="exelyClientSecret" autocomplete="new-password"
-                           th:placeholder="${hotel != null and hotel.hasExelySecret()} ? 'Saqlangan — almashtirish uchun yangisini kiriting' : 'Mehmonxona bergan client_secret (bo\'lmasa bo\'sh qoldiring)'">
-                    <span class="hint">Bazada shifrlangan holda saqlanadi va sahifada hech qachon ko'rsatilmaydi.</span>
+                           th:placeholder="${hotel != null and hotel.hasExelySecret()} ? 'Сақланган — алмаштириш учун янгисини киритинг' : 'Меҳмонхона берган клиент_секрет (бўлмаса бўш қолдиринг)'">
+                    <span class="hint">Базада шифрланган ҳолда сақланади ва саҳифада ҳеч қачон кўрсатилмайди.</span>
                 </div>
             </div>
         </details>
 
         <label class="check">
-            <input type="checkbox" name="active" value="true" th:checked="${hotel == null or hotel.active}"> Faol
+            <input type="checkbox" name="active" value="true" th:checked="${hotel == null or hotel.active}"> Фаол
         </label>
 
         <div class="form-actions">
-            <a class="btn btn-secondary" th:href="@{/admin/hotels}">Bekor qilish</a>
-            <button type="submit" class="btn btn-primary">Saqlash</button>
+            <a class="btn btn-secondary" th:href="@{/admin/hotels}">Бекор қилиш</a>
+            <button type="submit" class="btn btn-primary">Сақлаш</button>
         </div>
     </form>
 
@@ -138,35 +138,35 @@
     <section class="card sync-card reveal" th:if="${hotel != null}" th:attr="data-running=${syncRunning}">
         <div class="sync-head">
             <div>
-                <h3 class="card-title">Exely sinxronizatsiyasi</h3>
-                <p class="subtitle" th:unless="${hotel.exelyConnected}">Ulanish uchun yuqorida Exely PMS kalitini kiritib saqlang.</p>
+                <h3 class="card-title">Exely синхронизацияси</h3>
+                <p class="subtitle" th:unless="${hotel.exelyConnected}">Уланиш учун юқорида Exely PMS калитини киритиб сақланг.</p>
                 <p class="subtitle" th:if="${hotel.exelyConnected}"
-                   th:text="(${hotel.hasPmsKey()} ? 'Exely PMS orqali' : 'Exely Connect orqali') + ' — avtomatik ravishda har 30 daqiqada yangilanadi.'">Avtomatik ravishda har 30 daqiqada yangilanadi.</p>
+                   th:text="(${hotel.hasPmsKey()} ? 'Exely PMS орқали' : 'Exely Connect орқали') + ' — автоматик равишда ҳар 30 дақиқада янгиланади.'">Автоматик равишда ҳар 30 дақиқада янгиланади.</p>
             </div>
-            <span th:if="${syncRunning}" class="badge badge-role"><span class="spinner"></span>Sinxronlanmoqda…</span>
-            <span th:if="${!syncRunning and hotel.exelyLastSyncOk == true}" class="badge badge-ok">Ishlayapti</span>
-            <span th:if="${!syncRunning and hotel.exelyLastSyncOk == false}" class="badge badge-warn">Xatolik</span>
-            <span th:if="${!syncRunning and hotel.exelyLastSyncOk == null}" class="badge badge-off">Hali sinxronlanmagan</span>
+            <span th:if="${syncRunning}" class="badge badge-role"><span class="spinner"></span>Синхронланмоқда…</span>
+            <span th:if="${!syncRunning and hotel.exelyLastSyncOk == true}" class="badge badge-ok">Ишлаяпти</span>
+            <span th:if="${!syncRunning and hotel.exelyLastSyncOk == false}" class="badge badge-warn">Хатолик</span>
+            <span th:if="${!syncRunning and hotel.exelyLastSyncOk == null}" class="badge badge-off">Ҳали синхронланмаган</span>
         </div>
 
         <dl class="sync-meta" th:if="${hotel.exelyLastSyncAt != null}">
             <div>
-                <dt>Oxirgi sinxronlash</dt>
+                <dt>Охирги синхронлаш</dt>
                 <dd th:text="${#temporals.format(hotel.exelyLastSyncAt, 'dd.MM.yyyy HH:mm')}"></dd>
             </div>
             <div>
-                <dt>Natija</dt>
+                <dt>Натижа</dt>
                 <dd th:text="${hotel.exelyLastSyncMessage} ?: '—'"
                     th:classappend="${hotel.exelyLastSyncOk == false} ? 'text-danger'"></dd>
             </div>
         </dl>
 
         <div class="archive" th:if="${archive != null and !archive.isEmpty()}">
-            <h4 class="archive-title">Exely'dan olingan ma'lumotlar <span class="muted">— tahlillar uchun bazada saqlanadi</span></h4>
+            <h4 class="archive-title">Exely'дан олинган маълумотлар <span class="muted">— таҳлиллар учун базада сақланади</span></h4>
             <div class="archive-grid">
                 <a class="archive-item" th:each="e : ${archive}"
                    th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${e.key})}"
-                   th:title="'Ochish: ' + (${archiveLabels[e.key]} ?: ${e.key})">
+                   th:title="'Очиш: ' + (${archiveLabels[e.key]} ?: ${e.key})">
                     <b th:text="${@fmt.number(e.value)}">0</b>
                     <span th:text="${archiveLabels[e.key]} ?: ${e.key}"></span>
                 </a>
@@ -175,12 +175,12 @@
 
         <div class="verify" th:if="${hotel.hasPmsKey()}">
             <div class="verify-head">
-                <h4 class="archive-title">Exely bilan solishtirish
+                <h4 class="archive-title">Exely билан солиштириш
                     <span class="muted" th:if="${verify != null}"
                           th:text="'— ' + ${#temporals.format(verify.at, 'dd.MM.yyyy HH:mm')}"></span></h4>
-                <span class="badge badge-ok" th:if="${verify != null and verify.ok}">Hammasi mos</span>
-                <span class="badge badge-warn" th:if="${verify != null and !verify.ok}">Farq bor</span>
-                <span class="badge badge-off" th:if="${verify == null}">Hali tekshirilmagan</span>
+                <span class="badge badge-ok" th:if="${verify != null and verify.ok}">Ҳаммаси мос</span>
+                <span class="badge badge-warn" th:if="${verify != null and !verify.ok}">Фарқ бор</span>
+                <span class="badge badge-off" th:if="${verify == null}">Ҳали текширилмаган</span>
             </div>
             <p class="ai-error" th:if="${verify != null and verify.error != null}" th:text="${verify.error}"></p>
             <div class="verify-list" th:if="${verify != null}">
@@ -196,27 +196,27 @@
                     </ul>
                 </details>
             </div>
-            <p class="hint">Har kuni 04:30 da avtomatik tekshiriladi: bronlar ro'yxati, har kunning xizmatlari (soni va summasi),
-                har oyning to'lovlari — Exely'dan hozir olingan ma'lumot bilan.</p>
+            <p class="hint">Ҳар куни 04:30 да автоматик текширилади: бронлар рўйхати, ҳар куннинг хизматлари (сони ва суммаси),
+                ҳар ойнинг тўловлари — Exely'дан ҳозир олинган маълумот билан.</p>
         </div>
 
         <div class="sync-actions" th:if="${hotel.exelyConnected}">
             <form method="post" th:action="@{/admin/hotels/{id}/exely/test(id=${hotel.id})}">
-                <button type="submit" class="btn btn-secondary">Ulanishni tekshirish</button>
+                <button type="submit" class="btn btn-secondary">Уланишни текшириш</button>
             </form>
             <form method="post" th:action="@{/admin/hotels/{id}/exely/sync(id=${hotel.id})}">
-                <button type="submit" class="btn btn-primary" th:disabled="${syncRunning}">Hozir sinxronlash</button>
+                <button type="submit" class="btn btn-primary" th:disabled="${syncRunning}">Ҳозир синхронлаш</button>
             </form>
             <form method="post" th:if="${hotel.hasPmsKey()}" th:action="@{/admin/hotels/{id}/exely/verify(id=${hotel.id})}">
-                <button type="submit" class="btn btn-secondary" th:disabled="${syncRunning}">Exely bilan solishtirish</button>
+                <button type="submit" class="btn btn-secondary" th:disabled="${syncRunning}">Exely билан солиштириш</button>
             </form>
             <form method="post" th:action="@{/admin/hotels/{id}/exely/reset(id=${hotel.id})}"
-                  onsubmit="return confirm('Exely\'dagi barcha ma\'lumotlar boshidan qayta yuklanadi (bir necha daqiqa). Davom etasizmi?')">
-                <button type="submit" class="btn btn-secondary" th:disabled="${syncRunning}">Hammasini boshidan yuklash</button>
+                  onsubmit="return confirm('Exely\'даги барча маълумотлар бошидан қайта юкланади (бир неча дақиқа). Давом этасизми?')">
+                <button type="submit" class="btn btn-secondary" th:disabled="${syncRunning}">Ҳаммасини бошидан юклаш</button>
             </form>
             <form method="post" class="push-right" th:action="@{/admin/hotels/{id}/exely/disconnect(id=${hotel.id})}"
-                  onsubmit="return confirm('Exely ulanishini o\'chirasizmi? Olingan bronlar saqlanib qoladi.')">
-                <button type="submit" class="btn btn-danger">Ulanishni o'chirish</button>
+                  onsubmit="return confirm('Exely уланишини ўчирасизми? Олинган бронлар сақланиб қолади.')">
+                <button type="submit" class="btn btn-danger">Уланишни ўчириш</button>
             </form>
         </div>
     </section>

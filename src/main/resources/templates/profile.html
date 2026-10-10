@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head('Profil')}"></head>
+<head th:replace="~{fragments/layout :: head('Профил')}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('profile')}"></header>
 <main class="container">
     <div class="page-head reveal">
         <div>
-            <h1>Profil</h1>
-            <p class="subtitle">Hisob ma'lumotlari va Telegram bildirishnomalari</p>
+            <h1>Профил</h1>
+            <p class="subtitle">Ҳисоб маълумотлари ва Telegram билдиришномалари</p>
         </div>
     </div>
     <!-- Modal formadagi xato modal ichida ko'rsatiladi — bu yerda takrorlanmaydi. -->
@@ -20,27 +20,27 @@
         <!-- ===== Hisob ===== -->
         <section class="card">
             <div class="profile-head">
-                <span class="avatar avatar-lg" th:text="${#strings.toUpperCase(#strings.substring(user.fullName != null and !user.fullName.isBlank() ? user.fullName : user.username, 0, 1))}">A</span>
+                <span class="avatar avatar-lg" th:text="${#strings.toUpperCase(#strings.substring(user.fullName != null and !user.fullName.isBlank() ? user.fullName : user.username, 0, 1))}">А</span>
                 <div>
-                    <h3 class="card-title" th:text="${user.fullName != null and !user.fullName.isBlank() ? user.fullName : user.username}">Ism</h3>
-                    <span class="badge badge-role" th:text="${user.role.label}">Rol</span>
+                    <h3 class="card-title" th:text="${user.fullName != null and !user.fullName.isBlank() ? user.fullName : user.username}">Исм</h3>
+                    <span class="badge badge-role" th:text="${user.role.label}">Рол</span>
                 </div>
             </div>
             <dl class="info-list">
-                <div><dt>Login</dt><dd th:text="${user.username}"></dd></div>
-                <div><dt>Telefon</dt><dd th:text="${user.phone} ?: '—'"></dd></div>
-                <div sec:authorize="!hasRole('OWNER')"><dt>Mehmonxonalar</dt><dd th:text="${user.hotels.size()} + ' ta'"></dd></div>
-                <div sec:authorize="hasRole('OWNER')"><dt>Mehmonxonalar</dt><dd>Barchasi</dd></div>
+                <div><dt>Логин</dt><dd th:text="${user.username}"></dd></div>
+                <div><dt>Телефон</dt><dd th:text="${user.phone} ?: '—'"></dd></div>
+                <div sec:authorize="!hasRole('OWNER')"><dt>Меҳмонхоналар</dt><dd th:text="${user.hotels.size()} + ' та'"></dd></div>
+                <div sec:authorize="hasRole('OWNER')"><dt>Меҳмонхоналар</dt><dd>Барчаси</dd></div>
             </dl>
 
             <div class="profile-actions">
                 <button type="button" class="btn btn-secondary" data-modal-open="editModal">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                    Tahrirlash
+                    Таҳрирлаш
                 </button>
                 <button type="button" class="btn btn-secondary" data-modal-open="passwordModal">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                    Parolni o'zgartirish
+                    Паролни ўзгартириш
                 </button>
             </div>
         </section>
@@ -53,48 +53,48 @@
                 </span>
                 <div>
                     <h3 class="card-title">Telegram</h3>
-                    <span class="badge badge-ok" th:if="${user.telegramChatId != null}">Ulangan</span>
-                    <span class="badge badge-off" th:if="${user.telegramChatId == null}">Ulanmagan</span>
+                    <span class="badge badge-ok" th:if="${user.telegramChatId != null}">Уланган</span>
+                    <span class="badge badge-off" th:if="${user.telegramChatId == null}">Уланмаган</span>
                 </div>
             </div>
 
             <th:block th:if="${botUsername == null}">
-                <p class="muted">Telegram bot hali sozlanmagan.</p>
-                <p class="note" sec:authorize="hasRole('OWNER')">Administrator uchun: @BotFather'dan token olib, serverda <code>TELEGRAM_BOT_TOKEN</code> o'zgaruvchisiga yozing.</p>
+                <p class="muted">Telegram бот ҳали созланмаган.</p>
+                <p class="note" sec:authorize="hasRole('OWNER')">Администратор учун: @BotFather'дан токен олиб, серверда <code>TELEGRAM_BOT_TOKEN</code> ўзгарувчисига ёзинг.</p>
             </th:block>
 
             <th:block th:if="${botUsername != null and user.telegramChatId == null}">
                 <ul class="feature-list">
-                    <li>📊 Bugungi, haftalik va oylik ko'rsatkichlar bir tugmada</li>
-                    <li th:text="'☀️ Kechagi kun hisoboti — ' + ${dailyReportWhen}">☀️ Kechagi kun hisoboti — har kuni ertalab</li>
-                    <li>⚠️ Qarzdorlik haqida tezkor ma'lumot</li>
+                    <li>📊 Бугунги, ҳафталик ва ойлик кўрсаткичлар бир тугмада</li>
+                    <li th:text="'☀️ Кечаги кун ҳисоботи — ' + ${dailyReportWhen}">☀️ Кечаги кун ҳисоботи — ҳар куни эрталаб</li>
+                    <li>⚠️ Қарздорлик ҳақида тезкор маълумот</li>
                 </ul>
                 <form method="post" th:action="@{/profile/telegram/link}" target="_blank" data-wait-link>
-                    <button type="submit" class="btn btn-telegram btn-block">Telegram'ni ulash</button>
+                    <button type="submit" class="btn btn-telegram btn-block">Telegram'ни улаш</button>
                 </form>
-                <p class="note">Telegram ochiladi — <b>Start</b> tugmasini bosing. Havola 15 daqiqa amal qiladi.</p>
+                <p class="note">Telegram очилади — <b>Старт</b> тугмасини босинг. Ҳавола 15 дақиқа амал қилади.</p>
             </th:block>
 
             <th:block th:if="${botUsername != null and user.telegramChatId != null}">
                 <p class="muted">
-                    <a th:href="'https://t.me/' + ${botUsername}" target="_blank" rel="noopener" th:text="'@' + ${botUsername}">@bot</a>
+                    <a th:href="'https://t.me/' + ${botUsername}" target="_blank" rel="noopener" th:text="'@' + ${botUsername}">@бот</a>
                     <span th:if="${user.telegramLinkedAt != null}"
-                          th:text="' · ' + ${#temporals.format(user.telegramLinkedAt, 'dd.MM.yyyy')} + ' dan beri'"></span>
+                          th:text="' · ' + ${#temporals.format(user.telegramLinkedAt, 'dd.MM.yyyy')} + ' дан бери'"></span>
                 </p>
                 <form method="post" th:action="@{/profile/telegram/daily-report}" class="switch-row">
                     <div>
-                        <div class="switch-title">Kunlik hisobot</div>
-                        <div class="note" th:text="'Kechagi kun natijalari — ' + ${dailyReportWhen}">Kechagi kun natijalari — har kuni ertalab</div>
+                        <div class="switch-title">Кунлик ҳисобот</div>
+                        <div class="note" th:text="'Кечаги кун натижалари — ' + ${dailyReportWhen}">Кечаги кун натижалари — ҳар куни эрталаб</div>
                     </div>
                     <label class="switch">
                         <input type="checkbox" name="enabled" value="true" th:checked="${user.telegramDailyReport}"
-                               onchange="this.form.submit()" aria-label="Kunlik hisobot">
+                               onchange="this.form.submit()" aria-label="Кунлик ҳисобот">
                         <span class="slider"></span>
                     </label>
                 </form>
                 <form method="post" th:action="@{/profile/telegram/unlink}"
-                      onsubmit="return confirm('Telegram hisobingizdan uzilsinmi?')">
-                    <button type="submit" class="btn btn-danger btn-block">Telegram'ni uzish</button>
+                      onsubmit="return confirm('Telegram ҳисобингиздан узилсинми?')">
+                    <button type="submit" class="btn btn-danger btn-block">Telegram'ни узиш</button>
                 </form>
             </th:block>
         </section>
@@ -104,24 +104,24 @@
     <dialog class="modal" id="editModal" aria-labelledby="editModalTitle" th:attr="data-open-on-load=${editOpen}">
         <form class="form" method="post" th:action="@{/profile}">
             <div class="modal-head">
-                <h3 id="editModalTitle">Ma'lumotlarni tahrirlash</h3>
-                <button type="button" class="modal-close" data-modal-close aria-label="Yopish">×</button>
+                <h3 id="editModalTitle">Маълумотларни таҳрирлаш</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Ёпиш">×</button>
             </div>
             <div class="alert alert-error" role="alert" th:if="${editOpen != null and error != null}" th:text="${error}"></div>
             <div class="field">
-                <label for="fullName">F.I.Sh.</label>
+                <label for="fullName">Ф.И.Ш.</label>
                 <input type="text" id="fullName" name="fullName" maxlength="150" autocomplete="name"
-                       th:value="${user.fullName}" placeholder="Ism Familiya">
+                       th:value="${user.fullName}" placeholder="Исм Фамилия">
             </div>
             <div class="field">
-                <label for="phone">Telefon</label>
+                <label for="phone">Телефон</label>
                 <input type="text" id="phone" name="phone" maxlength="32" inputmode="tel" autocomplete="tel"
                        th:value="${user.phone}" placeholder="+998 90 123 45 67">
             </div>
-            <p class="note">Login, rol va mehmonxonalarni faqat platforma egasi o'zgartiradi.</p>
+            <p class="note">Логин, рол ва меҳмонхоналарни фақат платформа эгаси ўзгартиради.</p>
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary" data-modal-close>Bekor qilish</button>
-                <button type="submit" class="btn btn-primary">Saqlash</button>
+                <button type="button" class="btn btn-secondary" data-modal-close>Бекор қилиш</button>
+                <button type="submit" class="btn btn-primary">Сақлаш</button>
             </div>
         </form>
     </dialog>
@@ -130,37 +130,37 @@
     <dialog class="modal" id="passwordModal" aria-labelledby="passwordModalTitle" th:attr="data-open-on-load=${passwordOpen}">
         <form class="form" method="post" th:action="@{/profile/password}" data-password-form>
             <div class="modal-head">
-                <h3 id="passwordModalTitle">Parolni o'zgartirish</h3>
-                <button type="button" class="modal-close" data-modal-close aria-label="Yopish">×</button>
+                <h3 id="passwordModalTitle">Паролни ўзгартириш</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Ёпиш">×</button>
             </div>
             <div class="alert alert-error" role="alert" th:if="${passwordOpen != null and error != null}" th:text="${error}"></div>
             <div class="field">
-                <label for="currentPassword">Joriy parol</label>
+                <label for="currentPassword">Жорий парол</label>
                 <div class="password-wrap">
                     <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
-                    <button type="button" class="pw-toggle" aria-label="Parolni ko'rsatish">👁</button>
+                    <button type="button" class="pw-toggle" aria-label="Паролни кўрсатиш">👁</button>
                 </div>
             </div>
             <div class="field">
-                <label for="newPassword">Yangi parol</label>
+                <label for="newPassword">Янги парол</label>
                 <div class="password-wrap">
                     <input type="password" id="newPassword" name="newPassword" required minlength="8" autocomplete="new-password">
-                    <button type="button" class="pw-toggle" aria-label="Parolni ko'rsatish">👁</button>
+                    <button type="button" class="pw-toggle" aria-label="Паролни кўрсатиш">👁</button>
                 </div>
                 <div class="meter"><div class="meter-fill" data-strength></div></div>
-                <span class="hint" data-strength-label>Kamida 8 belgi</span>
+                <span class="hint" data-strength-label>Камида 8 белги</span>
             </div>
             <div class="field">
-                <label for="confirmPassword">Yangi parolni takrorlang</label>
+                <label for="confirmPassword">Янги паролни такрорланг</label>
                 <div class="password-wrap">
                     <input type="password" id="confirmPassword" name="confirmPassword" required minlength="8" autocomplete="new-password">
-                    <button type="button" class="pw-toggle" aria-label="Parolni ko'rsatish">👁</button>
+                    <button type="button" class="pw-toggle" aria-label="Паролни кўрсатиш">👁</button>
                 </div>
-                <span class="hint text-danger" data-confirm-error hidden>Parollar bir xil emas</span>
+                <span class="hint text-danger" data-confirm-error hidden>Пароллар бир хил эмас</span>
             </div>
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary" data-modal-close>Bekor qilish</button>
-                <button type="submit" class="btn btn-primary">Parolni o'zgartirish</button>
+                <button type="button" class="btn btn-secondary" data-modal-close>Бекор қилиш</button>
+                <button type="submit" class="btn btn-primary">Паролни ўзгартириш</button>
             </div>
         </form>
     </dialog>

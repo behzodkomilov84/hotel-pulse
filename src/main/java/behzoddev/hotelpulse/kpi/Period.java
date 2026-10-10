@@ -20,17 +20,17 @@ public record Period(String key, LocalDate from, LocalDate to) {
     public static final Map<String, String> OPTIONS = new LinkedHashMap<>();
 
     static {
-        OPTIONS.put("today", "Bugun");
-        OPTIONS.put("7d", "7 kun");
-        OPTIONS.put("30d", "30 kun");
-        OPTIONS.put("month", "Shu oy");
-        OPTIONS.put("prevmonth", "O'tgan oy");
-        OPTIONS.put("next30", "Kelgusi 30 kun");
+        OPTIONS.put("today", "Бугун");
+        OPTIONS.put("7d", "7 кун");
+        OPTIONS.put("30d", "30 кун");
+        OPTIONS.put("month", "Шу ой");
+        OPTIONS.put("prevmonth", "Ўтган ой");
+        OPTIONS.put("next30", "Келгуси 30 кун");
     }
 
     public Period {
         if (to.isBefore(from)) {
-            throw new IllegalArgumentException("Davr oxiri boshidan oldin bo'lmasligi kerak");
+            throw new IllegalArgumentException("Давр охири бошидан олдин бўлмаслиги керак");
         }
     }
 

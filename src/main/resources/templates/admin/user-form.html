@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head(${user == null} ? 'Yangi foydalanuvchi' : ${user.username})}"></head>
+<head th:replace="~{fragments/layout :: head(${user == null} ? 'Янги фойдаланувчи' : ${user.username})}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header('admin-users')}"></header>
 <main class="container"
       th:with="isOwner=${user != null and user.role.name() == 'OWNER'}">
     <div class="page-head reveal">
-        <h1 th:text="${user == null} ? 'Yangi foydalanuvchi' : ${user.username}">Foydalanuvchi</h1>
-        <a class="btn btn-secondary" th:href="@{/admin/users}">← Ro'yxatga qaytish</a>
+        <h1 th:text="${user == null} ? 'Янги фойдаланувчи' : ${user.username}">Фойдаланувчи</h1>
+        <a class="btn btn-secondary" th:href="@{/admin/users}">← Рўйхатга қайтиш</a>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
 
@@ -15,39 +15,39 @@
           th:action="${user == null} ? @{/admin/users} : @{/admin/users/{id}(id=${user.id})}">
         <div class="form-grid">
             <div class="field">
-                <label for="username">Login *</label>
+                <label for="username">Логин *</label>
                 <input type="text" id="username" name="username" required maxlength="64"
                        pattern="[A-Za-z0-9_.\-]{3,64}" autocomplete="off" th:value="${user?.username}">
-                <span class="hint">Lotin harflari, raqamlar, _ . - (3–64 belgi)</span>
+                <span class="hint">Лотин ҳарфлари, рақамлар, _ . - (3–64 белги)</span>
             </div>
             <div class="field" th:if="${user == null}">
-                <label for="password">Parol *</label>
+                <label for="password">Парол *</label>
                 <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password">
             </div>
             <div class="field">
-                <label for="fullName">F.I.Sh.</label>
+                <label for="fullName">Ф.И.Ш.</label>
                 <input type="text" id="fullName" name="fullName" maxlength="150" th:value="${user?.fullName}">
             </div>
             <div class="field">
-                <label for="phone">Telefon</label>
+                <label for="phone">Телефон</label>
                 <input type="text" id="phone" name="phone" maxlength="32" placeholder="+998 90 123 45 67" th:value="${user?.phone}">
             </div>
             <div class="field" th:unless="${isOwner}">
-                <label for="role">Roli *</label>
+                <label for="role">Роли *</label>
                 <select id="role" name="role" required>
                     <option th:each="r : ${roles}" th:value="${r}" th:text="${r.label}"
                             th:selected="${user != null and user.role == r}"></option>
                 </select>
             </div>
             <div class="field" th:if="${user != null}">
-                <label for="newPassword">Yangi parol</label>
+                <label for="newPassword">Янги парол</label>
                 <input type="password" id="newPassword" name="newPassword" minlength="8" autocomplete="new-password"
-                       placeholder="O'zgartirmaslik uchun bo'sh qoldiring">
+                       placeholder="Ўзгартирмаслик учун бўш қолдиринг">
             </div>
         </div>
 
         <div class="field" th:unless="${isOwner}">
-            <label>Ko'ra oladigan mehmonxonalari</label>
+            <label>Кўра оладиган меҳмонхоналари</label>
             <div class="check-list" th:if="${!allHotels.isEmpty()}">
                 <label th:each="h : ${allHotels}">
                     <input type="checkbox" name="hotelIds" th:value="${h.id}"
@@ -55,17 +55,17 @@
                     <span th:text="${h.name}"></span>
                 </label>
             </div>
-            <span class="hint" th:if="${allHotels.isEmpty()}">Avval mehmonxona qo'shing.</span>
+            <span class="hint" th:if="${allHotels.isEmpty()}">Аввал меҳмонхона қўшинг.</span>
         </div>
 
         <label class="check" th:if="${user != null and !isOwner}">
-            <input type="checkbox" name="enabled" value="true" th:checked="${user.enabled}"> Faol (kira oladi)
+            <input type="checkbox" name="enabled" value="true" th:checked="${user.enabled}"> Фаол (кира олади)
         </label>
         <input type="hidden" name="enabled" value="true" th:if="${isOwner}">
 
         <div class="form-actions">
-            <a class="btn btn-secondary" th:href="@{/admin/users}">Bekor qilish</a>
-            <button type="submit" class="btn btn-primary">Saqlash</button>
+            <a class="btn btn-secondary" th:href="@{/admin/users}">Бекор қилиш</a>
+            <button type="submit" class="btn btn-primary">Сақлаш</button>
         </div>
     </form>
 </main>

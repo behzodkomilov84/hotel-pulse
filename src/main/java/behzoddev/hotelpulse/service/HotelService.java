@@ -33,7 +33,7 @@ public class HotelService {
     @Transactional(readOnly = true)
     public Hotel getAccessible(CustomUserDetails user, Long hotelId) {
         if (!user.isOwner() && !hotelRepository.isUserLinked(user.getId(), hotelId)) {
-            throw new AccessDeniedException("Bu mehmonxonaga ruxsat yo'q");
+            throw new AccessDeniedException("Бу меҳмонхонага рухсат йўқ");
         }
         return getById(hotelId);
     }
@@ -46,7 +46,7 @@ public class HotelService {
     @Transactional(readOnly = true)
     public Hotel getById(Long id) {
         return hotelRepository.findById(id)
-                .orElseThrow(() -> new NotFoundException("Mehmonxona topilmadi"));
+                .orElseThrow(() -> new NotFoundException("Меҳмонхона топилмади"));
     }
 
     @Transactional
@@ -74,10 +74,10 @@ public class HotelService {
                       String exelyPropertyId, String exelyClientId, String exelyClientSecret,
                       String exelyPmsKey, boolean active, LocalTime dailyReportTime) {
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("Mehmonxona nomi bo'sh bo'lmasligi kerak");
+            throw new IllegalArgumentException("Меҳмонхона номи бўш бўлмаслиги керак");
         }
         if (roomsCount < 0) {
-            throw new IllegalArgumentException("Xonalar soni manfiy bo'lmasligi kerak");
+            throw new IllegalArgumentException("Хоналар сони манфий бўлмаслиги керак");
         }
         Hotel hotel = id == null ? new Hotel() : getById(id);
         hotel.setName(name.trim());
@@ -87,7 +87,7 @@ public class HotelService {
             hotel.setRoomsCountManual(roomsCountManual);
         }
         if (currency == null || !SUPPORTED_CURRENCIES.contains(currency)) {
-            throw new IllegalArgumentException("Valyutani tanlang");
+            throw new IllegalArgumentException("Валютани танланг");
         }
         hotel.setCurrency(currency);
         String newPropertyId = blankToNull(exelyPropertyId);
@@ -109,7 +109,7 @@ public class HotelService {
         if (exelyPmsKey != null && !exelyPmsKey.isBlank()) {
             String key = exelyPmsKey.trim();
             if (!key.matches("[A-Za-z0-9-]{16,128}")) {
-                throw new IllegalArgumentException("Exely PMS kaliti formati noto'g'ri (masalan: 6ac19413-0a62-...)");
+                throw new IllegalArgumentException("Exely PMS калити формати нотўғри (масалан: 6ac19413-0a62-...)");
             }
             if (!key.equals(hotel.getExelyPmsKey())) {
                 hotel.setPmsBookingsSyncedUntil(null);

@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 public class Department {
 
     /** Yangi mehmonxonada tayyor turadigan bo'limlar (tahlil tavsiyalaridagi nomlar). */
-    public static final java.util.List<String> DEFAULTS = java.util.List.of("Resepshn", "Buxgalteriya", "Rahbariyat");
+    public static final java.util.List<String> DEFAULTS = java.util.List.of("Ресепшн", "Бухгалтерия", "Раҳбарият");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

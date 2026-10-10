@@ -2,22 +2,22 @@
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
 <!-- Spring Boot barcha xatolar (403, 404, 500 ...) uchun shu sahifani ko'rsatadi.
      Login qilinmagan holatda ham ochilishi mumkin — shuning uchun header (currentUser) ishlatilmaydi. -->
-<head th:replace="~{fragments/layout :: head('Xatolik')}"></head>
+<head th:replace="~{fragments/layout :: head('Хатолик')}"></head>
 <body>
 <main class="login-page">
     <div class="card login-card error-card reveal" th:with="code=${status} ?: 500">
         <div class="error-code" th:text="${code}">500</div>
         <h1 class="error-title" th:switch="${code}">
-            <span th:case="403">Bu sahifaga ruxsatingiz yo'q</span>
-            <span th:case="404">Sahifa topilmadi</span>
-            <span th:case="*">Nimadir noto'g'ri ketdi</span>
+            <span th:case="403">Бу саҳифага рухсатингиз йўқ</span>
+            <span th:case="404">Саҳифа топилмади</span>
+            <span th:case="*">Нимадир нотўғри кетди</span>
         </h1>
         <p class="subtitle" th:switch="${code}">
-            <span th:case="403">Bu bo'lim boshqa rol uchun mo'ljallangan. Kerak bo'lsa, administrator bilan bog'laning.</span>
-            <span th:case="404">Manzil noto'g'ri yoki sahifa o'chirilgan bo'lishi mumkin.</span>
-            <span th:case="*">Birozdan keyin qayta urinib ko'ring. Xatolik takrorlansa, administratorga xabar bering.</span>
+            <span th:case="403">Бу бўлим бошқа рол учун мўлжалланган. Керак бўлса, администратор билан боғланинг.</span>
+            <span th:case="404">Манзил нотўғри ёки саҳифа ўчирилган бўлиши мумкин.</span>
+            <span th:case="*">Бироздан кейин қайта уриниб кўринг. Хатолик такрорланса, администраторга хабар беринг.</span>
         </p>
-        <a class="btn btn-primary btn-block" th:href="@{/}">Bosh sahifaga qaytish</a>
+        <a class="btn btn-primary btn-block" th:href="@{/}">Бош саҳифага қайтиш</a>
     </div>
 </main>
 </body>
