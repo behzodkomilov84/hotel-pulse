@@ -62,17 +62,17 @@
         <table class="debt-table inv-table">
             <thead>
             <tr>
-                <th:block th:if="${showHotel}"><th th:replace="~{:: sortable('hotel', 'Mehmonxona', '')}"></th></th:block>
-                <th th:replace="~{:: sortable('booking', 'Bron', '')}"></th>
-                <th th:replace="~{:: sortable('guest', 'Mehmon', '')}"></th>
-                <th th:replace="~{:: sortable('rooms', 'Xonalar', 'num')}"></th>
-                <th th:replace="~{:: sortable('departure', 'Yashash', 'col-source')}"></th>
-                <th th:replace="~{:: sortable('category', 'Holat', '')}"></th>
-                <th th:replace="~{:: sortable('debt', 'Qarz', 'num')}"></th>
-                <th th:replace="~{:: sortable('age', 'O\'tdi', 'num col-paid')}"></th>
+                <th:block th:if="${showHotel}"><th th:replace="~{:: sortable('hotel', 'Меҳмонхона', '')}"></th></th:block>
+                <th th:replace="~{:: sortable('booking', 'Брон', '')}"></th>
+                <th th:replace="~{:: sortable('guest', 'Меҳмон', '')}"></th>
+                <th th:replace="~{:: sortable('rooms', 'Хоналар', 'num')}"></th>
+                <th th:replace="~{:: sortable('departure', 'Яшаш', 'col-source')}"></th>
+                <th th:replace="~{:: sortable('category', 'Ҳолат', '')}"></th>
+                <th th:replace="~{:: sortable('debt', 'Қарз', 'num')}"></th>
+                <th th:replace="~{:: sortable('age', 'Ўтди', 'num col-paid')}"></th>
                 <th>Exely ҳисоблари</th>
-                <th th:replace="~{:: sortable('payer', 'To\'lovchi', 'col-total')}"></th>
-                <th th:replace="~{:: sortable('accountTotal', 'Hisob summasi', 'num col-total')}"></th>
+                <th th:replace="~{:: sortable('payer', 'Тўловчи', 'col-total')}"></th>
+                <th th:replace="~{:: sortable('accountTotal', 'Ҳисоб суммаси', 'num col-total')}"></th>
             </tr>
             </thead>
             <!-- Har bir bron — alohida tbody: bron qatori + (ko'p xonali bo'lsa) yashirin xonalar qatorlari. -->
