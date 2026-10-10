@@ -140,6 +140,12 @@ public class KpiService {
         return bookingRepository.existsByHotelId(hotel.getId());
     }
 
+    /** Davr bo'yicha yashash ko'rsatkichlari (hisobotlar uchun). */
+    @Transactional(readOnly = true)
+    public StayMetrics metrics(Hotel hotel, Period period) {
+        return stays(hotel, period);
+    }
+
     private StayMetrics stays(Hotel hotel, Period period) {
         List<Booking> bookings = bookingRepository.findStaysOverlapping(hotel.getId(), period.from(), period.toExclusive());
         return KpiCalculator.calculate(bookings, hotel.getRoomsCount(), period, serviceDays(hotel, period));

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${def.title})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('reports')}"></header>
+<main class="container">
+    <div class="page-head reveal">
+        <div>
+            <a class="back-link" th:href="@{/reports(hotel=${hotel?.id})}">← Hisobotlar</a>
+            <h1 th:text="${def.title}">Hisobot</h1>
+            <p class="subtitle">
+                <span class="badge badge-role" th:text="${def.group}"></span>
+                <span th:if="${def.exely}" th:text="'Exely: ' + ${def.exely}"></span>
+            </p>
+            <p class="muted report-desc" th:text="${def.description}"></p>
+        </div>
+        <div class="head-actions" th:if="${hotel != null and def.table}">
+            <a class="btn btn-secondary"
+               th:href="@{/reports/{k}/export.csv(k=${def.key}, hotel=${hotel.id}, period=${period.key}, from=${period.from}, to=${period.to})}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>
+                Excel
+            </a>
+            <form method="post" th:action="@{/reports/layout/add}" th:unless="${inLayout}">
+                <input type="hidden" name="key" th:value="${def.key}">
+                <input type="hidden" name="back" th:value="'/hotels/' + ${hotel.id}">
+                <button type="submit" class="btn btn-primary">+ Ekranimga qo'shish</button>
+            </form>
+            <a class="btn btn-secondary" th:if="${inLayout}" th:href="@{/hotels/{id}(id=${hotel.id})} + '#block-' + ${def.key}">Ekranimda ✓</a>
+        </div>
+    </div>
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="card empty reveal" th:if="${hotel == null}">
+        <p><strong>Sizga hali mehmonxona biriktirilmagan</strong></p>
+    </div>
+
+    <div class="alert alert-info reveal" th:if="${!def.available}">
+        <span th:text="${def.description} + '. Bu hisobot Exely PMS ichida mavjud, lekin integratsiya API orqali uning ma\'lumoti berilmaydi.'"></span>
+    </div>
+
+    <th:block th:if="${hotel != null and def.table}">
+        <!-- ===== Mehmonxona va davr ===== -->
+        <div class="period-bar reveal">
+            <form method="get" class="report-hotel" th:if="${hotels.size() > 1}">
+                <select name="hotel" aria-label="Mehmonxona" onchange="this.form.submit()">
+                    <option th:each="h : ${hotels}" th:value="${h.id}" th:text="${h.name}" th:selected="${h.id == hotel.id}"></option>
+                </select>
+                <input type="hidden" name="period" th:value="${period.key}">
+                <input type="hidden" name="from" th:value="${period.from}" th:if="${period.key == 'custom'}">
+                <input type="hidden" name="to" th:value="${period.to}" th:if="${period.key == 'custom'}">
+            </form>
+            <nav class="segmented" aria-label="Davr">
+                <a th:each="opt : ${periodOptions}" th:href="@{/reports/{k}(k=${def.key}, hotel=${hotel.id}, period=${opt.key})}"
+                   th:classappend="${period.key == opt.key} ? 'active'" th:text="${opt.value}">Davr</a>
+            </nav>
+            <form class="custom-period" method="get" th:action="@{/reports/{k}(k=${def.key})}">
+                <input type="hidden" name="hotel" th:value="${hotel.id}">
+                <input type="hidden" name="period" value="custom">
+                <input type="date" name="from" required th:value="${period.from}" aria-label="Boshlanish sanasi">
+                <span>—</span>
+                <input type="date" name="to" required th:value="${period.to}" aria-label="Tugash sanasi">
+                <button type="submit" class="btn btn-secondary">Ko'rsatish</button>
+            </form>
+        </div>
+        <p class="period-caption reveal">
+            <strong th:text="${hotel.name}"></strong>
+            <span th:text="'· ' + ${period.label}"></span>
+            <a th:if="${def.group == 'USALI'}" th:href="@{/reports/usali/expenses(hotel=${hotel.id})}">· USALI xarajatlarini kiritish →</a>
+        </p>
+
+        <div class="card reveal report-full">
+            <div th:replace="~{fragments/report-table :: table(${table}, 0)}"></div>
+        </div>
+    </th:block>
+</main>
+</body>
+</html>

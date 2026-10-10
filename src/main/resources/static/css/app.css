@@ -954,3 +954,125 @@ code { font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--
 .dept-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .dept-chip { display: inline-flex; padding: 2px 9px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 12px; font-weight: 700; }
 .dept-intro { margin: 4px 0 0; max-width: 620px; }
+
+/* ---------- Hisobotlar ekrani (mehmonxona sahifasi): bloklar ---------- */
+.ws { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 16px; }
+.ws-block { grid-column: 1 / -1; min-width: 0; position: relative; }
+.ws-block.ws-wide { grid-column: span 2; }
+.ws-block.ws-narrow { grid-column: span 1; }
+.ws-card { margin-bottom: 28px; }
+.ws-edit-bar { display: none; }
+.ws-toolbar {
+    position: sticky; top: 8px; z-index: 40; display: flex; gap: 12px; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; padding: 12px 14px; margin-bottom: 18px; border-radius: 14px;
+    background: var(--glass); backdrop-filter: blur(12px); border: 1px solid var(--primary); box-shadow: var(--shadow-lg);
+}
+.ws-toolbar[hidden] { display: none; }
+.ws-toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ws-toolbar-actions form { margin: 0; }
+body.ws-editing .ws-block {
+    border: 2px dashed var(--border-strong); border-radius: 16px; padding: 10px 10px 0; margin-bottom: 14px;
+    transition: border-color var(--t-fast), opacity var(--t-fast), transform var(--t-fast);
+}
+body.ws-editing .ws-block:hover { border-color: var(--primary); }
+body.ws-editing .ws-edit-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+body.ws-editing .ws-block .reveal, body.ws-editing .ws-block .stagger > * { opacity: 1 !important; transform: none !important; }
+.ws-handle { cursor: grab; color: var(--muted); font-weight: 800; letter-spacing: -2px; padding: 0 6px; user-select: none; }
+.ws-edit-title { flex: 1; font-weight: 700; font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ws-btn {
+    width: 32px; height: 32px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    font: 700 15px/1 inherit; cursor: pointer;
+}
+.ws-btn:hover { border-color: var(--primary); color: var(--primary); }
+.ws-btn.ws-remove:hover { border-color: var(--danger); color: var(--danger); background: var(--danger-soft); }
+.ws-dragging { opacity: .45; }
+.ws-moved { border-color: var(--primary) !important; box-shadow: var(--ring); }
+.ws-removing { opacity: 0; transform: scale(.97); }
+
+/* Jadval blok */
+.report-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.report-card-head .card-title { margin-bottom: 0; }
+.report-card-sub { margin: 2px 0 0; font-size: 12.5px; }
+.report-card-actions { display: flex; gap: 6px; }
+
+/* Hisobot qo'shish oynasi */
+#addReportModal { width: min(860px, calc(100vw - 24px)); }
+.add-report-groups { padding: 14px 22px 22px; display: grid; gap: 18px; max-height: 70vh; overflow: auto; }
+.add-report-group h4 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.add-report-group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.add-report-group li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 12px;
+    border: 1px solid var(--border); border-radius: 12px; }
+.add-report-group li > div { display: grid; gap: 2px; min-width: 0; }
+.add-report-group li .muted { font-size: 12.5px; }
+.add-report-group li form { margin: 0; flex: none; }
+.add-report-group li.unavailable { opacity: .6; }
+
+/* ---------- Hisobot jadvali ---------- */
+.report-scroll { padding: 0; overflow-x: auto; }
+table.rt th { font-size: 11.5px; padding: 10px 12px; position: sticky; top: 0; background: var(--surface); }
+table.rt td { font-size: 13.5px; padding: 8px 12px; }
+table.rt th.num { text-align: right; }
+table.rt tr.rt-section td { background: var(--surface-2); font-weight: 700; color: var(--text); }
+table.rt tr.rt-subtotal td { font-weight: 700; border-top: 1px solid var(--border-strong); }
+table.rt tr.rt-total td { font-weight: 800; border-top: 2px solid var(--border-strong); border-bottom: 0; background: var(--surface-2); }
+table.rt td.neg { color: var(--danger); font-weight: 600; }
+table.rt td.pos { color: var(--success); font-weight: 600; }
+table.rt td.muted { color: var(--muted); }
+table.rt td.strong { font-weight: 800; }
+table.rt td.weekend { color: var(--danger); }
+table.rt td[class*="heat-"] { font-weight: 700; }
+table.rt td.heat-0 { background: color-mix(in srgb, var(--primary) 4%, transparent); }
+table.rt td.heat-1 { background: color-mix(in srgb, var(--primary) 12%, transparent); }
+table.rt td.heat-2 { background: color-mix(in srgb, var(--primary) 22%, transparent); }
+table.rt td.heat-3 { background: color-mix(in srgb, var(--primary) 34%, transparent); }
+table.rt td.heat-4 { background: color-mix(in srgb, var(--primary) 50%, transparent); color: #fff; }
+.rt-more { margin: 8px 2px 0; font-size: 13px; }
+.rt-empty { padding: 24px; }
+.rt-notes { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 12.5px; display: grid; gap: 3px; }
+.report-full { padding: 8px; }
+.report-desc { margin: 6px 0 0; max-width: 720px; }
+.report-hotel select, .period-bar > select, .period-bar input[type=month] {
+    font: inherit; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text);
+}
+
+/* ---------- Hisobotlar katalogi ---------- */
+.catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; align-items: start; }
+.catalog-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.catalog-list li { padding: 10px 10px; border-radius: 10px; display: grid; gap: 4px; }
+.catalog-list li:hover { background: var(--surface-2); }
+.catalog-list li a, .catalog-list li > div:first-child { display: grid; gap: 2px; color: var(--text); }
+.catalog-list li .muted { font-size: 12.5px; }
+.catalog-list li.unavailable { opacity: .6; }
+.catalog-meta { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.catalog-exely { font-size: 11.5px; color: var(--muted); font-style: italic; }
+
+/* ---------- Hisobotlar menyusi (katta) ---------- */
+.nav-menu.mega-menu {
+    min-width: min(980px, calc(100vw - 40px)); grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px 12px; padding: 14px;
+}
+.mega-col { display: grid; align-content: start; gap: 1px; min-width: 0; }
+.mega-head { font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 4px 10px 6px; }
+.mega-menu .mega-col a { padding: 6px 10px; font-size: 13.5px; }
+.mega-foot { grid-column: 1 / -1; display: flex; gap: 8px; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 6px; }
+.mega-foot a { font-weight: 700; color: var(--primary); }
+
+/* ---------- USALI xarajatlari ---------- */
+.usali-dept { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; margin: 0 0 12px; }
+.usali-dept legend { font-weight: 800; padding: 0 6px; }
+.usali-row { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 12px; align-items: center; padding: 4px 0; }
+.usali-row label { font-size: 14px; }
+.usali-row input { font: inherit; text-align: right; padding: 8px 12px; border: 1px solid var(--border); border-radius: 9px;
+    background: var(--surface-2); color: var(--text); font-variant-numeric: tabular-nums; }
+
+@media (max-width: 960px) {
+    .ws-block.ws-wide, .ws-block.ws-narrow { grid-column: 1 / -1; }
+    .nav-menu.mega-menu { grid-template-columns: repeat(2, minmax(0, 1fr)); min-width: min(560px, calc(100vw - 32px)); }
+}
+@media (max-width: 720px) {
+    .nav-menu.mega-menu { grid-template-columns: 1fr; max-height: 70vh; overflow: auto; }
+    .usali-row { grid-template-columns: 1fr; gap: 4px; }
+    .ws-toolbar { top: 0; }
+}
+
+/* hidden atributi har doim ustun (display beruvchi klasslar ham) */
+[hidden] { display: none !important; }

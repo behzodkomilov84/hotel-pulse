@@ -58,6 +58,12 @@ public final class ExelyPmsMapper {
             return result;
         }
         LocalDateTime modified = toLocal(src.lastModified(), zone);
+        // Agent komissiyasi bron bo'yicha — yashashlarga narx ulushi bo'yicha bo'linadi.
+        BigDecimal commission = src.agentCommission() != null && src.agentCommission().amount() != null
+                ? src.agentCommission().amount().amount() : null;
+        BigDecimal bookingTotal = src.roomStays().stream()
+                .map(rs -> rs.totalPrice() != null && rs.totalPrice().amount() != null ? rs.totalPrice().amount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         for (ExelyPmsApi.RoomStay rs : src.roomStays()) {
             LocalDate arrival = datePart(rs.checkInDateTime());
             LocalDate departure = datePart(rs.checkOutDateTime());
@@ -85,6 +91,12 @@ public final class ExelyPmsMapper {
             b.setCurrency(currencyCode(src.currencyId()));
             b.setTotalAmount(money.convert(total, src.currencyId(), arrival));
             b.setBalanceDue(money.convert(due, src.currencyId(), arrival));
+            b.setRoomTypeId(rs.roomTypeId());
+            b.setRoomId(rs.roomId());
+            if (commission != null && commission.signum() > 0 && bookingTotal.signum() > 0) {
+                BigDecimal share = commission.multiply(total).divide(bookingTotal, 2, java.math.RoundingMode.HALF_UP);
+                b.setAgentCommission(money.convert(share, src.currencyId(), arrival));
+            }
 
             LocalDateTime firstSeen = knownBookedAt.get(externalId);
             b.setBookedAt(firstSeen != null ? firstSeen : (modified != null ? modified : arrival.atStartOfDay()));

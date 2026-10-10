@@ -33,8 +33,12 @@ public record StayMetrics(
         return roomRevenue.add(extrasRevenue);
     }
 
-    /** @param revenue kunlik jami daromad (yashash + xizmatlar) */
-    public record DailyPoint(LocalDate date, int roomsSold, double occupancy, BigDecimal revenue) {
+    /** revenue — jami (yashash + xizmatlar); roomRevenue — yashash; mealsRevenue — nonushta/ovqat. */
+    public record DailyPoint(LocalDate date, int roomsSold, double occupancy, BigDecimal revenue,
+                             BigDecimal roomRevenue, BigDecimal mealsRevenue) {
+        public BigDecimal otherRevenue() {
+            return revenue.subtract(roomRevenue).subtract(mealsRevenue);
+        }
     }
 
     /** @param share daromaddagi ulushi, 0..1 */

@@ -30,7 +30,22 @@ public final class ExelyPmsApi {
             Customer customer,
             List<RoomStay> roomStays,
             KeyValue source,
-            String sourceChannelName) {
+            String sourceChannelName,
+            AgentCommission agentCommission) {
+
+        public Booking(String id, String number, String lastModified, String currencyId, Customer customer,
+                       List<RoomStay> roomStays, KeyValue source, String sourceChannelName) {
+            this(id, number, lastModified, currencyId, customer, roomStays, source, sourceChannelName, null);
+        }
+    }
+
+    /** Agent komissiyasi: amount.amount — bron valyutasida. */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record AgentCommission(Money amount) {
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record Money(BigDecimal amount, String currency) {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -52,7 +67,14 @@ public final class ExelyPmsApi {
             /** Confirmed | Cancelled | Pending */
             String bookingStatus,
             GuestCount guestCountInfo,
-            TotalPrice totalPrice) {
+            TotalPrice totalPrice,
+            String roomId,
+            String roomTypeId) {
+
+        public RoomStay(String id, String checkInDateTime, String checkOutDateTime, String status, String bookingStatus,
+                        GuestCount guestCountInfo, TotalPrice totalPrice) {
+            this(id, checkInDateTime, checkOutDateTime, status, bookingStatus, guestCountInfo, totalPrice, null, null);
+        }
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)

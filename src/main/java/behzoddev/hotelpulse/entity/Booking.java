@@ -72,6 +72,17 @@ public class Booking {
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
 
+    /** Exely xona turi (room_type id) va xona (room id; joylashtirilmagan bo'lsa — null). */
+    @Column(name = "room_type_id", length = 32)
+    private String roomTypeId;
+
+    @Column(name = "room_id", length = 32)
+    private String roomId;
+
+    /** Agent (OTA) komissiyasi — mehmonxona valyutasida, yashash ulushi bo'yicha. */
+    @Column(name = "agent_commission", precision = 15, scale = 2)
+    private BigDecimal agentCommission;
+
     public long getNights() {
         return Math.max(1, ChronoUnit.DAYS.between(arrivalDate, departureDate));
     }

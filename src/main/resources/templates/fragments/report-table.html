@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  Jadval hisobot (ReportTable). limit > 0 — mehmonxona ekranidagi blok: faqat birinchi qatorlar, qolgani "To'liq →" sahifasida.
+-->
+<div class="report-table" th:fragment="table(t, limit)">
+    <th:block th:if="${t != null}">
+        <div class="table-wrap report-scroll" th:unless="${t.empty}">
+            <table class="rt">
+                <thead>
+                <tr><th th:each="c : ${t.columns}" th:text="${c.label}" th:classappend="${c.num} ? 'num'"></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="r : ${limit > 0 ? t.head(limit) : t.rows}" th:classappend="${r.kind != null} ? 'rt-' + ${r.kind}">
+                    <td th:each="cell, st : ${r.cells}" th:text="${cell.text}"
+                        th:classappend="(${t.columns[st.index].num} ? 'num ' : '') + (${cell.cls} ?: '')"></td>
+                </tr>
+                </tbody>
+                <tfoot th:if="${t.total != null}">
+                <tr class="rt-total">
+                    <td th:each="cell, st : ${t.total.cells}" th:text="${cell.text}"
+                        th:classappend="(${t.columns[st.index].num} ? 'num ' : '') + (${cell.cls} ?: '')"></td>
+                </tr>
+                </tfoot>
+            </table>
+        </div>
+        <p class="muted rt-more" th:if="${limit > 0 and t.rows.size() > limit}"
+           th:text="'… yana ' + ${t.rows.size() - limit} + ' qator — «To\'liq →»'"></p>
+        <p class="empty rt-empty" th:if="${t.empty}">Bu davr uchun ma'lumot yo'q</p>
+        <ul class="rt-notes" th:if="${!t.notes.isEmpty()}">
+            <li th:each="n : ${t.notes}" th:text="${n}"></li>
+        </ul>
+    </th:block>
+</div>
+</body>
+</html>

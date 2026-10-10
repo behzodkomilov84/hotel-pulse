@@ -13,4 +13,19 @@ public class GlobalModelAdvice {
     public CustomUserDetails currentUser(@AuthenticationPrincipal CustomUserDetails user) {
         return user;
     }
+
+    /** "Hisobotlar" menyusi: guruh → mavjud hisobotlar (katalog o'zgarmas — har safar bir xil). */
+    @ModelAttribute("reportMenu")
+    public java.util.Map<String, java.util.List<behzoddev.hotelpulse.report.ReportCatalog.ReportDef>> reportMenu() {
+        return MENU;
+    }
+
+    private static final java.util.Map<String, java.util.List<behzoddev.hotelpulse.report.ReportCatalog.ReportDef>> MENU;
+
+    static {
+        java.util.Map<String, java.util.List<behzoddev.hotelpulse.report.ReportCatalog.ReportDef>> m = new java.util.LinkedHashMap<>();
+        behzoddev.hotelpulse.report.ReportCatalog.GROUPS.forEach(g -> m.put(g, behzoddev.hotelpulse.report.ReportCatalog.group(g)
+                .stream().filter(behzoddev.hotelpulse.report.ReportCatalog.ReportDef::isAvailable).toList()));
+        MENU = java.util.Collections.unmodifiableMap(m);
+    }
 }

@@ -63,6 +63,11 @@ public class Formats {
         return gap.signum() > 0 ? "hali to'lanmagan qism" : "oldindan to'lovlar ko'proq";
     }
 
+    /** Butun summa, valyutasiz ("1 234 567") — jadvallar uchun (valyuta ustun nomida). */
+    public String amount(BigDecimal amount) {
+        return new DecimalFormat("#,##0", SYMBOLS).format(amount == null ? BigDecimal.ZERO : amount);
+    }
+
     public String pct(double ratio) {
         return new DecimalFormat("0.0", SYMBOLS).format(ratio * 100) + "%";
     }

@@ -44,6 +44,8 @@ public class PageController {
     private final DebtService debtService;
     private final DebtAnalyzer debtAnalyzer;
     private final TaskService taskService;
+    private final behzoddev.hotelpulse.report.LayoutService layoutService;
+    private final behzoddev.hotelpulse.report.ReportService reportService;
 
     @GetMapping("/login")
     public String login() {
@@ -182,6 +184,26 @@ public class PageController {
         model.addAttribute("sourceLabels", s.sources().stream().map(StayMetrics.SourceShare::source).toList());
         model.addAttribute("sourceRevenue", s.sources().stream()
                 .map(x -> x.revenue().setScale(0, RoundingMode.HALF_UP)).map(BigDecimal::longValue).toList());
+
+        // Hisobotlar ekrani: foydalanuvchi tanlagan bloklar (saqlanmagan bo'lsa — standart tarkib).
+        List<String> layout = layoutService.get(user.getId());
+        List<behzoddev.hotelpulse.report.ReportCatalog.ReportDef> blocks = layout.stream()
+                .map(k -> behzoddev.hotelpulse.report.ReportCatalog.find(k).orElseThrow()).toList();
+        java.util.Map<String, behzoddev.hotelpulse.report.ReportTable> tables = new java.util.HashMap<>();
+        for (var b : blocks) {
+            if (b.isTable()) {
+                tables.put(b.key(), reportService.build(b.key(), hotel, p));
+            }
+        }
+        java.util.Map<String, List<behzoddev.hotelpulse.report.ReportCatalog.ReportDef>> groups = new java.util.LinkedHashMap<>();
+        behzoddev.hotelpulse.report.ReportCatalog.GROUPS.forEach(g -> groups.put(g, behzoddev.hotelpulse.report.ReportCatalog.group(g)));
+        model.addAttribute("layout", layout);
+        model.addAttribute("blocks", blocks);
+        model.addAttribute("tables", tables);
+        model.addAttribute("catalogGroups", groups);
+        model.addAttribute("layoutCustom", layoutService.isCustom(user.getId()));
+        model.addAttribute("backUrl", "/hotels/" + hotel.getId() + "?period=" + p.key()
+                + ("custom".equals(p.key()) ? "&from=" + p.from() + "&to=" + p.to() : ""));
         return "hotel";
     }
 }

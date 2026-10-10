@@ -116,7 +116,7 @@ public final class KpiCalculator {
             totalExtras = totalExtras.add(extras[i]);
             totalMeals = totalMeals.add(meals[i]);
             daily.add(new StayMetrics.DailyPoint(from.plusDays(i), roomsSold[i],
-                    ratio(roomsSold[i], roomsCount), revenue[i].add(extras[i])));
+                    ratio(roomsSold[i], roomsCount), revenue[i].add(extras[i]), revenue[i], meals[i]));
         }
         long available = (long) roomsCount * days;
 

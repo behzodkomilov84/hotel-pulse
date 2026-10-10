@@ -19,6 +19,22 @@
         <a th:href="@{/}" th:classappend="${active == 'dashboard'} ? 'active'">Mehmonxonalar</a>
 
         <!-- Ochiladigan menyular: kompyuterda — olib borilganda, telefonda — bosilganda (app.js). -->
+        <div class="nav-group nav-mega" th:if="${reportMenu != null}" th:classappend="${active == 'reports'} ? 'active'">
+            <button type="button" class="nav-toggle" aria-haspopup="true" aria-expanded="false">
+                Hisobotlar <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="nav-menu mega-menu">
+                <div class="mega-col" th:each="g : ${reportMenu}">
+                    <div class="mega-head" th:text="${g.key}"></div>
+                    <a th:each="d : ${g.value}" th:href="@{/reports/{k}(k=${d.key})}" th:text="${d.title}"></a>
+                </div>
+                <div class="mega-foot">
+                    <a th:href="@{/reports}">Barcha hisobotlar →</a>
+                    <a sec:authorize="hasAnyRole('OWNER', 'HOTEL_OWNER', 'MANAGEMENT_COMPANY')" th:href="@{/reports/usali/expenses}">USALI xarajatlari</a>
+                </div>
+            </div>
+        </div>
+
         <div class="nav-group" th:classappend="${active.startsWith('svc-')} ? 'active'">
             <button type="button" class="nav-toggle" aria-haspopup="true" aria-expanded="false">
                 Xizmatlar <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>

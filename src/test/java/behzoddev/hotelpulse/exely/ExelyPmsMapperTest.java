@@ -33,6 +33,29 @@ class ExelyPmsMapperTest {
     }
 
     @Test
+    void roomTypeRoomAndAgentCommissionSplitByStayPrice() {
+        ExelyPmsApi.Booking src = new ExelyPmsApi.Booking("b9", "N-9", "2026-09-30T08:00:00Z", "UZS",
+                new ExelyPmsApi.Customer("Doe", "John"), List.of(
+                new ExelyPmsApi.RoomStay("rs1", "2026-10-01T14:00", "2026-10-03T12:00", "New", "Confirmed",
+                        new ExelyPmsApi.GuestCount(1, 0), new ExelyPmsApi.TotalPrice(new BigDecimal("300000"), BigDecimal.ZERO, BigDecimal.ZERO),
+                        "R101", "T-STD"),
+                new ExelyPmsApi.RoomStay("rs2", "2026-10-01T14:00", "2026-10-03T12:00", "New", "Confirmed",
+                        new ExelyPmsApi.GuestCount(1, 0), new ExelyPmsApi.TotalPrice(new BigDecimal("100000"), BigDecimal.ZERO, BigDecimal.ZERO),
+                        null, "T-DBL")),
+                new ExelyPmsApi.KeyValue("2", "Distribution channel"), "Booking.com",
+                new ExelyPmsApi.AgentCommission(new ExelyPmsApi.Money(new BigDecimal("60000"), "UZS")));
+
+        List<Booking> rows = ExelyPmsMapper.toBookings(src, 5L, TASHKENT, Map.of());
+
+        assertEquals("T-STD", rows.get(0).getRoomTypeId());
+        assertEquals("R101", rows.get(0).getRoomId());
+        assertNull(rows.get(1).getRoomId(), "xona hali joylashtirilmagan");
+        // Komissiya narx ulushi bo'yicha: 300k/400k va 100k/400k.
+        assertEquals(0, new BigDecimal("45000").compareTo(rows.get(0).getAgentCommission()));
+        assertEquals(0, new BigDecimal("15000").compareTo(rows.get(1).getAgentCommission()));
+    }
+
+    @Test
     void mapsStatusesBalanceAndSource() {
         ExelyPmsApi.Booking src = booking(List.of(
                 stay("rs1", "2026-10-01T14:00", "2026-10-03T12:00", "CheckedOut", "Confirmed",

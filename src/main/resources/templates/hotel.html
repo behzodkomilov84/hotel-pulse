@@ -15,8 +15,14 @@
                 <span class="badge badge-warn" th:unless="${hotel.exelyConnected}">Exely ulanmagan</span>
             </p>
         </div>
-        <div class="head-actions" sec:authorize="hasRole('OWNER')">
-            <a class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">Tahrirlash</a>
+        <div class="head-actions">
+            <th:block th:if="${hasData}">
+                <button type="button" class="btn btn-secondary" data-ws-edit>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                    Tahrirlash
+                </button>
+            </th:block>
+            <a sec:authorize="hasRole('OWNER')" class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">Sozlamalar</a>
         </div>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
@@ -33,6 +39,42 @@
 
     <th:block th:if="${hasData}" th:with="s=${kpi.stays}, ps=${kpi.previousStays}">
 
+        <th:block th:if="${blocks.isEmpty() or blocks[0].key != 'today'}"><div th:replace="~{::periodbar}"></div></th:block>
+
+        <!-- ===== Tahrirlash rejimi paneli (Tahrirlash tugmasi bosilganda) ===== -->
+        <div class="ws-toolbar" data-ws-toolbar hidden>
+            <div class="ws-toolbar-text">
+                <strong>Tahrirlash rejimi</strong>
+                <span class="muted">— bloklarni sudrab yoki ↑ ↓ bilan joyini o'zgartiring, ✕ — olib tashlash.</span>
+            </div>
+            <div class="ws-toolbar-actions">
+                <button type="button" class="btn btn-secondary" data-modal-open="addReportModal">+ Hisobot qo'shish</button>
+                <form method="post" th:action="@{/reports/layout/reset}" th:if="${layoutCustom}" data-confirm="Standart tarkib tiklansinmi? Qo'shilgan hisobotlar ekrandan olinadi.">
+                    <input type="hidden" name="back" th:value="${backUrl}">
+                    <button type="submit" class="btn btn-secondary">Standartga qaytarish</button>
+                </form>
+                <button type="button" class="btn btn-secondary" data-ws-cancel>Bekor qilish</button>
+                <form method="post" th:action="@{/reports/layout}" data-ws-save>
+                    <input type="hidden" name="keys">
+                    <input type="hidden" name="back" th:value="${backUrl}">
+                    <button type="submit" class="btn btn-primary">Saqlash</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ===== Hisobotlar ekrani: bloklar foydalanuvchi tanlagan tartibda ===== -->
+        <div class="ws" id="workspace">
+            <section class="ws-block" th:each="b, bStat : ${blocks}" th:id="'block-' + ${b.key}"
+                     th:classappend="'ws-' + ${b.size}" th:attr="data-key=${b.key}">
+                <div class="ws-edit-bar">
+                    <span class="ws-handle" title="Sudrab joyini o'zgartiring" aria-hidden="true">⋮⋮</span>
+                    <span class="ws-edit-title" th:text="${b.title}"></span>
+                    <button type="button" class="ws-btn" data-ws-up aria-label="Yuqoriga">↑</button>
+                    <button type="button" class="ws-btn" data-ws-down aria-label="Pastga">↓</button>
+                    <button type="button" class="ws-btn ws-remove" data-ws-remove aria-label="Olib tashlash">✕</button>
+                </div>
+                <th:block th:switch="${b.key}">
+                <th:block th:case="'today'">
         <!-- ===== Bugun ===== -->
         <h2 class="section-title"><span class="live-dot"></span>Bugun</h2>
         <div class="stats-grid stagger">
@@ -79,29 +121,9 @@
                 <div class="stat-more">Batafsil →</div>
             </a>
         </div>
-
-        <!-- ===== Davr tanlash ===== -->
-        <div class="period-bar reveal">
-            <nav class="segmented" aria-label="Davr">
-                <a th:each="opt : ${periodOptions}"
-                   th:href="@{/hotels/{id}(id=${hotel.id}, period=${opt.key})}"
-                   th:classappend="${kpi.period.key == opt.key} ? 'active'"
-                   th:text="${opt.value}">Davr</a>
-            </nav>
-            <form class="custom-period" method="get" th:action="@{/hotels/{id}(id=${hotel.id})}">
-                <input type="hidden" name="period" value="custom">
-                <input type="date" name="from" required th:value="${kpi.period.from}" aria-label="Boshlanish sanasi">
-                <span>—</span>
-                <input type="date" name="to" required th:value="${kpi.period.to}" aria-label="Tugash sanasi">
-                <button type="submit" class="btn btn-secondary">Ko'rsatish</button>
-            </form>
-        </div>
-        <p class="period-caption reveal">
-            <strong th:text="${kpi.period.label}"></strong>
-            <span th:text="'· taqqoslash: ' + ${kpi.previousPeriod.label}"></span>
-            <span th:if="${kpi.period.to.isAfter(todayDate)}" class="badge badge-role">kelajak — hozircha bron qilingani</span>
-        </p>
-
+                    <th:block th:if="${bStat.first}"><div th:replace="~{::periodbar}"></div></th:block>
+                </th:block>
+                <th:block th:case="'kpi'">
         <!-- ===== Asosiy ko'rsatkichlar ===== -->
         <div class="stats-grid stagger">
             <div class="card stat">
@@ -195,7 +217,8 @@
                 <div class="stat-sub">shu davrda kelganlar</div>
             </div>
         </div>
-
+                </th:block>
+                <th:block th:case="'flow'">
         <!-- ===== Daromad va tushum ===== -->
         <div class="card flow-card reveal" th:with="gap=${s.totalRevenue().subtract(kpi.paymentsReceived)}">
             <h3 class="card-title">Daromad va tushum</h3>
@@ -217,29 +240,87 @@
                 </div>
             </div>
         </div>
-
-        <!-- ===== Grafiklar ===== -->
-        <div class="chart-grid stagger">
-            <div class="card">
-                <h3 class="card-title">Kunlik bandlik va daromad</h3>
-                <div class="chart-box"><canvas id="dailyChart" aria-label="Kunlik bandlik va daromad grafigi" role="img"></canvas></div>
-            </div>
-            <div class="card">
-                <h3 class="card-title">Savdo kanallari</h3>
-                <div class="chart-box chart-box-sm" th:if="${!s.sources.isEmpty()}"><canvas id="sourceChart" aria-label="Savdo kanallari ulushi" role="img"></canvas></div>
-                <table class="compact source-table" th:if="${!s.sources.isEmpty()}">
-                    <colgroup><col><col class="col-pct"><col class="col-sum"></colgroup>
-                    <tr th:each="src, st : ${s.sources}">
-                        <td class="source-name"><span class="swatch" th:style="'background:' + ${palette[st.index % palette.size()]}"></span><span th:text="${src.source}"></span></td>
-                        <td class="num" th:text="${@fmt.pct(src.share)}"></td>
-                        <td class="num" th:text="${@fmt.moneyShort(src.revenue, cur)}"></td>
-                    </tr>
-                </table>
-                <p class="empty" th:if="${s.sources.isEmpty()}">Bu davrda bron yo'q</p>
-            </div>
+                </th:block>
+                <th:block th:case="'daily-chart'">
+                    <div class="card ws-card">
+                        <h3 class="card-title">Kunlik bandlik va daromad</h3>
+                        <div class="chart-box"><canvas id="dailyChart" aria-label="Kunlik bandlik va daromad grafigi" role="img"></canvas></div>
+                    </div>
+                </th:block>
+                <th:block th:case="'sources-chart'">
+                    <div class="card ws-card">
+                        <h3 class="card-title">Savdo kanallari</h3>
+                        <div class="chart-box chart-box-sm" th:if="${!s.sources.isEmpty()}"><canvas id="sourceChart" aria-label="Savdo kanallari ulushi" role="img"></canvas></div>
+                        <table class="compact source-table" th:if="${!s.sources.isEmpty()}">
+                            <colgroup><col><col class="col-pct"><col class="col-sum"></colgroup>
+                            <tr th:each="src, st : ${s.sources}">
+                                <td class="source-name"><span class="swatch" th:style="'background:' + ${palette[st.index % palette.size()]}"></span><span th:text="${src.source}"></span></td>
+                                <td class="num" th:text="${@fmt.pct(src.share)}"></td>
+                                <td class="num" th:text="${@fmt.moneyShort(src.revenue, cur)}"></td>
+                            </tr>
+                        </table>
+                        <p class="empty" th:if="${s.sources.isEmpty()}">Bu davrda bron yo'q</p>
+                    </div>
+                </th:block>
+                <th:block th:case="*">
+                    <div class="card ws-card report-card" th:with="t=${tables[b.key]}">
+                        <div class="report-card-head">
+                            <div>
+                                <h3 class="card-title" th:text="${b.title}">Hisobot</h3>
+                                <p class="muted report-card-sub" th:if="${b.exely}" th:text="'Exely: ' + ${b.exely}"></p>
+                            </div>
+                            <div class="report-card-actions">
+                                <a class="btn btn-secondary btn-sm"
+                                   th:href="@{/reports/{k}/export.csv(k=${b.key}, hotel=${hotel.id}, period=${kpi.period.key}, from=${kpi.period.from}, to=${kpi.period.to})}">Excel</a>
+                                <a class="btn btn-secondary btn-sm"
+                                   th:href="@{/reports/{k}(k=${b.key}, hotel=${hotel.id}, period=${kpi.period.key}, from=${kpi.period.from}, to=${kpi.period.to})}">To'liq →</a>
+                            </div>
+                        </div>
+                        <div th:replace="~{fragments/report-table :: table(${t}, 12)}"></div>
+                    </div>
+                </th:block>
+                </th:block>
+            </section>
         </div>
+
+        <div class="card empty reveal" th:if="${blocks.isEmpty()}">
+            <p><strong>Ekranda hisobot yo'q</strong></p>
+            <p><b>Tahrirlash</b> → <b>+ Hisobot qo'shish</b> bilan kerakli hisobotlarni qo'shing.</p>
+        </div>
+
+        <!-- ===== Hisobot qo'shish: ro'yxatdan (Hisobotlar menyusidagi bilan bir xil) ===== -->
+        <dialog class="modal modal-wide" id="addReportModal" aria-labelledby="addReportTitle">
+            <div class="modal-head">
+                <h3 id="addReportTitle">Hisobot qo'shish</h3>
+                <button type="button" class="modal-close" data-modal-close aria-label="Yopish">×</button>
+            </div>
+            <div class="add-report-groups">
+                <div class="add-report-group" th:each="g : ${catalogGroups}">
+                    <h4 th:text="${g.key}"></h4>
+                    <ul>
+                        <li th:each="d : ${g.value}" th:classappend="${!d.available} ? 'unavailable'">
+                            <div>
+                                <strong th:text="${d.title}"></strong>
+                                <span class="muted" th:text="${d.description}"></span>
+                            </div>
+                            <form method="post" th:action="@{/reports/layout/add}" th:if="${d.available}" data-ws-add>
+                                <input type="hidden" name="key" th:value="${d.key}">
+                                <input type="hidden" name="keys">
+                                <input type="hidden" name="back" th:value="${backUrl}">
+                                <button type="submit" class="btn btn-sm"
+                                        th:classappend="${layout.contains(d.key)} ? 'btn-secondary' : 'btn-primary'"
+                                        th:text="${layout.contains(d.key)} ? 'Ekranda ✓' : '+ Qo\'shish'"
+                                        th:disabled="${layout.contains(d.key)}"></button>
+                            </form>
+                            <span class="badge badge-off" th:unless="${d.available}">Exely bermaydi</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </dialog>
     </th:block>
 </main>
+<script th:src="@{/js/workspace.js}" defer></script>
 
 <th:block th:if="${hasData}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -270,7 +351,9 @@
                 borderColor: grid, borderWidth: 1, padding: 12, cornerRadius: 10, boxPadding: 4, usePointStyle: true
             };
 
+            // Bloklar foydalanuvchi tanloviga ko'ra — grafik ekranda bo'lmasligi mumkin.
             const canvas = document.getElementById('dailyChart');
+            if (canvas) {
             const ctx = canvas.getContext('2d');
             const fill = ctx.createLinearGradient(0, 0, 0, canvas.clientHeight || 320);
             fill.addColorStop(0, primary + '40');
@@ -306,6 +389,7 @@
                     }
                 }
             });
+            }
 
             const sourceCanvas = document.getElementById('sourceChart');
             if (sourceCanvas) {
@@ -323,6 +407,32 @@
             }
         })();
     </script>
+</th:block>
+<!-- Davr paneli: birinchi blok "Bugun" bo'lsa — undan keyin (avvalgi sahifa kabi), aks holda — tepada. -->
+<th:block th:if="${false}">
+<div class="period-wrap" th:fragment="periodbar">
+        <!-- ===== Davr tanlash ===== -->
+        <div class="period-bar reveal">
+            <nav class="segmented" aria-label="Davr">
+                <a th:each="opt : ${periodOptions}"
+                   th:href="@{/hotels/{id}(id=${hotel.id}, period=${opt.key})}"
+                   th:classappend="${kpi.period.key == opt.key} ? 'active'"
+                   th:text="${opt.value}">Davr</a>
+            </nav>
+            <form class="custom-period" method="get" th:action="@{/hotels/{id}(id=${hotel.id})}">
+                <input type="hidden" name="period" value="custom">
+                <input type="date" name="from" required th:value="${kpi.period.from}" aria-label="Boshlanish sanasi">
+                <span>—</span>
+                <input type="date" name="to" required th:value="${kpi.period.to}" aria-label="Tugash sanasi">
+                <button type="submit" class="btn btn-secondary">Ko'rsatish</button>
+            </form>
+        </div>
+        <p class="period-caption reveal">
+            <strong th:text="${kpi.period.label}"></strong>
+            <span th:text="'· taqqoslash: ' + ${kpi.previousPeriod.label}"></span>
+            <span th:if="${kpi.period.to.isAfter(todayDate)}" class="badge badge-role">kelajak — hozircha bron qilingani</span>
+        </p>
+</div>
 </th:block>
 </body>
 </html>
