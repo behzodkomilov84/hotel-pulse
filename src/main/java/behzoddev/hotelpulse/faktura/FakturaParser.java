@@ -78,21 +78,56 @@ public final class FakturaParser {
                         "column_summary_values.column_subtotal_with_taxes", "column_subtotal_with_taxes"));
     }
 
-    /** Didox hujjat turi (ГНК kodi, "002" — ЭСФ) → umumiy tur: 002 → 2, qolganlari → 1000 + kod (xarajatga kirmaydi). */
+    /**
+     * Faktura.uz: ro'yxat elementi (Swagger DocumentInfo) + hujjat tarkibi (GetDocumentsContent, deserializatsiya
+     * qilingan import modeli). Tarkib bo'lmasa — ro'yxatdagi summa (QQS bilan) va yaratilgan sana.
+     *
+     * @param type tur ro'yxat so'rovidagi filtrdan (ro'yxat elementida tur yo'q)
+     */
+    public static Parsed parseFaktura(JsonNode item, JsonNode content, boolean inbox, Integer type) {
+        String party = inbox ? "sender" : "receiver";
+        String info = "head." + party + "." + party + "_info";
+        String member = inbox ? "ownerMember" : "contractorMember";
+        String inn = digits(text(content, info + ".INN", info + ".inn"));
+        String name = text(content, info + ".company_name", info + ".name");
+        if (inn == null) {
+            inn = digits(text(item, member + ".inn", "contractor.inn"));
+        }
+        if (name == null) {
+            name = text(item, member + ".name", "contractor.name");
+        }
+        String sums = "document.column_summary_values.";
+        BigDecimal withVat = decimal(content, sums + "column_subtotal_with_taxes_uzs", sums + "column_subtotal_with_taxes");
+        return new Parsed(
+                text(item, "uniqueId"),
+                type != null ? type : integer(item, "type", "documentType"),
+                integer(item, "status"),
+                text(content, "document.document_number"),
+                firstDate(date(content, "document.document_date"), date(item, "createdDateTime")),
+                inn, name,
+                decimal(content, sums + "column_subtotal_uzs", sums + "column_subtotal"),
+                decimal(content, sums + "column_vat_value_uzs", sums + "column_vat_value"),
+                withVat != null ? withVat : decimal(item, "totalPrice"));
+    }
+
+    private static LocalDate firstDate(LocalDate a, LocalDate b) {
+        return a != null ? a : b;
+    }
+
+    /** Didox'ga xos turlar: 1000 + Didox kodi (xarajatga kirmaydi) — {@link #didoxType}. */
     public static final int DIDOX_TYPE_BASE = 1000;
 
     /**
      * Didox ro'yxat elementi. Holatlar umumiy (Faktura.uz) kodlariga o'giriladi — imzolangan = 24 va h.k.
-     * Didox holatlari (SDK bo'yicha): 0 qoralama, 1 yuborilgan, 2 imzolangan, 3 rad etilgan, 4 bekor qilingan,
-     * 5 xato, 6 qisman imzolangan, 7 imzo kutilmoqda, 8 ishlanmoqda, 9 muddati o'tgan. Xom JSON saqlanadi.
+     * Holat va tur {@link #didoxStatus} / {@link #didoxType} bilan o'giriladi.
+     * Xom JSON saqlanadi.
      */
     public static Parsed parseDidox(JsonNode doc, boolean inbox) {
         String side = inbox ? "seller" : "buyer";
         String typeCode = text(doc, "doctype", "docType", "doc_type", "type");
         Integer type = null;
         if (typeCode != null && typeCode.matches("\\d{1,4}")) {
-            int t = Integer.parseInt(typeCode);
-            type = t == 2 ? 2 : DIDOX_TYPE_BASE + t;
+            type = didoxType(Integer.parseInt(typeCode));
         }
         Integer raw = integer(doc, "doc_status", "docStatus", "status");
         return new Parsed(
@@ -110,15 +145,45 @@ public final class FakturaParser {
                 decimal(doc, "total_sum", "totalSum", "total_delivery_sum_with_vat", "totalDeliverySumWithVat", "sum"));
     }
 
+    /**
+     * Didox holati → umumiy kod. Didox (DIDOX-1C-INTEGRATION hujjati): 0 yaratilgan (qoralama), 1 o'zi imzolagan
+     * (kontragent kutilmoqda), 2 kontragent imzolagan (bizning imzo kerak), 3 imzolangan, 4 rad etilgan, 5 o'chirilgan,
+     * 6 / 60 agent imzosi kutilmoqda, 8 agent imzolagan, 40 yaroqsiz.
+     */
     static int didoxStatus(int s) {
         return switch (s) {
             case 1, 8 -> 21;
-            case 2 -> 24;
-            case 3 -> 23;
-            case 4 -> 34;
-            case 6, 7 -> 22;
-            case 9 -> 27;
+            case 2 -> 22;
+            case 3 -> 24;
+            case 4 -> 23;
+            case 5 -> 27;
+            case 6, 60 -> 26;
+            case 40 -> 34;
             default -> 20;
+        };
+    }
+
+    /**
+     * Didox hujjat turi → umumiy tur: 001 (ЭСФ) va 002 (ЭСФ aktsiz) → 2, 008 (farm ЭСФ) → 25 — xarajatga kiradi;
+     * qolganlari (005 akt, 021/081 qaytarish, 006/061 ishonchnoma, 000 ixtiyoriy) → 1000 + kod.
+     */
+    static int didoxType(int code) {
+        return switch (code) {
+            case 1, 2 -> 2;
+            case 8 -> 25;
+            default -> DIDOX_TYPE_BASE + code;
+        };
+    }
+
+    /** Didox'ga xos turlar nomi (1000 + kod). */
+    public static String didoxTypeLabel(int code) {
+        return switch (code) {
+            case 0 -> "Ихтиёрий ҳужжат";
+            case 5 -> "Акт";
+            case 6, 61 -> "Ишончнома";
+            case 21 -> "Ҳисоб-фактура (қайтариш)";
+            case 81 -> "Ҳисоб-фактура ФАРМ (қайтариш)";
+            default -> "Ҳужжат (тури " + String.format("%03d", code) + ")";
         };
     }
 

@@ -263,20 +263,79 @@ public class FakturaService {
         return sb.toString();
     }
 
+    /** Faktura.uz'dan olinadigan turlar (ro'yxat elementida tur yo'q — har biri alohida so'raladi). */
+    static final List<Integer> FAKTURA_TYPES = List.of(2, 5, 25, 28, 29);
+    /** GetDocumentsContent bitta so'rovidagi hujjatlar. */
+    static final int CONTENT_BATCH = 50;
+
     /** @return {saqlangan, tanilmagan} */
     private int[] fetch(Long hotelId, FakturaAccount a, String token, boolean inbox, LocalDateTime now) {
+        return a.isDidox() ? fetchDidox(hotelId, token, inbox, now) : fetchFaktura(hotelId, a, token, inbox, now);
+    }
+
+    /**
+     * Faktura.uz: tur bo'yicha ro'yxat; yangi yoki o'zgargan (updatedDateTime) hujjatlar uchun tarkibi ham
+     * olinadi (raqam, sana, QQSsiz summa, QQS). Payload — {"list": ..., "content": ...}.
+     */
+    private int[] fetchFaktura(Long hotelId, FakturaAccount a, String token, boolean inbox, LocalDateTime now) {
+        Map<String, String> known = new HashMap<>();
+        jdbc.query("select unique_id, json_unquote(json_extract(payload, '$.list.updatedDateTime')) from faktura_documents"
+                        + " where hotel_id = ? and direction = ?",
+                rs -> {
+                    known.put(rs.getString(1), rs.getString(2));
+                }, hotelId, inbox ? IN : OUT);
         int saved = 0, unknown = 0;
-        int size = a.isDidox() ? DidoxClient.PAGE : FakturaClient.PAGE;
+        int size = FakturaClient.PAGE;
+        for (Integer type : FAKTURA_TYPES) {
+            Map<String, JsonNode> changed = new LinkedHashMap<>();
+            for (int page = 0; page < MAX_PAGES; page++) {
+                FakturaClient.Page p = client.documents(token, a.getCompanyInn(), inbox, page * size, size, type);
+                for (JsonNode item : p.documents()) {
+                    String id = FakturaParser.text(item, "uniqueId");
+                    if (id == null) {
+                        unknown++;
+                        continue;
+                    }
+                    saved++;
+                    String updated = FakturaParser.text(item, "updatedDateTime");
+                    if (!known.containsKey(id) || !java.util.Objects.equals(known.get(id), updated)) {
+                        changed.put(id, item);
+                    }
+                }
+                long seen = (long) (page + 1) * size;
+                if (p.documents().size() < size || (p.totalCount() != null && seen >= p.totalCount())) {
+                    break;
+                }
+            }
+            List<String> ids = new ArrayList<>(changed.keySet());
+            for (int i = 0; i < ids.size(); i += CONTENT_BATCH) {
+                List<String> batch = ids.subList(i, Math.min(i + CONTENT_BATCH, ids.size()));
+                Map<String, JsonNode> contents = client.content(token, a.getCompanyInn(), batch);
+                for (String id : batch) {
+                    JsonNode item = changed.get(id);
+                    JsonNode content = contents.get(id);
+                    Parsed d = FakturaParser.parseFaktura(item, content, inbox, type);
+                    String payload = "{\"list\":" + item + ",\"content\":" + (content == null ? "null" : content.toString()) + "}";
+                    upsert(hotelId, id.length() <= 64 ? id : sha(id), inbox ? IN : OUT, d, payload, now);
+                }
+            }
+        }
+        return new int[]{saved, unknown};
+    }
+
+    private int[] fetchDidox(Long hotelId, String token, boolean inbox, LocalDateTime now) {
+        int saved = 0, unknown = 0;
+        int size = DidoxClient.PAGE;
         for (int page = 0; page < MAX_PAGES; page++) {
-            FakturaClient.Page p = page(a, token, inbox, page, size);
+            FakturaClient.Page p = didox.documents(token, inbox, page + 1, size);
             for (JsonNode doc : p.documents()) {
-                Parsed d = a.isDidox() ? FakturaParser.parseDidox(doc, inbox) : FakturaParser.parse(doc, inbox);
+                Parsed d = FakturaParser.parseDidox(doc, inbox);
                 String id = idOf(d);
                 if (id == null) {
                     unknown++;
                     continue;
                 }
-                String key = a.isDidox() ? "dx:" + id : id;
+                String key = "dx:" + id;
                 upsert(hotelId, key.length() <= 64 ? key : sha(key), inbox ? IN : OUT, d, doc.toString(), now);
                 saved++;
             }
@@ -473,7 +532,7 @@ public class FakturaService {
                 return "—";
             }
             if (type >= FakturaParser.DIDOX_TYPE_BASE) {
-                return "Ҳужжат (тури " + String.format("%03d", type - FakturaParser.DIDOX_TYPE_BASE) + ")";
+                return FakturaParser.didoxTypeLabel(type - FakturaParser.DIDOX_TYPE_BASE);
             }
             return TYPE_LABELS.getOrDefault(type, String.valueOf(type));
         }

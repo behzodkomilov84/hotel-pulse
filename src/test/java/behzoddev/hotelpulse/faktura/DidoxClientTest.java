@@ -79,7 +79,7 @@ class DidoxClientTest {
     @Test
     void didoxDocumentIsNormalized() {
         var doc = JsonMapper.builder().build().readTree("""
-                {"doc_id":"64f0c1","doctype":"002","doc_status":2,"name":"15","doc_date":"2026-09-30",
+                {"doc_id":"64f0c1","doctype":"002","doc_status":3,"name":"15","doc_date":"2026-09-30",
                  "partnerTin":"301234567","partnerCompany":"\\"TOZA SUV\\" MChJ",
                  "total_delivery_sum":1000000,"total_vat_sum":120000,"total_sum":1120000}""");
         FakturaParser.Parsed d = FakturaParser.parseDidox(doc, true);
@@ -91,9 +91,15 @@ class DidoxClientTest {
         assertEquals("301234567", d.counterpartyInn());
         assertEquals(0, new BigDecimal("1000000").compareTo(d.net()));
 
-        var act = JsonMapper.builder().build().readTree("{\"doc_id\":\"x\",\"doctype\":\"005\",\"doc_status\":3}");
+        var act = JsonMapper.builder().build().readTree("{\"doc_id\":\"x\",\"doctype\":\"005\",\"doc_status\":4}");
         FakturaParser.Parsed a = FakturaParser.parseDidox(act, false);
         assertEquals(FakturaParser.DIDOX_TYPE_BASE + 5, a.type());
         assertEquals(23, a.status());
+
+        // Hujjatdagi holatlar: 2 — kontragent imzolagan (bizning imzo kutilmoqda), 5 — o'chirilgan; 001 ham ЭСФ.
+        assertEquals(22, FakturaParser.didoxStatus(2));
+        assertEquals(27, FakturaParser.didoxStatus(5));
+        assertEquals(2, FakturaParser.didoxType(1));
+        assertEquals("Ҳисоб-фактура (қайтариш)", FakturaParser.didoxTypeLabel(21));
     }
 }

@@ -29,7 +29,10 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -106,21 +109,33 @@ class FakturaDbTest {
         staff = new CustomUserDetails(saveUser("fk-staff", Role.HOTEL_STAFF));
         mvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
 
+        // Faktura.uz Swagger shakli: ro'yxat (DocumentInfo) + tarkib (GetDocumentsContent, deserializatsiya qilingan).
         String signedDate = lastMonth.atDay(10).toString();
+        long createdSec = lastMonth.atDay(10).atStartOfDay(java.time.ZoneId.of("Asia/Tashkent")).toEpochSecond();
         when(client.token(anyString(), anyString(), anyString(), anyString()))
                 .thenReturn(new FakturaClient.Token("tok-1", 1_209_600));
-        when(client.documents(eq("tok-1"), eq(INN), eq(true), eq(0), anyInt())).thenReturn(FakturaClient.parsePage("""
+        FakturaClient.Page empty = FakturaClient.parsePage("{\"documents\":[],\"totalCount\":0}");
+        when(client.documents(anyString(), anyString(), anyBoolean(), anyInt(), anyInt(), any())).thenReturn(empty);
+        when(client.documents(anyString(), anyString(), anyBoolean(), anyInt(), anyInt())).thenReturn(empty);
+        when(client.documents(eq("tok-1"), eq(INN), eq(true), eq(0), anyInt(), eq(2))).thenReturn(FakturaClient.parsePage("""
                 {"documents":[
-                  {"UniqueId":"in-1","DocumentType":2,"Status":24,"DocumentNumber":"77","DocumentDate":"%s",
-                   "SellerTin":"%s","SellerName":"Toshkent Elektr MChJ","TotalPrice":1000000,"TotalVat":120000,"TotalPriceWithVat":1120000},
-                  {"UniqueId":"in-2","DocumentType":2,"Status":22,"DocumentNumber":"78","DocumentDate":"%s",
-                   "SellerTin":"%s","SellerName":"Toshkent Elektr MChJ","TotalPrice":500000}
-                ],"totalCount":2}""".formatted(signedDate, SUPPLIER, signedDate, SUPPLIER)));
-        when(client.documents(eq("tok-1"), eq(INN), eq(false), eq(0), anyInt())).thenReturn(FakturaClient.parsePage("""
+                  {"uniqueId":"in-1","title":"Счет-фактура","totalPrice":"1120000","status":24,"createdDateTime":%d,"updatedDateTime":1,
+                   "ownerMember":{"inn":"%s","name":"Toshkent Elektr MChJ"},"contractorMember":{"inn":"%s","name":"Hotel"}},
+                  {"uniqueId":"in-2","title":"Счет-фактура","totalPrice":"500000","status":22,"createdDateTime":%d,"updatedDateTime":1,
+                   "ownerMember":{"inn":"%s","name":"Toshkent Elektr MChJ"},"contractorMember":{"inn":"%s","name":"Hotel"}}
+                ],"totalPrice":0,"totalCount":2}""".formatted(createdSec, SUPPLIER, INN, createdSec, SUPPLIER, INN)));
+        when(client.documents(eq("tok-1"), eq(INN), eq(false), eq(0), anyInt(), eq(2))).thenReturn(FakturaClient.parsePage("""
                 {"documents":[
-                  {"UniqueId":"out-1","DocumentType":2,"Status":24,"DocumentNumber":"5","DocumentDate":"%s",
-                   "BuyerTin":"%s","BuyerName":"\\"SILK ROAD TOURS\\" MChJ","TotalPrice":1785714.29,"TotalVat":214285.71,"TotalPriceWithVat":2000000}
-                ],"totalCount":1}""".formatted(today.minusDays(2), GUEST_COMPANY)));
+                  {"uniqueId":"out-1","title":"Счет-фактура","totalPrice":"2000000","status":24,"createdDateTime":%d,"updatedDateTime":1,
+                   "ownerMember":{"inn":"%s","name":"Hotel"},"contractorMember":{"inn":"%s","name":"\\"SILK ROAD TOURS\\" MChJ"}}
+                ],"totalCount":1}""".formatted(createdSec, INN, GUEST_COMPANY)));
+        when(client.content(eq("tok-1"), eq(INN), anyList())).thenReturn(FakturaClient.parseContent("""
+                {"Success":true,"Documents":[
+                  {"UniqueId":"in-1","Content":"{\\"head\\":{\\"sender\\":{\\"sender_info\\":{\\"INN\\":\\"%s\\",\\"company_name\\":\\"Toshkent Elektr MChJ\\"}}},\\"document\\":{\\"document_number\\":\\"77\\",\\"document_date\\":\\"%s\\",\\"column_summary_values\\":{\\"column_subtotal\\":1000000,\\"column_vat_value\\":120000,\\"column_subtotal_with_taxes\\":1120000}}}"},
+                  {"UniqueId":"out-1","Content":{"head":{"receiver":{"receiver_info":{"INN":"%s","company_name":"\\"SILK ROAD TOURS\\" MChJ"}}},
+                    "document":{"document_number":"5","document_date":"%s",
+                      "column_summary_values":{"column_subtotal":1785714.29,"column_vat_value":214285.71,"column_subtotal_with_taxes":2000000}}}}
+                ]}""".formatted(SUPPLIER, signedDate, GUEST_COMPANY, today.minusDays(2))));
     }
 
     @Test
@@ -197,11 +212,11 @@ class FakturaDbTest {
         when(didox.login(INN, "didox-pass")).thenReturn("user-tok");
         String date = lastMonth.atDay(5).toString();
         when(didox.documents(eq("user-tok"), eq(true), eq(1), anyInt())).thenReturn(DidoxClient.parsePage("""
-                {"data":[{"doc_id":"d-1","doctype":"002","doc_status":2,"name":"9","doc_date":"%s",
+                {"data":[{"doc_id":"d-1","doctype":"002","doc_status":3,"name":"9","doc_date":"%s",
                           "partnerTin":"%s","partnerCompany":"Toshkent Elektr","total_delivery_sum":700000,"total_sum":784000}],
                  "meta":{"page":1,"totalPages":1,"total":1}}""".formatted(date, SUPPLIER)));
         when(didox.documents(eq("user-tok"), eq(false), eq(1), anyInt())).thenReturn(DidoxClient.parsePage("""
-                {"data":[{"doc_id":"d-2","doctype":"002","doc_status":2,"name":"3","doc_date":"%s",
+                {"data":[{"doc_id":"d-2","doctype":"002","doc_status":3,"name":"3","doc_date":"%s",
                           "partnerTin":"%s","partnerCompany":"Silk Road Tours","total_sum":2000000}],
                  "meta":{"page":1,"totalPages":1,"total":1}}""".formatted(today.minusDays(2), GUEST_COMPANY)));
 

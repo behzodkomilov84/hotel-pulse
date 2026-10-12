@@ -80,6 +80,23 @@ class FakturaClientTest {
     }
 
     @Test
+    void typeFilterAndContent() {
+        server.expect(requestTo(API + "/Api/Document/GetDocuments?CompanyInn=301234567&IsInbox=true&Skip=0&Limit=100&Types=2"))
+                .andRespond(withSuccess("{\"documents\":[{\"uniqueId\":\"u1\"}],\"totalCount\":1}", MediaType.APPLICATION_JSON));
+        server.expect(requestTo(API + "/Api/Document/GetDocumentsContent?companyInn=301234567&isDeserialized=true"))
+                .andExpect(method(HttpMethod.POST))
+                .andExpect(header("Authorization", "Bearer tok-1"))
+                .andExpect(content().json("{\"DocumentUniqueIds\":[\"u1\"]}"))
+                .andRespond(withSuccess("{\"Success\":true,\"Documents\":[{\"UniqueId\":\"u1\",\"Content\":\"{\\\"document\\\":{\\\"document_number\\\":\\\"7\\\"}}\"}]}",
+                        MediaType.APPLICATION_JSON));
+
+        assertEquals(1, client.documents("tok-1", "301234567", true, 0, 100, 2).documents().size());
+        var content = client.content("tok-1", "301234567", java.util.List.of("u1"));
+        assertEquals("7", content.get("u1").path("document").path("document_number").asString());
+        server.verify();
+    }
+
+    @Test
     void expiredTokenIsReported() {
         server.expect(requestTo(API + "/Api/Document/GetDocuments?CompanyInn=301234567&IsInbox=true&Skip=0&Limit=1"))
                 .andRespond(withStatus(HttpStatus.UNAUTHORIZED));

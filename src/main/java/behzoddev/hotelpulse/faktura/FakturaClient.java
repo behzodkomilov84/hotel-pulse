@@ -71,15 +71,71 @@ public class FakturaClient {
      * @param inbox true — kiruvchi (bizga kelgan), false — chiquvchi (biz yuborgan)
      */
     public Page documents(String token, String companyInn, boolean inbox, int skip, int limit) {
-        String body = call(() -> api.get().uri(b -> b.path("/Api/Document/GetDocuments")
-                        .queryParam("CompanyInn", companyInn)
-                        .queryParam(inbox ? "IsInbox" : "IsSent", true)
-                        .queryParam("Skip", skip)
-                        .queryParam("Limit", limit)
-                        .build())
+        return documents(token, companyInn, inbox, skip, limit, null);
+    }
+
+    /**
+     * Ro'yxat elementida tur yo'q (Swagger: uniqueId, title, totalPrice, status, created/updatedDateTime,
+     * contractor, ownerMember, contractorMember) — shuning uchun tur bo'yicha alohida so'raladi (types).
+     */
+    public Page documents(String token, String companyInn, boolean inbox, int skip, int limit, Integer type) {
+        String body = call(() -> api.get().uri(b -> {
+                    b.path("/Api/Document/GetDocuments")
+                            .queryParam("CompanyInn", companyInn)
+                            .queryParam(inbox ? "IsInbox" : "IsSent", true)
+                            .queryParam("Skip", skip)
+                            .queryParam("Limit", limit);
+                    if (type != null) {
+                        b.queryParam("Types", type);
+                    }
+                    return b.build();
+                })
                 .header("Authorization", "Bearer " + token).accept(MediaType.APPLICATION_JSON)
                 .retrieve().body(String.class), false);
         return parsePage(body);
+    }
+
+    /**
+     * Hujjatlar tarkibi (POST Api/Document/GetDocumentsContent, isDeserialized=true): uniqueId → hujjat modeli
+     * ({head: {sender/receiver}, document: {document_number, document_date, column_summary_values}}).
+     */
+    public java.util.Map<String, JsonNode> content(String token, String companyInn, List<String> uniqueIds) {
+        if (uniqueIds.isEmpty()) {
+            return java.util.Map.of();
+        }
+        String body = call(() -> api.post().uri(b -> b.path("/Api/Document/GetDocumentsContent")
+                        .queryParam("companyInn", companyInn)
+                        .queryParam("isDeserialized", true)
+                        .build())
+                .header("Authorization", "Bearer " + token)
+                .contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
+                .body(java.util.Map.of("DocumentUniqueIds", uniqueIds))
+                .retrieve().body(String.class), false);
+        return parseContent(body);
+    }
+
+    static java.util.Map<String, JsonNode> parseContent(String body) {
+        JsonNode root = JSON.readTree(body == null || body.isBlank() ? "{}" : body);
+        JsonNode docs = FakturaParser.field(root, "Documents", "documents");
+        java.util.Map<String, JsonNode> result = new java.util.HashMap<>();
+        if (docs != null && docs.isArray()) {
+            for (JsonNode d : docs) {
+                String id = FakturaParser.text(d, "UniqueId");
+                JsonNode c = FakturaParser.field(d, "Content");
+                if (id == null || c == null) {
+                    continue;
+                }
+                if (c.isString()) {
+                    try {
+                        c = JSON.readTree(c.asString());
+                    } catch (RuntimeException e) {
+                        continue;   // JSON emas (masalan, XML) — tarkibsiz qoladi
+                    }
+                }
+                result.put(id, c);
+            }
+        }
+        return result;
     }
 
     /** Javob {documents, totalCount} yoki {Data: {...}} ko'rinishida bo'lishi mumkin — ikkalasini ham qabul qiladi. */
