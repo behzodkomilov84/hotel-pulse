@@ -63,7 +63,11 @@
                 <td class="wrap"><th:block th:if="${a.lastSyncAt != null}"><span th:text="${#temporals.format(a.lastSyncAt, 'dd.MM.yyyy HH:mm')}"></span>
                     <div class="muted" th:text="${a.lastSyncMessage}"></div></th:block><span th:unless="${a.lastSyncAt != null}">—</span></td>
                 <td class="num" th:text="${a.tables}"></td>
-                <td>
+                <td class="fk-form">
+                    <form method="post" th:if="${a.approved and a.kind == 'SHELTER' and a.tables > 0}"
+                          th:action="@{/admin/agents/{id}/import(id=${a.id})}">
+                        <button type="submit" class="btn btn-primary btn-sm">Ҳозир қайта ҳисоблаш</button>
+                    </form>
                     <form method="post" th:action="@{/admin/agents/{id}/delete(id=${a.id})}"
                           onsubmit="return confirm('Агентни ўчирасизми? Унинг калити бошқа ишламайди.')">
                         <button type="submit" class="btn btn-secondary btn-sm">Ўчириш</button>

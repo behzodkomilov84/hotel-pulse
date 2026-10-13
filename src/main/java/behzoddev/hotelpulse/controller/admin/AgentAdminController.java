@@ -24,6 +24,7 @@ public class AgentAdminController {
 
     private final AgentService agents;
     private final HotelService hotelService;
+    private final behzoddev.hotelpulse.agent.ShelterImportService shelterImport;
 
     @GetMapping
     public String list(Model model) {
@@ -54,6 +55,18 @@ public class AgentAdminController {
                     + "») — у калитни ўзи олади ва юклашни бошлайди");
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/agents";
+    }
+
+    /** Shelter jadvallaridan bronlar/daromad/to'lovlarni hozir qayta qurish (keyingi sinxronlashni kutmasdan). */
+    @PostMapping("/{id}/import")
+    public String importNow(@PathVariable long id, RedirectAttributes ra) {
+        var agent = agents.agents().stream().filter(a -> a.id() == id && a.hotelId() != null).findFirst();
+        if (agent.isEmpty()) {
+            ra.addFlashAttribute("error", "Агент топилмади ёки меҳмонхонага боғланмаган");
+        } else {
+            ra.addFlashAttribute("success", shelterImport.importNow(agent.get().hotelId()));
         }
         return "redirect:/admin/agents";
     }

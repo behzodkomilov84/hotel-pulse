@@ -30,6 +30,7 @@ public class AgentApiController {
     static final int MAX_UPLOAD = 200 * 1024 * 1024;
 
     private final AgentService agents;
+    private final ShelterImportService shelterImport;
 
     @PostMapping("/pair")
     public ResponseEntity<?> pair(@RequestParam(defaultValue = "SHELTER") String kind,
@@ -97,6 +98,9 @@ public class AgentApiController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "kalit noto'g'ri"));
         }
         agents.finishSync(agent.get(), message);
+        if ("SHELTER".equals(agent.get().kind())) {
+            shelterImport.importAsync(agent.get().hotelId());   // jadvallardan bronlar/daromad/to'lovlar
+        }
         return ResponseEntity.ok(Map.of("ok", true));
     }
 

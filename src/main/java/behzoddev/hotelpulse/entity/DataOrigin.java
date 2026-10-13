@@ -8,5 +8,7 @@ public enum DataOrigin {
     EXELY,
     /** Exely PMS Universal API — bronlar, haqiqiy holat, to'lovlar va qoldiq. */
     EXELY_PMS,
+    /** UCS Shelter (mehmonxona kompyuteridagi agent orqali, Firebird bazasidan). */
+    SHELTER,
     MANUAL
 }
