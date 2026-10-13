@@ -29,6 +29,7 @@ import java.util.Locale;
 public class DebtService {
 
     private final BookingRepository bookingRepository;
+    private final CompanyDebtService companyDebtService;
     private final Clock clock;
 
     /**
@@ -53,7 +54,15 @@ public class DebtService {
         }
 
         DebtReport.Summary summary = summary(all);
-        List<DebtReport.AgingBucket> aging = aging(all, summary.total());
+        List<DebtReport.Company> companies = companyDebtService.list(hotel.getId()).stream()
+                .map(c -> {
+                    LocalDate since = c.to() != null ? c.to() : c.openedOn();
+                    long age = since == null ? 0 : Math.max(0, ChronoUnit.DAYS.between(since, today));
+                    return new DebtReport.Company(c.name(), c.amount(), c.openedOn(), age, c.services(), c.paid(),
+                            c.from(), c.to(), c.rooms(), c.guests(), c.stays());
+                })
+                .toList();
+        List<DebtReport.AgingBucket> aging = aging(all, companies);
 
         String q = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         List<DebtReport.Row> rows = all.stream()
@@ -63,7 +72,7 @@ public class DebtService {
                         || r.bookingNumber().toLowerCase(Locale.ROOT).contains(q))
                 .sorted(comparator(sort))
                 .toList();
-        return new DebtReport(rows, summary, aging);
+        return new DebtReport(rows, summary, aging, companies);
     }
 
     /** PMS haqiqiy holati: ketish sanasi o'tgan, lekin CheckedIn — vyselenie qilinmagan. */
@@ -114,14 +123,23 @@ public class DebtService {
         return new DebtReport.Summary(total, rows.size(), in, inN, out, outN, not, notN);
     }
 
-    private static List<DebtReport.AgingBucket> aging(List<DebtReport.Row> rows, BigDecimal total) {
+    /** Mehmon qarzi — ketish sanasidan, korxona hisobi — hisob ochilgan sanadan. */
+    private static List<DebtReport.AgingBucket> aging(List<DebtReport.Row> rows, List<DebtReport.Company> companies) {
         String[] labels = {"0–30 кун", "31–60 кун", "61–90 кун", "90+ кун"};
         BigDecimal[] sums = {BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO};
         long[] counts = new long[4];
+        BigDecimal total = BigDecimal.ZERO;
         for (DebtReport.Row r : rows) {
-            int i = r.ageDays() <= 30 ? 0 : r.ageDays() <= 60 ? 1 : r.ageDays() <= 90 ? 2 : 3;
+            int i = bucket(r.ageDays());
             sums[i] = sums[i].add(r.debt());
             counts[i]++;
+            total = total.add(r.debt());
+        }
+        for (DebtReport.Company c : companies) {
+            int i = bucket(c.ageDays());
+            sums[i] = sums[i].add(c.debt());
+            counts[i]++;
+            total = total.add(c.debt());
         }
         List<DebtReport.AgingBucket> result = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
@@ -129,6 +147,10 @@ public class DebtService {
             result.add(new DebtReport.AgingBucket(labels[i], sums[i], counts[i], share));
         }
         return result;
+    }
+
+    private static int bucket(long ageDays) {
+        return ageDays <= 30 ? 0 : ageDays <= 60 ? 1 : ageDays <= 90 ? 2 : 3;
     }
 
     private static Comparator<DebtReport.Row> comparator(String sort) {

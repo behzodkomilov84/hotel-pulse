@@ -51,8 +51,25 @@ public final class ShelterMapper {
     public record Pay(String externalId, String bookingExternalId, BigDecimal amount, String method, LocalDateTime paidAt) {
     }
 
-    /** Korxona/guruh hisobi qarzi (Shelter to'lovchi folio'si: KIND=1, BALANCE < 0). */
-    public record CompanyDebt(String externalId, String name, BigDecimal amount, LocalDate openedOn) {
+    /**
+     * Korxona/guruh hisobi qarzi (Shelter to'lovchi folio'si: KIND=1, BALANCE < 0).
+     *
+     * @param services hisobga yozilgan xizmatlar (chegirmadan keyin), paid — to'lovlar; services − paid = amount
+     * @param from     yashashlar davri (hisob qatorlaridagi CLAIM → ROOM_SCHEDULE), to — oxirgi ketish
+     * @param rooms    yashashlar (xona) soni, guests — kishilar soni
+     */
+    public record CompanyDebt(String externalId, String name, BigDecimal amount, LocalDate openedOn,
+                              BigDecimal services, BigDecimal paid, LocalDate from, LocalDate to,
+                              int rooms, int guests, List<CompanyStay> stays) {
+
+        public CompanyDebt(String externalId, String name, BigDecimal amount, LocalDate openedOn) {
+            this(externalId, name, amount, openedOn, BigDecimal.ZERO, BigDecimal.ZERO, null, null, 0, 0, List.of());
+        }
+    }
+
+    /** Korxona hisobiga yozilgan bitta yashash; room null — yashashga bog'lanmagan xizmatlar. */
+    public record CompanyStay(String room, String guest, LocalDate arrival, LocalDate departure, int guests,
+                              BigDecimal amount) {
     }
 
     public record Result(List<Stay> stays, List<Service> services, List<Pay> payments, int roomsCount,
@@ -90,7 +107,34 @@ public final class ShelterMapper {
         Map<Long, BigDecimal> paymentsByFolio = new HashMap<>();
         List<JsonNode> serviceRows = new ArrayList<>();
         List<JsonNode> paymentRows = new ArrayList<>();
+        // Korxona hisoblari: Shelter qoldig'i (BALANCE) bilan bir xil asosda — barcha qatorlar (soliq, o'tkazmalar ham);
+        // xizmat qatorining CLAIM'i — qaysi yashash uchun yozilgani (ROOM_SCHEDULE.ID).
+        Set<Long> companyFolios = new HashSet<>();
+        for (JsonNode f : folios) {
+            if (l(f, "KIND") == 1 && d(f, "BALANCE").signum() < 0) {
+                companyFolios.add(l(f, "ID"));
+            }
+        }
+        Map<Long, BigDecimal> companyServices = new HashMap<>(), companyPaid = new HashMap<>();
+        Map<Long, Map<Long, BigDecimal>> companyClaims = new HashMap<>();
+        Map<Long, LocalDate[]> companyDays = new HashMap<>();
         for (JsonNode fc : folioContents) {
+            long cf = l(fc, "FOLIO");
+            if (l(fc, "ENABLED") == 1 && companyFolios.contains(cf)) {
+                BigDecimal v = amount(fc);
+                if (l(fc, "ISSERVICE") == 1) {
+                    companyServices.merge(cf, v, BigDecimal::add);
+                    companyClaims.computeIfAbsent(cf, k -> new HashMap<>()).merge(l(fc, "CLAIM"), v, BigDecimal::add);
+                    LocalDate day = date(fc, "SHIFTDATE");
+                    if (day != null) {
+                        LocalDate[] range = companyDays.computeIfAbsent(cf, k -> new LocalDate[]{day, day});
+                        range[0] = day.isBefore(range[0]) ? day : range[0];
+                        range[1] = day.isAfter(range[1]) ? day : range[1];
+                    }
+                } else {
+                    companyPaid.merge(cf, v, BigDecimal::add);
+                }
+            }
             // CANCELED=1 qatorlar ham olinadi: Shelter bekor qilishni teskari (manfiy) yozuv bilan qiladi — ikkalasi nolga tushadi.
             if (l(fc, "ENABLED") != 1 || TRANSFER_OPERATIONS.contains(l(fc, "OPERATION"))) {
                 continue;
@@ -203,15 +247,49 @@ public final class ShelterMapper {
         }
         // Korxona va guruh hisoblari (to'lovchi folio'lar) qarzi — mehmon darajasida ko'rinmaydi.
         List<CompanyDebt> companyDebts = new ArrayList<>();
+        Map<Long, JsonNode> scheduleById = companyFolios.isEmpty() ? Map.of() : index(schedule);
+        Map<Long, JsonNode> roomById = index(rooms);
         for (JsonNode f : folios) {
-            BigDecimal bal = d(f, "BALANCE");
-            if (l(f, "KIND") != 1 || bal.signum() >= 0) {
+            long id = l(f, "ID");
+            if (!companyFolios.contains(id)) {
                 continue;
             }
             JsonNode owner = guestById.get(l(f, "OWNER"));
             String name = owner == null ? "" : name(owner);
-            companyDebts.add(new CompanyDebt("sh:folio:" + l(f, "ID"),
-                    cut(name.isBlank() ? "Ҳисоб №" + l(f, "ID") : name, 255), bal.negate(), date(f, "CREATIONDATE")));
+            List<CompanyStay> cs = new ArrayList<>();
+            LocalDate first = null, last = null;
+            int people = 0;
+            for (Map.Entry<Long, BigDecimal> e : companyClaims.getOrDefault(id, Map.of()).entrySet()) {
+                JsonNode r = scheduleById.get(e.getKey());
+                if (r == null) {
+                    cs.add(new CompanyStay(null, null, null, null, 0, e.getValue()));
+                    continue;
+                }
+                JsonNode room = roomById.get(l(r, "IDROOM"));
+                JsonNode guest = guestById.get(l(r, "GUEST"));
+                LocalDate a = date(r, "ARRIVAL"), b = date(r, "DEPARTURE");
+                int n = (int) Math.max(1, l(r, "Q_GUESTS") + l(r, "Q_CHILDS"));
+                people += n;
+                first = a != null && (first == null || a.isBefore(first)) ? a : first;
+                last = b != null && (last == null || b.isAfter(last)) ? b : last;
+                cs.add(new CompanyStay(room == null ? "—" : roomName(room), guest == null ? null : cut(name(guest), 150), a, b, n,
+                        e.getValue()));
+            }
+            // Yashashga bog'lanmagan qatorlar bitta "boshqa xizmatlar" qatoriga; qolganlari — kelish sanasi bo'yicha.
+            List<CompanyStay> merged = new ArrayList<>(cs.stream().filter(s -> s.room() != null)
+                    .sorted(java.util.Comparator.comparing(CompanyStay::arrival, java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder()))
+                            .thenComparing(CompanyStay::room))
+                    .toList());
+            BigDecimal other = cs.stream().filter(s -> s.room() == null).map(CompanyStay::amount).reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (other.signum() != 0) {
+                merged.add(new CompanyStay(null, null, null, null, 0, other));
+            }
+            LocalDate[] days = companyDays.get(id);
+            companyDebts.add(new CompanyDebt("sh:folio:" + id,
+                    cut(name.isBlank() ? "Ҳисоб №" + id : name, 255), d(f, "BALANCE").negate(), date(f, "CREATIONDATE"),
+                    companyServices.getOrDefault(id, BigDecimal.ZERO), companyPaid.getOrDefault(id, BigDecimal.ZERO),
+                    first != null ? first : days == null ? null : days[0], last != null ? last : days == null ? null : days[1],
+                    (int) merged.stream().filter(s -> s.room() != null).count(), people, merged));
         }
         return new Result(stays, services, payments, roomsCount, from, until, companyDebts);
     }
@@ -275,6 +353,11 @@ public final class ShelterMapper {
             }
         }
         return "Тўғридан-тўғри";
+    }
+
+    static String roomName(JsonNode room) {
+        String number = text(room, "NUMBER");
+        return number.isBlank() ? text(room, "NAME") : number;
     }
 
     static String name(JsonNode g) {

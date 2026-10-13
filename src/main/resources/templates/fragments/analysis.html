@@ -57,6 +57,28 @@
             </div>
         </div>
     </th:block>
+
+    <th:block th:if="${!a.companies.isEmpty()}">
+        <h4>Биринчи навбатда солиштириладиган корхона ҳисоблари</h4>
+        <div class="ai-priorities">
+            <div class="ai-prio" th:each="c, st : ${a.companies}">
+                <span class="ai-rank" th:text="${st.count}"></span>
+                <div class="ai-prio-main">
+                    <div class="ai-prio-top"><strong th:text="${c.name}"></strong></div>
+                    <div class="muted ai-prio-reason" th:text="${c.reason}"></div>
+                    <button type="button" class="btn-task" th:if="${canAssign}"
+                            th:attr="data-task-title='Корхона ' + ${c.name} + ': ҳисоб-китобни солиштириш ва қарзни ундириш',
+                                     data-task-desc=${c.reason} + '. Қарз: ' + ${@fmt.money(c.debt, cur)} + '.',
+                                     data-task-dept='Бухгалтерия',
+                                     data-task-due=${#temporals.format(today.plusDays(c.ageDays > 90 ? 2 : 5), 'yyyy-MM-dd')}">📌 Топшириқ бериш</button>
+                </div>
+                <div class="ai-prio-sum">
+                    <b class="debt-cell" th:text="${@fmt.money(c.debt, cur)}"></b>
+                    <span class="muted" th:text="${c.ageDays} + ' кун'"></span>
+                </div>
+            </div>
+        </div>
+    </th:block>
 </div>
 </body>
 </html>

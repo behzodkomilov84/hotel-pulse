@@ -11,9 +11,17 @@ import java.util.List;
  * @param risks      xavfli nuqtalar
  * @param actions    tavsiyalar — ustuvorlik bo'yicha
  * @param priorities birinchi navbatda tekshirish kerak bo'lgan bronlar
+ * @param companies  birinchi navbatda solishtiriladigan korxona/guruh hisoblari
  */
 public record DebtAnalysis(String warning, String summary, List<Point> risks, List<Point> actions,
-                           List<Priority> priorities) {
+                           List<Priority> priorities, List<CompanyPriority> companies) {
+
+    public DebtAnalysis(String warning, String summary, List<Point> risks, List<Point> actions, List<Priority> priorities) {
+        this(warning, summary, risks, actions, priorities, List.of());
+    }
+
+    public record CompanyPriority(String name, BigDecimal debt, long ageDays, String reason) {
+    }
 
     public enum Level { HIGH, MEDIUM, LOW }
 

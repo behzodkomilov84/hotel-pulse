@@ -74,3 +74,14 @@ CREATE TABLE company_debts
     CONSTRAINT fk_company_debts_hotel FOREIGN KEY (hotel_id) REFERENCES hotels (id) ON DELETE CASCADE,
     CONSTRAINT uq_company_debts UNIQUE (hotel_id, external_id)
 );
+
+--changeset behzod:35
+-- Korxona hisobining tafsiloti: xizmatlar, to'lovlar, yashashlar davri, xona/kishi soni va yashashlar ro'yxati (JSON).
+ALTER TABLE company_debts
+    ADD COLUMN services    DECIMAL(15, 2) NOT NULL DEFAULT 0,
+    ADD COLUMN paid        DECIMAL(15, 2) NOT NULL DEFAULT 0,
+    ADD COLUMN period_from DATE           NULL,
+    ADD COLUMN period_to   DATE           NULL,
+    ADD COLUMN rooms       INT            NOT NULL DEFAULT 0,
+    ADD COLUMN guests      INT            NOT NULL DEFAULT 0,
+    ADD COLUMN stays_json  MEDIUMTEXT     NULL;

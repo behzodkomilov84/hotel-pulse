@@ -5,7 +5,7 @@
 <header th:replace="~{fragments/layout :: header('dashboard')}"></header>
 <main class="container" th:with="cur=${hotel.currency}, s=${report.summary},
         cats=${@fmt.moneyShortParts(s.total, {s.inHouse, s.checkedOut, s.notCheckedOut}, cur)},
-        agingMoney=${@fmt.moneyShortParts(s.total, report.aging.![amount], cur)},
+        agingMoney=${@fmt.moneyShortParts(report.agingTotal(), report.aging.![amount], cur)},
         agingPct=${@fmt.pctParts(report.aging.![share])}">
     <div class="page-head reveal">
         <div>
@@ -69,8 +69,9 @@
     </div>
 
     <!-- ===== Qarz yoshi ===== -->
-    <section class="card aging-card reveal" th:if="${s.count > 0}">
-        <h3 class="card-title">Қарз ёши<span th:replace="~{fragments/layout :: tip(#{tip.debt.aging})}"></span> <span class="muted">— кетиш санасидан бери ўтган вақт</span></h3>
+    <section class="card aging-card reveal" th:if="${s.count > 0 or !report.companies.isEmpty()}">
+        <h3 class="card-title">Қарз ёши<span th:replace="~{fragments/layout :: tip(#{tip.debt.aging})}"></span> <span class="muted" th:text="${report.companies.isEmpty()} ? '— кетиш санасидан бери ўтган вақт'
+                : '— кетиш санасидан бери ўтган вақт (корхона ҳисоблари — охирги меҳмон кетганидан)'"></span></h3>
         <div class="aging-grid">
             <div class="aging-item" th:each="a, st : ${report.aging}">
                 <div class="aging-top">
@@ -88,7 +89,7 @@
     </section>
 
     <!-- ===== Tahlil (faqat tugma bosilganda) ===== -->
-    <section class="card ai-card reveal" id="aiCard" th:if="${s.count > 0}"
+    <section class="card ai-card reveal" id="aiCard" th:if="${s.count > 0 or !report.companies.isEmpty()}"
              th:attr="data-url=@{/hotels/{id}/debts/analysis(id=${hotel.id})}">
         <div class="ai-head">
             <div class="ai-title">
@@ -167,18 +168,69 @@
     <div class="card table-wrap reveal" th:if="${!companyDebts.isEmpty()}">
         <h3 class="card-title">Корхона ва гуруҳ ҳисоблари
             <span class="muted" th:text="'— ' + ${companyTotal.count} + ' та ҳисоб, жами ' + ${@fmt.money(companyTotal.amount, cur)}"></span></h3>
-        <p class="hint">Гуруҳ ва корхона номидан яшаганларнинг харажатлари тўловчи ҳисобига ёзилади — қарз меҳмонда эмас,
-            шу ҳисобларда (PMS'даги қолдиқ).</p>
-        <table class="debt-table">
-            <thead><tr><th>Ҳисоб (тўловчи)</th><th>Очилган</th><th class="num">Қарз</th></tr></thead>
+        <p class="hint">Гуруҳ, корхона ёки агентлик номидан яшаганларнинг хизматлари меҳмонга эмас, тўловчининг ҳисобига ёзилади.
+            Қатор устига босинг — ким, қачон, қайси хонада яшагани ва ҳар бирига қанча ёзилгани очилади.</p>
+        <table class="debt-table company-table">
+            <thead><tr>
+                <th>Ҳисоб (тўловчи)</th><th>Яшаш даври</th>
+                <th class="num col-total">Хизматлар</th><th class="num col-paid">Тўланган</th>
+                <th class="num">Қарз</th><th class="num">Кун ўтди</th>
+            </tr></thead>
             <tbody>
-            <tr th:each="c : ${companyDebts}">
-                <td class="wrap"><strong th:text="${c.name}"></strong></td>
-                <td th:text="${c.openedOn} != null ? ${#temporals.format(c.openedOn, 'dd.MM.yyyy')} : '—'"></td>
-                <td class="num"><b class="debt-cell" th:text="${@fmt.money(c.amount, cur)}"></b></td>
-            </tr>
+            <th:block th:each="c, st : ${report.companies}">
+                <tr class="raw-row" tabindex="0" th:attr="aria-controls='company-' + ${st.index}" aria-expanded="false">
+                    <td class="wrap">
+                        <span class="row-chevron" aria-hidden="true">›</span>
+                        <strong th:text="${c.name}"></strong>
+                        <div class="muted" th:if="${c.rooms > 0}" th:text="${c.rooms} + ' та хона · ' + ${c.guests} + ' киши'"></div>
+                    </td>
+                    <td th:text="${c.from != null and c.to != null} ? ${#temporals.format(c.from, 'dd.MM')} + '–' + ${#temporals.format(c.to, 'dd.MM.yyyy')} : '—'"></td>
+                    <td class="num col-total" th:text="${@fmt.money(c.services, cur)}"></td>
+                    <td class="num col-paid" th:text="${@fmt.money(c.paid, cur)}"></td>
+                    <td class="num"><b class="debt-cell" th:text="${@fmt.money(c.debt, cur)}"></b></td>
+                    <td class="num" th:text="${c.to != null and c.to.isAfter(#temporals.createToday())} ? 'яшаяпти' : ${c.ageDays}"></td>
+                </tr>
+                <tr class="raw-detail" th:id="'company-' + ${st.index}" hidden>
+                    <td colspan="6">
+                        <table class="company-stays" th:if="${!c.stays.isEmpty()}">
+                            <thead><tr><th>Хона</th><th>Меҳмон</th><th>Келиш</th><th>Кетиш</th><th class="num">Киши</th><th class="num">Ёзилган</th></tr></thead>
+                            <tbody>
+                            <tr th:each="x : ${c.stays}">
+                                <th:block th:if="${x.room != null}">
+                                    <td th:text="${x.room}"></td>
+                                    <td class="wrap" th:text="${x.guest} ?: '—'"></td>
+                                    <td th:text="${x.arrival} != null ? ${#temporals.format(x.arrival, 'dd.MM.yyyy')} : '—'"></td>
+                                    <td th:text="${x.departure} != null ? ${#temporals.format(x.departure, 'dd.MM.yyyy')} : '—'"></td>
+                                    <td class="num" th:text="${x.guests}"></td>
+                                </th:block>
+                                <td colspan="5" class="muted" th:if="${x.room == null}">Хонага боғланмаган хизматлар (тузатишлар, ўтказмалар)</td>
+                                <td class="num" th:text="${@fmt.money(x.amount, cur)}"></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        <p class="muted" th:if="${c.stays.isEmpty()}">Бу ҳисобга яшашлар ёзилмаган — фақат қолдиқ кўчирилган.</p>
+                        <p class="muted company-sum" th:text="'Хизматлар ' + ${@fmt.money(c.services, cur)} + ' − тўланган ' + ${@fmt.money(c.paid, cur)} + ' = қарз ' + ${@fmt.money(c.debt, cur)}
+                            + (${c.openedOn} != null ? ' · ҳисоб очилган: ' + ${#temporals.format(c.openedOn, 'dd.MM.yyyy')} : '')"></p>
+                    </td>
+                </tr>
+            </th:block>
             </tbody>
         </table>
+        <script>
+            document.querySelectorAll('.company-table .raw-row').forEach(function (row) {
+                function toggle() {
+                    var detail = document.getElementById(row.getAttribute('aria-controls'));
+                    var open = detail.hidden;
+                    detail.hidden = !open;
+                    row.setAttribute('aria-expanded', String(open));
+                    row.classList.toggle('open', open);
+                }
+                row.addEventListener('click', toggle);
+                row.addEventListener('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+                });
+            });
+        </script>
     </div>
 
     <div class="card empty reveal" th:if="${report.rows.isEmpty()}">

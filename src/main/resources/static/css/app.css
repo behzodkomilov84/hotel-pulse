@@ -691,6 +691,26 @@ code { font-size: 12.5px; background: var(--surface-2); border: 1px solid var(--
     .debt-table td, .debt-table th { padding: 9px 8px; }
 }
 
+/* Korxona hisoblari: qator bosilsa — yashashlar ro'yxati */
+.company-table .row-chevron {
+    display: inline-block; width: 14px; color: var(--muted); font-weight: 700;
+    transition: transform var(--t-fast);
+}
+.company-table .raw-row.open .row-chevron { transform: rotate(90deg); }
+.company-table .raw-row .muted { font-weight: 400; margin-left: 14px; font-size: 12.5px; }
+.company-table .raw-detail > td { padding: 4px 12px 14px 26px; }
+.company-stays { width: 100%; border-collapse: collapse; background: var(--surface); border-radius: 10px; overflow: hidden; }
+.company-stays th, .company-stays td {
+    background: transparent; padding: 7px 10px; font-size: 13px; border-bottom: 1px solid var(--border); text-align: left;
+}
+.company-stays th { color: var(--muted); font-weight: 600; font-size: 12px; }
+.company-stays th.num, .company-stays td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.company-stays tr:last-child td { border-bottom: 0; }
+.company-sum { font-size: 12.5px; margin: 8px 0 0; }
+@media (prefers-reduced-motion: reduce) {
+    .company-table .row-chevron { transition: none; }
+}
+
 /* ---------- AI tahlil ---------- */
 .ai-card { margin-bottom: 20px; position: relative; overflow: hidden; }
 .ai-card::before {

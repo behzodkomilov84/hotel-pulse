@@ -44,16 +44,133 @@ public class DebtAnalyzer {
                 : "Бу меҳмонхона Exely Connect орқали уланган — тўлов маълумоти тўлиқ эмас, "
                 + "шунинг учун қарз амалдагидан катта кўриниши мумкин. Аниқ таҳлил учун Exely PMS калитини уланг.";
         DebtReport.Summary s = report.summary();
-        if (s.count() == 0 || s.total().signum() <= 0) {
+        BigDecimal companyTotal = report.companyTotal();
+        boolean guests = s.count() > 0 && s.total().signum() > 0;
+        if (!guests && companyTotal.signum() <= 0) {
             return new DebtAnalysis(warning, "Қарздорлик йўқ — барча яшашлар тўлиқ тўланган. Жорий тартибни сақланг.",
                     List.of(), List.of(), List.of());
         }
-        Stats st = new Stats(report.rows(), s);
-        // Kartalardagi bilan bir xil yaxlitlash — qismlar yig'indisi jamiga teng.
-        st.catMoney = fmt.moneyShortParts(s.total(), List.of(s.inHouse(), s.checkedOut(), s.notCheckedOut()), currency);
-        st.catPct = fmt.pctParts(List.of(st.inHouseShare, st.checkedOutShare, st.notCheckedOutShare));
-        return new DebtAnalysis(warning, summary(st, currency), risks(st, currency), actions(st, currency),
-                priorities(report.rows(), LocalDate.now(clock)));
+        LocalDate today = LocalDate.now(clock);
+        BigDecimal grand = companyTotal.add(guests ? s.total() : BigDecimal.ZERO);
+        List<Point> risks = new ArrayList<>(), actions = new ArrayList<>();
+        String summary;
+        List<DebtAnalysis.Priority> priorities = List.of();
+        if (guests) {
+            Stats st = new Stats(report.rows(), s);
+            // Kartalardagi bilan bir xil yaxlitlash — qismlar yig'indisi jamiga teng.
+            st.catMoney = fmt.moneyShortParts(s.total(), List.of(s.inHouse(), s.checkedOut(), s.notCheckedOut()), currency);
+            st.catPct = fmt.pctParts(List.of(st.inHouseShare, st.checkedOutShare, st.notCheckedOutShare));
+            summary = summary(st, currency);
+            risks.addAll(risks(st, currency));
+            actions.addAll(actions(st, currency));
+            priorities = priorities(report.rows(), today);
+            if (companyTotal.signum() > 0) {
+                summary += " Бундан ташқари корхона ва гуруҳ ҳисобларида " + money(companyTotal, currency) + " ("
+                        + report.companies().size() + " та ҳисоб) қарз бор.";
+            }
+        } else {
+            summary = "Меҳмонлар бўйича қарз йўқ. " + companySummary(report.companies(), companyTotal, currency);
+        }
+        if (companyTotal.signum() > 0) {
+            companyPoints(report.companies(), companyTotal, grand, currency, risks, actions);
+        }
+        risks.sort(Comparator.comparing(Point::level));
+        actions.sort(Comparator.comparing(Point::level));
+        return new DebtAnalysis(warning, summary, risks, actions, priorities, companyPriorities(report.companies(), today));
+    }
+
+    // ---------------------------------------------------------------- Korxona va guruh hisoblari
+
+    private String companySummary(List<DebtReport.Company> companies, BigDecimal total, String cur) {
+        DebtReport.Company top = companies.stream().max(Comparator.comparing(DebtReport.Company::debt)).orElseThrow();
+        BigDecimal old90 = sumOlder(companies, 90);
+        StringBuilder sb = new StringBuilder("Жами қарз ").append(money(total, cur)).append(" — ").append(companies.size())
+                .append(" та корхона ва гуруҳ ҳисобида (тўловчи корхоналар, агентликлар, гуруҳлар), ўртача ")
+                .append(money(total.divide(BigDecimal.valueOf(companies.size()), 0, java.math.RoundingMode.HALF_UP), cur))
+                .append(". Энг каттаси — ").append(top.name()).append(" (").append(money(top.debt(), cur)).append(", ")
+                .append(pct(share(top.debt(), total))).append("). ");
+        if (old90.signum() > 0) {
+            sb.append("Шундан ").append(money(old90, cur)).append(" (").append(pct(share(old90, total)))
+                    .append(") — 90 кундан эски ҳисобларда: асосий хавф шу ерда.");
+        } else {
+            sb.append("Барча ҳисоблар 90 кундан янги — одатда шартнома бўйича кейинроқ тўланади, муддатларни назорат қилинг.");
+        }
+        return sb.toString();
+    }
+
+    private void companyPoints(List<DebtReport.Company> companies, BigDecimal total, BigDecimal grand, String cur,
+                               List<Point> risks, List<Point> actions) {
+        double share = share(total, grand);
+        risks.add(new Point(level(share), "Корхона ва гуруҳ ҳисоблари: " + money(total, cur) + " (" + companies.size() + " та)",
+                "Тўловчи корхона, агентлик ёки гуруҳ номига очилган ҳисоблар — меҳмон кетгандан кейин шартнома бўйича тўланади. "
+                        + "Муддати ўтганлари назоратсиз қолса, ундириш қийинлашади."));
+        BigDecimal old90 = sumOlder(companies, 90);
+        long old90Count = companies.stream().filter(c -> c.ageDays() > 90).count();
+        if (old90.signum() > 0) {
+            risks.add(new Point(share(old90, total) >= MAJOR_SHARE ? Level.HIGH : Level.MEDIUM,
+                    "Эски корхона ҳисоблари: " + money(old90, cur) + " (" + old90Count + " та)",
+                    "Меҳмонлар кетганидан 90 кундан кўп ўтган. Ё тўлов ҳали тушмаган, ё тушган, лекин Shelter'да қайд этилмаган — "
+                            + "ўзаро ҳисоб-китоб далолатномаси (акт сверки) билан аниқланг."));
+        }
+        if (companies.size() >= TOP_CONCENTRATION * 2) {
+            BigDecimal top = companies.stream().map(DebtReport.Company::debt).sorted(Comparator.reverseOrder())
+                    .limit(TOP_CONCENTRATION).reduce(BigDecimal.ZERO, BigDecimal::add);
+            if (share(top, total) >= 0.5) {
+                risks.add(new Point(Level.MEDIUM, "Корхона қарзи жамланган",
+                        "Энг катта " + TOP_CONCENTRATION + " та ҳисоб — корхона қарзининг " + pct(share(top, total))
+                                + ". Шу корхоналар билан ишлаш катта натижа беради."));
+            }
+        }
+        DebtReport.Company biggest = companies.stream().max(Comparator.comparing(DebtReport.Company::debt)).orElseThrow();
+        actions.add(new Point(level(share), "Бухгалтерия",
+                companies.size() + " та корхона ва гуруҳ билан ўзаро ҳисоб-китобни солиштиринг (акт сверки) ва тўлов муддатини "
+                        + "белгиланг — энг каттасидан бошланг: " + biggest.name() + " (" + money(biggest.debt(), cur) + ")."));
+        if (old90.signum() > 0) {
+            actions.add(new Point(Level.MEDIUM, "Раҳбарият",
+                    "90 кундан эски " + old90Count + " та корхона ҳисобига (" + money(old90, cur) + ") расмий талабнома юборинг; "
+                            + "ундириб бўлмайдиганларини ҳисобдан чиқаринг."));
+        }
+        actions.add(new Point(Level.LOW, "Сотув бўлими",
+                "Янги гуруҳ ва корхона бронларида олдиндан тўлов ёки кафолат хатини талаб қилинг, тўлов муддатини шартномада ёзинг."));
+    }
+
+    /** Ball: qarz × (1 + yosh/30), yosh ta'siri 90 kungacha. */
+    private List<DebtAnalysis.CompanyPriority> companyPriorities(List<DebtReport.Company> companies, LocalDate today) {
+        return companies.stream()
+                .sorted(Comparator.comparingDouble((DebtReport.Company c) ->
+                        -c.debt().doubleValue() * (1 + Math.min(c.ageDays(), 90) / 30.0)))
+                .limit(PRIORITY_COUNT)
+                .map(c -> new DebtAnalysis.CompanyPriority(c.name(), c.debt(), c.ageDays(), companyReason(c, today)))
+                .toList();
+    }
+
+    private static String companyReason(DebtReport.Company c, LocalDate today) {
+        StringBuilder sb = new StringBuilder();
+        if (c.from() != null && c.to() != null) {
+            sb.append(c.from().format(DAY)).append("–").append(c.to().format(DATE)).append(", ");
+        }
+        if (c.rooms() > 0) {
+            sb.append(c.rooms()).append(" та хона, ").append(c.guests()).append(" киши; ");
+        }
+        if (c.to() != null && c.to().isAfter(today)) {
+            sb.append("ҳали яшаяпти — кетишда ҳисоб-китоб қилинг");
+        } else {
+            sb.append(c.paid().signum() == 0 ? "умуман тўланмаган" : "қисман тўланган").append(", ")
+                    .append(c.ageDays()).append(" кун ўтди")
+                    .append(c.ageDays() > 90 ? " — эски, акт сверка қилинг" : c.ageDays() > 30 ? " — тўлов муддатини аниқланг" : "");
+        }
+        return sb.toString();
+    }
+
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+
+    private static BigDecimal sumOlder(List<DebtReport.Company> companies, long days) {
+        return companies.stream().filter(c -> c.ageDays() > days).map(DebtReport.Company::debt)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private static double share(BigDecimal part, BigDecimal total) {
+        return total.signum() == 0 ? 0 : part.doubleValue() / total.doubleValue();
     }
 
     // ---------------------------------------------------------------- Asosiy xulosa

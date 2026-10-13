@@ -145,7 +145,9 @@ class AgentDbTest {
         put(auth, "FOLIO_CONTENTS",
                 "{\"ID\":1,\"FOLIO\":100,\"OPERATION\":70,\"ISSERVICE\":1,\"ENABLED\":1,\"COST\":1000000,\"SHIFTDATE\":" + a + "}\n"
                         + "{\"ID\":2,\"FOLIO\":100,\"OPERATION\":70,\"ISSERVICE\":1,\"ENABLED\":1,\"COST\":1000000,\"SHIFTDATE\":" + (a + 1) + "}\n"
-                        + "{\"ID\":3,\"FOLIO\":100,\"OPERATION\":85,\"ISSERVICE\":0,\"ENABLED\":1,\"COST\":1500000,\"CREATIONDATE\":" + (b + 0.4) + "}");
+                        + "{\"ID\":3,\"FOLIO\":100,\"OPERATION\":85,\"ISSERVICE\":0,\"ENABLED\":1,\"COST\":1500000,\"CREATIONDATE\":" + (b + 0.4) + "}\n"
+                        // Korxona hisobiga yozilgan xizmat (CLAIM — qaysi yashash uchun).
+                        + "{\"ID\":4,\"FOLIO\":500,\"OPERATION\":70,\"ISSERVICE\":1,\"ENABLED\":1,\"COST\":7000000,\"CLAIM\":1,\"SHIFTDATE\":" + a + "}");
         put(auth, "OPERATIONS", "{\"ID\":70,\"CODE\":\"100\",\"NAME\":\"Проживание\",\"CATEGORY\":101,\"ISSERVICE\":1}\n"
                 + "{\"ID\":85,\"CODE\":\"02\",\"NAME\":\"Uzcard\",\"CATEGORY\":902,\"ISSERVICE\":0}");
         put(auth, "GUESTS", "{\"ID\":5,\"NAME\":\"Rahimov\",\"NAME1\":\"Sardor\"}\n{\"ID\":900,\"FULLNAME\":\"Sitora Tour 25-26.07\"}");
@@ -163,7 +165,7 @@ class AgentDbTest {
         assertEquals("Rahimov Sardor", booking.get("guest_name"));
         assertEquals(0, new java.math.BigDecimal("2000000").compareTo((java.math.BigDecimal) booking.get("total_amount")));
         assertEquals(0, new java.math.BigDecimal("500000").compareTo((java.math.BigDecimal) booking.get("balance_due")));
-        assertEquals(2, jdbc.queryForObject("select count(*) from service_revenue where hotel_id = ?", Integer.class, hotel.getId()));
+        assertEquals(3, jdbc.queryForObject("select count(*) from service_revenue where hotel_id = ?", Integer.class, hotel.getId()));
         assertEquals(1, jdbc.queryForObject("select count(*) from payments where hotel_id = ? and booking_id is not null", Integer.class, hotel.getId()));
         var h = hotelRepository.findById(hotel.getId()).orElseThrow();
         assertEquals(2, h.getRoomsCount());
@@ -180,6 +182,15 @@ class AgentDbTest {
         assertTrue(page.contains("UCS Shelter уланган"), "PMS belgisi");
         String debts = html("/hotels/" + hotel.getId() + "/debts");
         assertTrue(debts.contains("Корхона ва гуруҳ ҳисоблари") && debts.contains("Sitora Tour 25-26.07"));
+        // Qarz yoshi va tahlil korxona hisoblari bilan ham chiqadi; Excel'da korxona qatori bor.
+        assertTrue(debts.contains("Қарз ёши") && debts.contains("Қарздорлик таҳлили"), "qarz yoshi va tahlil");
+        // Korxona hisobi tafsiloti: kim, qaysi xonada, qachon yashagan.
+        assertTrue(debts.contains("1 та хона · 2 киши") || debts.contains("1 та хона · 1 киши"), "xona/kishi soni");
+        assertTrue(debts.contains("company-stays") && debts.contains("Rahimov Sardor") && debts.contains(">101<"), "yashashlar ro'yxati");
+        String analysis = html("/hotels/" + hotel.getId() + "/debts/analysis");
+        assertTrue(analysis.contains("корхона ҳисоблари") && analysis.contains("Sitora Tour 25-26.07"), analysis);
+        String csv = html("/hotels/" + hotel.getId() + "/debts.csv");
+        assertTrue(csv.contains("Sitora Tour 25-26.07") && csv.contains("7000000"), csv);
         String admin = html("/admin/hotels/" + hotel.getId());
         assertTrue(admin.contains("олинган маълумотлар") && admin.contains("Бронлар ва яшашлар"));
         assertTrue(html("/").contains("UCS Shelter уланган"));

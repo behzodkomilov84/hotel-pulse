@@ -176,10 +176,26 @@ public class ShelterImportService {
             jdbc.update("delete from company_debts where hotel_id = ?", hotelId);
             List<Object[]> cd = new ArrayList<>();
             for (ShelterMapper.CompanyDebt c : r.companyDebts()) {
+                List<Map<String, Object>> stays = new ArrayList<>();
+                for (ShelterMapper.CompanyStay s : c.stays()) {
+                    Map<String, Object> m = new java.util.LinkedHashMap<>();
+                    m.put("room", s.room());
+                    m.put("guest", s.guest());
+                    m.put("arrival", s.arrival() == null ? null : s.arrival().toString());
+                    m.put("departure", s.departure() == null ? null : s.departure().toString());
+                    m.put("guests", s.guests());
+                    m.put("amount", s.amount());
+                    stays.add(m);
+                }
                 cd.add(new Object[]{hotelId, c.externalId(), c.name(), c.amount(),
-                        c.openedOn() == null ? null : Date.valueOf(c.openedOn()), Timestamp.valueOf(now)});
+                        c.openedOn() == null ? null : Date.valueOf(c.openedOn()), Timestamp.valueOf(now),
+                        c.services(), c.paid(), c.from() == null ? null : Date.valueOf(c.from()),
+                        c.to() == null ? null : Date.valueOf(c.to()), c.rooms(), c.guests(), JSON.writeValueAsString(stays)});
             }
-            jdbc.batchUpdate("insert into company_debts (hotel_id, external_id, name, amount, opened_on, updated_at) values (?, ?, ?, ?, ?, ?)", cd);
+            jdbc.batchUpdate("""
+                    insert into company_debts (hotel_id, external_id, name, amount, opened_on, updated_at,
+                        services, paid, period_from, period_to, rooms, guests, stays_json)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", cd);
 
             List<Object[]> b = new ArrayList<>();
             for (ShelterMapper.Stay s : r.stays()) {
@@ -255,7 +271,7 @@ public class ShelterImportService {
     static final Set<String> SCHEDULE_FIELDS = Set.of("ID", "RESID", "STATE", "ENABLED", "ARRIVAL", "DEPARTURE", "GUEST",
             "Q_GUESTS", "Q_CHILDS", "FOLIO", "ROOMKIND", "IDROOM", "TRAVELAGENT", "AGENTREF", "DEBTORREF", "PAYER",
             "CREATIONDATE", "UPDATEDATE", "QUANTCANCEL", "COST", "IDPAR");
-    static final Set<String> FOLIO_FIELDS = Set.of("ID", "FOLIO", "OPERATION", "ISSERVICE", "ENABLED", "COST", "COSTALL",
+    static final Set<String> FOLIO_FIELDS = Set.of("ID", "FOLIO", "OPERATION", "ISSERVICE", "ENABLED", "COST", "COSTALL", "CLAIM",
             "SHIFTDATE", "CREATIONDATE");
 
     /**

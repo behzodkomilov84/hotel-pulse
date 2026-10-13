@@ -132,6 +132,23 @@ public class PageController {
                     .append(r.debt().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
                     .append(r.ageDays()).append('\n');
         }
+        // Korxona va guruh hisoblari (Shelter) — toifa filtri bo'lmasa; qidiruv — nomi bo'yicha.
+        String needle = q == null ? "" : q.trim().toLowerCase(java.util.Locale.ROOT);
+        if (category == null) {
+            for (DebtReport.Company c : report.companies()) {
+                if (!needle.isEmpty() && !c.name().toLowerCase(java.util.Locale.ROOT).contains(needle)) {
+                    continue;
+                }
+                sb.append(';').append(csv(c.name())).append(';')
+                        .append(csv("Корхона/гуруҳ ҳисоби" + (c.rooms() > 0 ? " (" + c.rooms() + " хона, " + c.guests() + " киши)" : ""))).append(';')
+                        .append(c.from() == null ? "" : c.from().format(d)).append(';')
+                        .append(c.to() == null ? "" : c.to().format(d)).append(";;Корхона ҳисоби;")
+                        .append(c.services().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
+                        .append(c.paid().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
+                        .append(c.debt().setScale(0, RoundingMode.HALF_UP).toPlainString()).append(';')
+                        .append(c.ageDays()).append('\n');
+            }
+        }
         String file = "qarzdorlik-" + kpiService.today() + ".csv";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment().filename(file).build().toString())
