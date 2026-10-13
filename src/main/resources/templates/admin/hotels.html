@@ -24,12 +24,14 @@
                 <td class="wrap"><strong th:text="${h.name}"></strong></td>
                 <td th:text="${h.city} ?: '—'"></td>
                 <td th:text="${h.roomsCount}"></td>
-                <td>
-                    <span class="badge badge-ok" th:if="${h.exelyConnected and h.exelyLastSyncOk != false}">Уланган</span>
-                    <span class="badge badge-warn" th:if="${h.exelyConnected and h.exelyLastSyncOk == false}">Синхронлаш хатоси</span>
-                    <th:block th:if="${h.exelyConnected and h.exelyLastSyncMessage != null}"><button
+                <td th:with="pmsName=${@pms.name(h)}">
+                    <span class="badge badge-ok" th:if="${pmsName != null and h.exelyLastSyncOk != false}"
+                          th:text="${pmsName} + ' · уланган'">Уланган</span>
+                    <span class="badge badge-warn" th:if="${pmsName != null and h.exelyLastSyncOk == false}"
+                          th:text="${pmsName} + ' · синхронлаш хатоси'">Синхронлаш хатоси</span>
+                    <th:block th:if="${pmsName != null and h.exelyLastSyncMessage != null}"><button
                             th:replace="~{fragments/layout :: tip(${h.exelyLastSyncMessage})}"></button></th:block>
-                    <span class="badge badge-off" th:unless="${h.exelyConnected}">Уланмаган</span>
+                    <span class="badge badge-off" th:if="${pmsName == null}">Уланмаган</span>
                 </td>
                 <td>
                     <span class="badge badge-ok" th:if="${h.active}">Фаол</span>

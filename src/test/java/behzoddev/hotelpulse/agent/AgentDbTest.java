@@ -148,7 +148,10 @@ class AgentDbTest {
                         + "{\"ID\":3,\"FOLIO\":100,\"OPERATION\":85,\"ISSERVICE\":0,\"ENABLED\":1,\"COST\":1500000,\"CREATIONDATE\":" + (b + 0.4) + "}");
         put(auth, "OPERATIONS", "{\"ID\":70,\"CODE\":\"100\",\"NAME\":\"Проживание\",\"CATEGORY\":101,\"ISSERVICE\":1}\n"
                 + "{\"ID\":85,\"CODE\":\"02\",\"NAME\":\"Uzcard\",\"CATEGORY\":902,\"ISSERVICE\":0}");
-        put(auth, "GUESTS", "{\"ID\":5,\"NAME\":\"Rahimov\",\"NAME1\":\"Sardor\"}");
+        put(auth, "GUESTS", "{\"ID\":5,\"NAME\":\"Rahimov\",\"NAME1\":\"Sardor\"}\n{\"ID\":900,\"FULLNAME\":\"Sitora Tour 25-26.07\"}");
+        // Mehmon folio'si (qoldiq 0 — to'langan) va to'lovchi korxona hisobi (KIND=1, qarz 7 000 000).
+        put(auth, "FOLIO", "{\"ID\":100,\"KIND\":2,\"BALANCE\":-500000}\n"
+                + "{\"ID\":500,\"KIND\":1,\"OWNER\":900,\"BALANCE\":-7000000,\"CREATIONDATE\":" + a + "}");
         put(auth, "ENTERPRISEDEBTOR", "");
         put(auth, "ROOMS", "{\"ID\":7,\"ROOMKIND\":1,\"ENABLED\":1,\"NUMBER\":\"101\"}\n{\"ID\":8,\"ROOMKIND\":1,\"ENABLED\":1,\"NUMBER\":\"102\"}");
         put(auth, "ROOM_KINDS", "{\"ID\":1,\"NAME\":\"Standard Twin\"}");
@@ -169,8 +172,23 @@ class AgentDbTest {
         // Qayta import — dublikat yo'q.
         shelterImport.importNow(hotel.getId());
         assertEquals(1, jdbc.queryForObject("select count(*) from bookings where hotel_id = ?", Integer.class, hotel.getId()));
-        // Mehmonxona sahifasi ochiladi.
-        assertEquals(200, mvc.perform(get("/hotels/" + hotel.getId()).with(user(owner))).andReturn().getResponse().getStatus());
+        // Korxona hisobi qarzi alohida saqlanadi.
+        assertEquals(0, new java.math.BigDecimal("7000000").compareTo(
+                jdbc.queryForObject("select amount from company_debts where hotel_id = ?", java.math.BigDecimal.class, hotel.getId())));
+        // Sahifalar: PMS belgisi, qarzdorlik (korxona bo'limi), admin — Shelter jadvallari.
+        String page = html("/hotels/" + hotel.getId());
+        assertTrue(page.contains("UCS Shelter уланган"), "PMS belgisi");
+        String debts = html("/hotels/" + hotel.getId() + "/debts");
+        assertTrue(debts.contains("Корхона ва гуруҳ ҳисоблари") && debts.contains("Sitora Tour 25-26.07"));
+        String admin = html("/admin/hotels/" + hotel.getId());
+        assertTrue(admin.contains("олинган маълумотлар") && admin.contains("Бронлар ва яшашлар"));
+        assertTrue(html("/").contains("UCS Shelter уланган"));
+    }
+
+    private String html(String url) throws Exception {
+        var res = mvc.perform(get(url).with(user(owner))).andReturn().getResponse();
+        assertEquals(200, res.getStatus(), url);
+        return res.getContentAsString(StandardCharsets.UTF_8);
     }
 
     private void put(AgentService.Authenticated auth, String table, String jsonl) throws java.io.IOException {

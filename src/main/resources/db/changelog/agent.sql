@@ -58,3 +58,19 @@ CREATE TABLE agent_tables
 
 ALTER TABLE agents ADD COLUMN last_sync_at DATETIME(6) NULL;
 ALTER TABLE agents ADD COLUMN last_sync_message VARCHAR(500) NULL;
+
+--changeset behzod:34
+-- Korxona va guruh hisoblari qarzi (Shelter: to'lovchi korxona folio'lari, KIND=1, BALANCE < 0).
+-- Mehmon (yashash) darajasidan tashqari — har importda to'liq almashtiriladi.
+CREATE TABLE company_debts
+(
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    hotel_id    BIGINT         NOT NULL,
+    external_id VARCHAR(64)    NOT NULL,
+    name        VARCHAR(255)   NOT NULL,
+    amount      DECIMAL(15, 2) NOT NULL,
+    opened_on   DATE           NULL,
+    updated_at  DATETIME(6)    NOT NULL,
+    CONSTRAINT fk_company_debts_hotel FOREIGN KEY (hotel_id) REFERENCES hotels (id) ON DELETE CASCADE,
+    CONSTRAINT uq_company_debts UNIQUE (hotel_id, external_id)
+);

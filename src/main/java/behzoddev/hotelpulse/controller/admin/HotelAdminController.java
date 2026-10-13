@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.LocalTime;
+import java.util.List;
 
 @Controller
 @RequestMapping("/admin/hotels")
@@ -26,6 +27,7 @@ public class HotelAdminController {
     private final ExelySyncService exelySyncService;
     private final ExelyRawStore exelyRawStore;
     private final FakturaService fakturaService;
+    private final behzoddev.hotelpulse.agent.AgentService agentService;
     private final behzoddev.hotelpulse.faktura.DidoxClient didoxClient;
 
     @GetMapping
@@ -51,6 +53,7 @@ public class HotelAdminController {
         model.addAttribute("verify", ExelyVerifyService.read(hotelService.getById(id)));
         model.addAttribute("archiveLabels", ARCHIVE_LABELS);
         model.addAttribute("faktura", fakturaService.account(id).orElse(null));
+        model.addAttribute("shelter", shelterArchive(id));
         model.addAttribute("fakturaRunning", fakturaService.isRunning(id));
         model.addAttribute("didoxConfigured", didoxClient.configured());
         return "admin/hotel-form";
@@ -138,6 +141,49 @@ public class HotelAdminController {
             ra.addFlashAttribute("success", "Жорий синхронлаш тугагач, кейингиси ҳаммасини бошидан юклайди");
         }
         return "redirect:/admin/hotels/" + id;
+    }
+
+    /** Shelter agenti yuborgan asosiy jadvallar: nom → qatorlar soni (bo'lmasa — null). */
+    public record ShelterArchive(java.util.Map<String, Long> tiles, int tables, long rows, java.time.LocalDateTime syncedAt) {
+    }
+
+    private static final java.util.Map<String, String> SHELTER_LABELS = new java.util.LinkedHashMap<>();
+
+    static {
+        SHELTER_LABELS.put("ROOM_SCHEDULE", "Бронлар ва яшашлар");
+        SHELTER_LABELS.put("GROUP_SCHEDULE", "Гуруҳ бронлари");
+        SHELTER_LABELS.put("GUESTS", "Меҳмонлар ва тўловчилар");
+        SHELTER_LABELS.put("ENTERPRISEDEBTOR", "Корхоналар (агентлар)");
+        SHELTER_LABELS.put("COMPANY_CONTRACTS", "Шартномалар");
+        SHELTER_LABELS.put("FOLIO", "Фолиолар (ҳисоблар)");
+        SHELTER_LABELS.put("FOLIO_CONTENTS", "Хизматлар ва тўловлар");
+        SHELTER_LABELS.put("INVOICES", "Касса чеклари");
+        SHELTER_LABELS.put("CASH_DOCUMENTS", "Касса ҳужжатлари");
+        SHELTER_LABELS.put("ROOMS", "Хоналар");
+        SHELTER_LABELS.put("ROOM_KINDS", "Хона турлари");
+        SHELTER_LABELS.put("OPERATIONS", "Хизмат турлари");
+    }
+
+    private ShelterArchive shelterArchive(Long hotelId) {
+        List<behzoddev.hotelpulse.agent.AgentService.TableInfo> tables = agentService.tables(hotelId);
+        if (tables.isEmpty()) {
+            return null;
+        }
+        java.util.Map<String, Long> byName = new java.util.HashMap<>();
+        long rows = 0;
+        java.time.LocalDateTime synced = null;
+        for (var t : tables) {
+            byName.put(t.name(), t.rows());
+            rows += t.rows();
+            synced = synced == null || (t.uploadedAt() != null && t.uploadedAt().isAfter(synced)) ? t.uploadedAt() : synced;
+        }
+        java.util.Map<String, Long> tiles = new java.util.LinkedHashMap<>();
+        SHELTER_LABELS.forEach((table, label) -> {
+            if (byName.containsKey(table)) {
+                tiles.put(label, byName.get(table));
+            }
+        });
+        return new ShelterArchive(tiles, tables.size(), rows, synced);
     }
 
     /** Xom arxiv turlarining nomlari (admin sahifasi). */

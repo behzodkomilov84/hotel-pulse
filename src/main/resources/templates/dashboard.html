@@ -57,8 +57,10 @@
                 <span th:text="${h.roomsCount} + ' та хона'">0 та хона</span>
             </div>
             <div>
-                <span class="badge badge-ok" th:if="${h.exelyConnected}">Exely уланган</span>
-                <span class="badge badge-warn" th:unless="${h.exelyConnected}">Exely уланмаган</span>
+                <th:block th:with="pmsName=${@pms.name(h)}">
+                    <span class="badge badge-ok" th:if="${pmsName != null}" th:text="${pmsName} + ' уланган'">Exely уланган</span>
+                    <span class="badge badge-warn" th:if="${pmsName == null}">PMS уланмаган</span>
+                </th:block>
                 <span class="badge badge-off" th:unless="${h.active}">Нофаол</span>
             </div>
             <div class="hotel-stats" th:if="${summaries[h.id].soldRoomNights > 0}" th:with="m=${summaries[h.id]}">

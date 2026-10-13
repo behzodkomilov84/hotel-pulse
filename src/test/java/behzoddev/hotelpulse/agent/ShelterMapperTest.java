@@ -85,7 +85,7 @@ class ShelterMapperTest {
         assertEquals(BookingStatus.NO_SHOW, status(r, 4));
         ShelterMapper.Stay future = r.stays().stream().filter(s -> s.id() == 7).findFirst().orElseThrow();
         assertEquals(BookingStatus.CONFIRMED, future.status());
-        assertEquals(0, new BigDecimal("1000000").compareTo(future.total()));
+        assertEquals(0, new BigDecimal("500000").compareTo(future.total()), "ROOM_SCHEDULE.COST — butun yashash narxi");
         assertEquals("Тўғридан-тўғри", future.source());
 
         // Kunlik xizmatlar: yashash (kind 0), erta kirish (3), ovqat (Meals); soliq olinmaydi.
@@ -100,6 +100,37 @@ class ShelterMapperTest {
         assertEquals("sh:10#1", r.payments().get(0).bookingExternalId());
         assertEquals("Uzcard", r.payments().get(0).method());
         assertEquals(2, r.roomsCount());
+    }
+
+    /** Chegirma (COSTALL) va xona almashtirish (bir xil IDPAR/folio/sanalar — faqat oxirgi yozuv). */
+    @Test
+    void discountAndRoomMove() {
+        long a = dd(LocalDate.of(2026, 5, 1)), b = dd(LocalDate.of(2026, 5, 2));
+        List<JsonNode> schedule = List.of(
+                j("{\"ID\":2260,\"IDPAR\":2260,\"RESID\":795,\"STATE\":400,\"ENABLED\":1,\"ARRIVAL\":" + (a + 0.67)
+                        + ",\"DEPARTURE\":" + (b + 0.52) + ",\"FOLIO\":2870,\"ROOMKIND\":1,\"IDROOM\":192}"),
+                j("{\"ID\":2375,\"IDPAR\":2260,\"RESID\":795,\"STATE\":400,\"ENABLED\":1,\"ARRIVAL\":" + (a + 0.67)
+                        + ",\"DEPARTURE\":" + (b + 0.52) + ",\"FOLIO\":2870,\"ROOMKIND\":1,\"IDROOM\":191}"));
+        List<JsonNode> ops = List.of(
+                j("{\"ID\":70,\"CODE\":\"100\",\"NAME\":\"Проживание\",\"CATEGORY\":101,\"ISSERVICE\":1}"),
+                j("{\"ID\":85,\"CODE\":\"02\",\"NAME\":\"Uzcard\",\"CATEGORY\":902,\"ISSERVICE\":0}"));
+        List<JsonNode> fc = new java.util.ArrayList<>();
+        for (int i = 0; i < 4; i++) {
+            fc.add(j("{\"ID\":" + (3774 + i) + ",\"FOLIO\":2870,\"OPERATION\":70,\"ISSERVICE\":1,\"ENABLED\":1,"
+                    + "\"COST\":800000,\"EXTRACOST2\":-240000,\"COSTALL\":560000,\"SHIFTDATE\":" + a + "}"));
+        }
+        fc.add(j("{\"ID\":3767,\"FOLIO\":2870,\"OPERATION\":85,\"ISSERVICE\":0,\"ENABLED\":1,\"COST\":2240000,\"COSTALL\":2240000,\"CREATIONDATE\":" + a + "}"));
+
+        ShelterMapper.Result r = ShelterMapper.map(schedule, fc, ops, List.of(), List.of(), List.of(), TODAY);
+
+        assertEquals(1, r.stays().size(), "eski xona yozuvi olinmaydi");
+        ShelterMapper.Stay s = r.stays().get(0);
+        assertEquals(2375, s.id());
+        assertEquals("191", s.roomId());
+        assertEquals(0, new BigDecimal("2240000").compareTo(s.total()), "chegirmadan keyingi narx");
+        assertEquals(0, s.balance().signum(), "to'liq to'langan — qarz yo'q");
+        assertEquals(0, new BigDecimal("2240000").compareTo(
+                r.services().stream().map(ShelterMapper.Service::amount).reduce(BigDecimal.ZERO, BigDecimal::add)));
     }
 
     @Test

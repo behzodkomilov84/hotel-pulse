@@ -86,16 +86,22 @@ public class ShelterImportService {
         // Xotira tejash: har qatordan faqat kerakli ustunlar; mehmonlardan — faqat bron/korxonalarda uchraydiganlari.
         List<JsonNode> schedule = rows(hotelId, "ROOM_SCHEDULE", SCHEDULE_FIELDS, null);
         List<JsonNode> debtors = rows(hotelId, "ENTERPRISEDEBTOR", Set.of("ID", "OWNER"), null);
+        List<JsonNode> folios = rows(hotelId, "FOLIO", Set.of("ID", "BALANCE", "KIND", "OWNER", "CREATIONDATE"), null);
         Set<Long> guestIds = new java.util.HashSet<>();
         schedule.forEach(n -> guestIds.add(ShelterMapper.l(n, "GUEST")));
         debtors.forEach(n -> guestIds.add(ShelterMapper.l(n, "OWNER")));
+        folios.forEach(n -> {
+            if (ShelterMapper.l(n, "KIND") == 1) {
+                guestIds.add(ShelterMapper.l(n, "OWNER"));
+            }
+        });
         List<JsonNode> guests = rows(hotelId, "GUESTS", Set.of("ID", "FULLNAME", "NAME", "NAME1", "NAME2"), guestIds);
         List<JsonNode> rooms = rows(hotelId, "ROOMS", Set.of("ID", "ROOMKIND", "ENABLED", "NUMBER", "NAME"), null);
         List<JsonNode> roomKinds = rows(hotelId, "ROOM_KINDS", Set.of("ID", "NAME"), null);
         ShelterMapper.Result r = ShelterMapper.map(schedule,
                 rows(hotelId, "FOLIO_CONTENTS", FOLIO_FIELDS, null),
                 rows(hotelId, "OPERATIONS", Set.of("ID", "CODE", "NAME", "CATEGORY", "ISSERVICE"), null),
-                guests, debtors, rooms, today);
+                guests, debtors, rooms, folios, today);
         schedule = null;
         guests = null;
         if (r.stays().isEmpty()) {
@@ -106,6 +112,13 @@ public class ShelterImportService {
             jdbc.update("delete from payments where hotel_id = ? and origin = 'SHELTER'", hotelId);
             jdbc.update("delete from bookings where hotel_id = ? and origin = 'SHELTER'", hotelId);
             jdbc.update("delete from service_revenue where hotel_id = ? and external_id like 'sh:%'", hotelId);
+            jdbc.update("delete from company_debts where hotel_id = ?", hotelId);
+            List<Object[]> cd = new ArrayList<>();
+            for (ShelterMapper.CompanyDebt c : r.companyDebts()) {
+                cd.add(new Object[]{hotelId, c.externalId(), c.name(), c.amount(),
+                        c.openedOn() == null ? null : Date.valueOf(c.openedOn()), Timestamp.valueOf(now)});
+            }
+            jdbc.batchUpdate("insert into company_debts (hotel_id, external_id, name, amount, opened_on, updated_at) values (?, ?, ?, ?, ?, ?)", cd);
 
             List<Object[]> b = new ArrayList<>();
             for (ShelterMapper.Stay s : r.stays()) {
@@ -172,15 +185,16 @@ public class ShelterImportService {
                     r.roomsCount(), r.roomsCount(), hotelId);
         });
         String msg = "UCS Shelter: " + r.stays().size() + " та яшаш, " + r.services().size() + " та хизмат, "
-                + r.payments().size() + " та тўлов; " + r.roomsCount() + " та сотиладиган хона";
+                + r.payments().size() + " та тўлов; " + r.roomsCount() + " та сотиладиган хона; "
+                + r.companyDebts().size() + " та корхона ҳисобида қарз";
         log.info("Shelter import (mehmonxona {}): {}", hotelId, msg);
         return msg;
     }
 
     static final Set<String> SCHEDULE_FIELDS = Set.of("ID", "RESID", "STATE", "ENABLED", "ARRIVAL", "DEPARTURE", "GUEST",
             "Q_GUESTS", "Q_CHILDS", "FOLIO", "ROOMKIND", "IDROOM", "TRAVELAGENT", "AGENTREF", "DEBTORREF", "PAYER",
-            "CREATIONDATE", "UPDATEDATE", "QUANTCANCEL", "COST");
-    static final Set<String> FOLIO_FIELDS = Set.of("ID", "FOLIO", "OPERATION", "ISSERVICE", "ENABLED", "COST",
+            "CREATIONDATE", "UPDATEDATE", "QUANTCANCEL", "COST", "IDPAR");
+    static final Set<String> FOLIO_FIELDS = Set.of("ID", "FOLIO", "OPERATION", "ISSERVICE", "ENABLED", "COST", "COSTALL",
             "SHIFTDATE", "CREATIONDATE");
 
     /**

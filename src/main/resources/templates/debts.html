@@ -163,11 +163,29 @@
         </table>
     </div>
 
+    <!-- ===== Korxona va guruh hisoblari (Shelter to'lovchi folio'lari) ===== -->
+    <div class="card table-wrap reveal" th:if="${!companyDebts.isEmpty()}">
+        <h3 class="card-title">Корхона ва гуруҳ ҳисоблари
+            <span class="muted" th:text="'— ' + ${companyTotal.count} + ' та ҳисоб, жами ' + ${@fmt.money(companyTotal.amount, cur)}"></span></h3>
+        <p class="hint">Гуруҳ ва корхона номидан яшаганларнинг харажатлари тўловчи ҳисобига ёзилади — қарз меҳмонда эмас,
+            шу ҳисобларда (PMS'даги қолдиқ).</p>
+        <table class="debt-table">
+            <thead><tr><th>Ҳисоб (тўловчи)</th><th>Очилган</th><th class="num">Қарз</th></tr></thead>
+            <tbody>
+            <tr th:each="c : ${companyDebts}">
+                <td class="wrap"><strong th:text="${c.name}"></strong></td>
+                <td th:text="${c.openedOn} != null ? ${#temporals.format(c.openedOn, 'dd.MM.yyyy')} : '—'"></td>
+                <td class="num"><b class="debt-cell" th:text="${@fmt.money(c.amount, cur)}"></b></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
     <div class="card empty reveal" th:if="${report.rows.isEmpty()}">
         <div class="empty-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
         </div>
-        <p><strong th:text="${s.count == 0} ? 'Қарздорлик йўқ' : 'Бу филтр бўйича қарз топилмади'">Қарздорлик йўқ</strong></p>
+        <p><strong th:text="${s.count == 0} ? (${companyDebts.isEmpty()} ? 'Қарздорлик йўқ' : 'Меҳмонлар бўйича қарз йўқ — қарзлар корхона ва гуруҳ ҳисобларида (юқорида)') : 'Бу филтр бўйича қарз топилмади'">Қарздорлик йўқ</strong></p>
     </div>
 
     <!-- Tahlil tavsiyasidan topshiriq berish -->

@@ -42,6 +42,7 @@ public class PageController {
     private final HotelService hotelService;
     private final KpiService kpiService;
     private final DebtService debtService;
+    private final behzoddev.hotelpulse.service.CompanyDebtService companyDebtService;
     private final DebtAnalyzer debtAnalyzer;
     private final TaskService taskService;
     private final behzoddev.hotelpulse.report.LayoutService layoutService;
@@ -79,6 +80,8 @@ public class PageController {
         model.addAttribute("q", q);
         model.addAttribute("sort", sort);
         model.addAttribute("paymentsComplete", kpiService.paymentsComplete(hotel));
+        model.addAttribute("companyDebts", companyDebtService.list(hotel.getId()));
+        model.addAttribute("companyTotal", companyDebtService.total(hotel.getId()));
         // Tahlil tavsiyalaridan topshiriq berish — faqat egasi / boshqaruv kompaniyasi / platforma egasi.
         boolean canAssign = TaskService.canAssign(user);
         model.addAttribute("canAssign", canAssign);

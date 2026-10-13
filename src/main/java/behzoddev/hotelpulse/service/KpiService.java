@@ -26,6 +26,7 @@ public class KpiService {
     private final BookingRepository bookingRepository;
     private final PaymentRepository paymentRepository;
     private final ServiceRevenueRepository serviceRevenueRepository;
+    private final CompanyDebtService companyDebtService;
     private final Clock clock;
 
     public LocalDate today() {
@@ -80,6 +81,10 @@ public class KpiService {
         Object[] pms = bookingRepository.sumBalanceDue(hotel.getId(), today).get(0);
         debt = debt.add((BigDecimal) pms[0]);
         debtors += ((Number) pms[1]).longValue();
+        // 3) Korxona va guruh hisoblari (Shelter to'lovchi folio'lari).
+        CompanyDebtService.Total company = companyDebtService.total(hotel.getId());
+        debt = debt.add(company.amount());
+        debtors += company.count();
 
         double occupancy = hotel.getRoomsCount() == 0 ? 0 : (double) inHouse / hotel.getRoomsCount();
         return new TodaySnapshot(arrivals, departures, inHouse, occupancy, debt, debtors);

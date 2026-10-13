@@ -221,6 +221,42 @@
         </div>
     </section>
 
+    <!-- ===== UCS Shelter (mehmonxona kompyuteridagi agent orqali) ===== -->
+    <section class="card sync-card reveal" th:if="${hotel != null and shelter != null}">
+        <div class="sync-head">
+            <div>
+                <h3 class="card-title">UCS Shelter</h3>
+                <p class="subtitle">Меҳмонхона компьютеридаги агент Shelter базасини ҳар 2 соатда юборади; бронлар, даромад ва
+                    тўловлар шундан қайта ҳисобланади.</p>
+            </div>
+            <span class="badge" th:classappend="${hotel.exelyLastSyncOk == false} ? 'badge-warn' : 'badge-ok'"
+                  th:text="${hotel.exelyLastSyncOk == false} ? 'Хатолик' : 'Ишлаяпти'"></span>
+        </div>
+        <dl class="sync-meta">
+            <div>
+                <dt>Охирги юклаш</dt>
+                <dd th:text="${shelter.syncedAt} != null ? ${#temporals.format(shelter.syncedAt, 'dd.MM.yyyy HH:mm')} : '—'"></dd>
+            </div>
+            <div>
+                <dt>Охирги ҳисоблаш</dt>
+                <dd th:text="${hotel.exelyLastSyncMessage} ?: '—'" th:classappend="${hotel.exelyLastSyncOk == false} ? 'text-danger'"></dd>
+            </div>
+        </dl>
+        <div class="archive">
+            <h4 class="archive-title">Shelter'дан олинган маълумотлар
+                <span class="muted" th:text="'— ' + ${shelter.tables} + ' та жадвал, ' + ${@fmt.number(shelter.rows)} + ' та қатор; таҳлиллар учун базада сақланади'"></span></h4>
+            <div class="archive-grid">
+                <div class="archive-item" th:each="e : ${shelter.tiles}">
+                    <b th:text="${@fmt.number(e.value)}">0</b>
+                    <span th:text="${e.key}"></span>
+                </div>
+            </div>
+        </div>
+        <div class="sync-actions">
+            <a class="btn btn-secondary" th:href="@{/admin/agents}">Агентлар →</a>
+        </div>
+    </section>
+
     <!-- ===== ЭСФ operatori: Didox yoki Faktura.uz (elektron hisob-fakturalar) ===== -->
     <section class="card sync-card reveal" id="faktura" th:if="${hotel != null}" th:attr="data-running=${fakturaRunning}">
         <div class="sync-head">

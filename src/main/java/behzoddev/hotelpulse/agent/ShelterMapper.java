@@ -51,12 +51,30 @@ public final class ShelterMapper {
     public record Pay(String externalId, String bookingExternalId, BigDecimal amount, String method, LocalDateTime paidAt) {
     }
 
+    /** Korxona/guruh hisobi qarzi (Shelter to'lovchi folio'si: KIND=1, BALANCE < 0). */
+    public record CompanyDebt(String externalId, String name, BigDecimal amount, LocalDate openedOn) {
+    }
+
     public record Result(List<Stay> stays, List<Service> services, List<Pay> payments, int roomsCount,
-                         LocalDate servicesFrom, LocalDate servicesUntil) {
+                         LocalDate servicesFrom, LocalDate servicesUntil, List<CompanyDebt> companyDebts) {
     }
 
     public static Result map(List<JsonNode> schedule, List<JsonNode> folioContents, List<JsonNode> operations,
                              List<JsonNode> guests, List<JsonNode> debtors, List<JsonNode> rooms, LocalDate today) {
+        return map(schedule, folioContents, operations, guests, debtors, rooms, List.of(), today);
+    }
+
+    /**
+     * @param folios FOLIO jadvali (ID, BALANCE): bor bo'lsa — qarz Shelter'ning o'z qoldig'idan (BALANCE = to'lovlar − xizmatlar,
+     *               o'tkazmalar va chegirmalar hisobga olingan); korxona hisobiga yoziladigan yashashlarda guest folio bo'sh — qarz yo'q
+     */
+    public static Result map(List<JsonNode> schedule, List<JsonNode> folioContents, List<JsonNode> operations,
+                             List<JsonNode> guests, List<JsonNode> debtors, List<JsonNode> rooms, List<JsonNode> folios,
+                             LocalDate today) {
+        Map<Long, BigDecimal> folioBalance = new HashMap<>();
+        for (JsonNode f : folios) {
+            folioBalance.put(l(f, "ID"), d(f, "BALANCE"));
+        }
         Map<Long, JsonNode> ops = index(operations);
         Map<Long, JsonNode> guestById = index(guests);
         Map<Long, String> debtorName = new HashMap<>();
@@ -79,7 +97,7 @@ public final class ShelterMapper {
             }
             JsonNode op = ops.get(l(fc, "OPERATION"));
             int category = op == null ? 0 : (int) l(op, "CATEGORY");
-            BigDecimal cost = d(fc, "COST");
+            BigDecimal cost = amount(fc);
             long folio = l(fc, "FOLIO");
             if (l(fc, "ISSERVICE") == 1) {
                 if (TAX_CATEGORIES.contains(category)) {
@@ -93,13 +111,22 @@ public final class ShelterMapper {
             }
         }
 
+        // Xona almashtirilganda Shelter yangi yozuv ochadi (IDPAR — eskisining ID'si), eskisi ham sanalari bilan qoladi:
+        // bir xil IDPAR, folio va sanalarga ega yozuvlardan faqat eng oxirgisi (yangi xona) olinadi.
+        Map<String, Long> latestCopy = new HashMap<>();
+        for (JsonNode r : schedule) {
+            if (isStay(r)) {
+                latestCopy.merge(copyKey(r), l(r, "ID"), Math::max);
+            }
+        }
+
         // Yashashlar.
         List<Stay> stays = new ArrayList<>();
         Map<Long, Stay> stayByFolio = new HashMap<>();
         Set<Long> soldKinds = new HashSet<>();
         for (JsonNode r : schedule) {
             int state = (int) l(r, "STATE");
-            if (l(r, "ENABLED") != 1 || !(state == 50 || state == 52 || state == 300 || state == 305 || state == 400)) {
+            if (!isStay(r) || latestCopy.get(copyKey(r)) != l(r, "ID")) {
                 continue;
             }
             LocalDate arrival = date(r, "ARRIVAL");
@@ -118,14 +145,14 @@ public final class ShelterMapper {
             BigDecimal total = servicesByFolio.getOrDefault(folio, BigDecimal.ZERO);
             BigDecimal paid = paymentsByFolio.getOrDefault(folio, BigDecimal.ZERO);
             if (total.signum() == 0 && d(r, "COST").signum() > 0 && status != BookingStatus.CHECKED_OUT) {
-                total = d(r, "COST").multiply(BigDecimal.valueOf(ChronoUnit.DAYS.between(arrival, departure)));
+                total = d(r, "COST");   // ROOM_SCHEDULE.COST — butun yashash narxi (kechaga emas), hali hisob ochilmagan bronlar uchun
             }
             String number = String.valueOf(l(r, "RESID") > 0 ? l(r, "RESID") : l(r, "ID"));
             JsonNode guest = guestById.get(l(r, "GUEST"));
             Stay s = new Stay(l(r, "ID"), "sh:" + number + "#" + l(r, "ID"), number, status,
                     guest == null ? null : cut(name(guest), 150), cut(source(r, debtorName), 64), arrival, departure,
                     (int) Math.max(1, l(r, "Q_GUESTS") + l(r, "Q_CHILDS")), total,
-                    folio > 0 ? total.subtract(paid) : null, dateTime(r, "CREATIONDATE"),
+                    balance(folio, total, paid, folioBalance), dateTime(r, "CREATIONDATE"),
                     status == BookingStatus.CANCELLED ? dateTime(r, "UPDATEDATE") : null,
                     l(r, "ROOMKIND") > 0 ? String.valueOf(l(r, "ROOMKIND")) : null,
                     l(r, "IDROOM") > 0 ? String.valueOf(l(r, "IDROOM")) : null, folio);
@@ -149,7 +176,7 @@ public final class ShelterMapper {
             int kind = ROOM_CATEGORIES.contains(category) ? ("102".equals(code) ? 3 : "101".equals(code) ? 4 : 0) : 1;
             Stay s = stayByFolio.get(l(fc, "FOLIO"));
             services.add(new Service("sh:fc:" + l(fc, "ID"), day, kind, op == null ? null : cut(text(op, "NAME"), 128),
-                    MEAL_CATEGORIES.contains(category) ? "Meals" : kind == 1 ? "Other" : null, d(fc, "COST"),
+                    MEAL_CATEGORIES.contains(category) ? "Meals" : kind == 1 ? "Other" : null, amount(fc),
                     s == null ? null : s.bookingNumber(), s == null ? null : s.id()));
             from = from == null || day.isBefore(from) ? day : from;
             until = until == null || day.isAfter(until) ? day : until;
@@ -164,7 +191,7 @@ public final class ShelterMapper {
             }
             JsonNode op = ops.get(l(fc, "OPERATION"));
             Stay s = stayByFolio.get(l(fc, "FOLIO"));
-            payments.add(new Pay("sh:pay:" + l(fc, "ID"), s == null ? null : s.externalId(), d(fc, "COST"),
+            payments.add(new Pay("sh:pay:" + l(fc, "ID"), s == null ? null : s.externalId(), amount(fc),
                     op == null ? null : cut(text(op, "NAME"), 32), at));
         }
 
@@ -174,7 +201,49 @@ public final class ShelterMapper {
                 roomsCount++;
             }
         }
-        return new Result(stays, services, payments, roomsCount, from, until);
+        // Korxona va guruh hisoblari (to'lovchi folio'lar) qarzi — mehmon darajasida ko'rinmaydi.
+        List<CompanyDebt> companyDebts = new ArrayList<>();
+        for (JsonNode f : folios) {
+            BigDecimal bal = d(f, "BALANCE");
+            if (l(f, "KIND") != 1 || bal.signum() >= 0) {
+                continue;
+            }
+            JsonNode owner = guestById.get(l(f, "OWNER"));
+            String name = owner == null ? "" : name(owner);
+            companyDebts.add(new CompanyDebt("sh:folio:" + l(f, "ID"),
+                    cut(name.isBlank() ? "Ҳисоб №" + l(f, "ID") : name, 255), bal.negate(), date(f, "CREATIONDATE")));
+        }
+        return new Result(stays, services, payments, roomsCount, from, until, companyDebts);
+    }
+
+    /**
+     * Folio qatorining haqiqiy summasi: COSTALL — chegirma (EXTRACOST2, masalan −30%) ayirilgandan keyingi narx
+     * (QQS bilan); COST — chegirmagacha bo'lgan narx. COSTALL bo'lmasa — COST.
+     */
+    static BigDecimal amount(JsonNode fc) {
+        JsonNode all = fc.get("COSTALL");
+        return all != null && all.isNumber() ? all.decimalValue() : d(fc, "COST");
+    }
+
+    /** Qarz: Shelter FOLIO.BALANCE (manfiy — qarz) bo'lsa — undan; aks holda xizmatlar − to'lovlar. */
+    private static BigDecimal balance(long folio, BigDecimal total, BigDecimal paid, Map<Long, BigDecimal> folioBalance) {
+        if (folio <= 0) {
+            return null;
+        }
+        BigDecimal b = folioBalance.get(folio);
+        return b != null ? b.negate() : total.subtract(paid);
+    }
+
+    private static boolean isStay(JsonNode r) {
+        int state = (int) l(r, "STATE");
+        return l(r, "ENABLED") == 1 && (state == 50 || state == 52 || state == 300 || state == 305 || state == 400);
+    }
+
+    /** Xona almashtirish nusxalarini aniqlash kaliti: IDPAR + folio + kelish/ketish kunlari. */
+    private static String copyKey(JsonNode r) {
+        long parent = l(r, "IDPAR") > 0 ? l(r, "IDPAR") : l(r, "ID");
+        LocalDate a = date(r, "ARRIVAL"), b = date(r, "DEPARTURE");
+        return parent + "|" + l(r, "FOLIO") + "|" + a + "|" + b;
     }
 
     static BookingStatus status(int state, boolean cancelled, LocalDate arrival, LocalDate today) {

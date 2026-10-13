@@ -11,8 +11,10 @@
                 <span th:if="${hotel.city}" th:text="${hotel.city}"></span>
                 <span th:if="${hotel.city}">·</span>
                 <span th:text="${hotel.roomsCount} + ' та хона'"></span>
-                <span class="badge badge-ok" th:if="${hotel.exelyConnected}">Exely уланган</span>
-                <span class="badge badge-warn" th:unless="${hotel.exelyConnected}">Exely уланмаган</span>
+                <th:block th:with="pmsName=${@pms.name(hotel)}">
+                    <span class="badge badge-ok" th:if="${pmsName != null}" th:text="${pmsName} + ' уланган'">Exely уланган</span>
+                    <span class="badge badge-warn" th:if="${pmsName == null}">PMS уланмаган</span>
+                </th:block>
             </p>
         </div>
         <div class="head-actions">
@@ -33,8 +35,8 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
         </div>
         <p><strong>Ҳали маълумот йўқ</strong></p>
-        <p th:unless="${hotel.exelyConnected}">Exely улангач, бронлар ва тўловлар шу ерда автоматик кўринади.</p>
-        <p th:if="${hotel.exelyConnected}">Exely уланган — биринчи синхронлаш тугагач, маълумотлар шу ерда кўринади.</p>
+        <p th:unless="${@pms.connected(hotel)}">PMS (Exely ёки UCS Shelter) улангач, бронлар ва тўловлар шу ерда автоматик кўринади.</p>
+        <p th:if="${@pms.connected(hotel)}" th:text="${@pms.name(hotel)} + ' уланган — биринчи синхронлаш тугагач, маълумотлар шу ерда кўринади.'"></p>
     </div>
 
     <th:block th:if="${hasData}" th:with="s=${kpi.stays}, ps=${kpi.previousStays}">
@@ -112,7 +114,7 @@
                 </div>
                 <th:block th:if="${paymentsComplete}">
                     <div class="stat-value" data-count th:text="${@fmt.moneyShort(today.debt, cur)}">0</div>
-                    <div class="stat-sub" th:text="${today.debtorCount} + ' та брон тўлиқ тўланмаган'"></div>
+                    <div class="stat-sub" th:text="${today.debtorCount} + ' та брон / ҳисоб тўлиқ тўланмаган'"></div>
                 </th:block>
                 <th:block th:unless="${paymentsComplete}">
                     <div class="stat-value">—</div>
