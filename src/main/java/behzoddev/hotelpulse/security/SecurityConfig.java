@@ -26,10 +26,13 @@ public class SecurityConfig {
                         // Faqat "local" profilda mavjud (DevLoginController); boshqa
                         // muhitlarda bu manzilda controller yo'q — 404.
                         .requestMatchers("/dev-login").permitAll()
+                        // Mehmonxona agentlari: juftlash va yuklash — sessiyasiz, X-Agent-Key bilan (AgentApiController).
+                        .requestMatchers("/api/agent/**").permitAll()
                         // Mehmonxona/foydalanuvchi boshqaruvi — faqat platforma egasi.
                         .requestMatchers("/admin/**").hasRole("OWNER")
                         .requestMatchers("/team/**").hasAnyRole("OWNER", "HOTEL_OWNER", "MANAGEMENT_COMPANY")
                         .anyRequest().authenticated())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/agent/**"))
                 .formLogin(form -> form
                         .loginPage("/login")
                         .defaultSuccessUrl("/", true)

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Агентлар')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-agents')}"></header>
+<main class="container">
+    <div class="page-head reveal">
+        <div>
+            <h1>Агентлар</h1>
+            <p class="subtitle">Меҳмонхона компьютеридаги дастурлар (UCS Shelter, 1C) — маълумотни HotelPulse'га юборади</p>
+        </div>
+    </div>
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+    <form method="post" class="card form reveal" th:action="@{/admin/agents/approve}">
+        <h3 class="card-title">Агентни улаш</h3>
+        <p class="hint">Меҳмонхона компьютерида агент <code>--pair</code> билан ишга туширилганда экранда 6 хонали код чиқади.
+            Шу кодни киритиб, меҳмонхонани танланг — агент калитни ўзи олади (калит ҳеч қаерда кўрсатилмайди).</p>
+        <div class="form-grid">
+            <div class="field">
+                <label for="code">Код</label>
+                <input type="text" id="code" name="code" inputmode="numeric" maxlength="7" pattern="\d{6}" required placeholder="123456">
+            </div>
+            <div class="field">
+                <label for="hotel">Меҳмонхона</label>
+                <select id="hotel" name="hotel" required>
+                    <option th:each="h : ${hotels}" th:value="${h.id}" th:text="${h.name}"></option>
+                </select>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Тасдиқлаш</button>
+        </div>
+    </form>
+
+    <div class="card table-wrap reveal" th:if="${!agents.isEmpty()}">
+        <h3 class="card-title">Агентлар</h3>
+        <table class="debt-table">
+            <thead>
+            <tr><th>Тури</th><th>Компьютер</th><th>Меҳмонхона</th><th>Ҳолат</th><th>Охирги алоқа</th><th class="num">Файллар</th><th></th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="a : ${agents}">
+                <td th:text="${a.kind}"></td>
+                <td class="mono" th:text="${a.machine} ?: '—'"></td>
+                <td th:text="${a.hotelName} ?: (${a.hotelHint} ?: '—')"></td>
+                <td>
+                    <span class="badge badge-ok" th:if="${a.approved}">Уланган</span>
+                    <th:block th:unless="${a.approved}">
+                        <span class="badge badge-warn" th:text="'Код ' + ${a.pairingCode} + ' · ' + ${#temporals.format(a.pairingExpires, 'HH:mm')} + ' гача'"></span>
+                        <form method="post" class="fk-form" th:action="@{/admin/agents/{id}/approve(id=${a.id})}">
+                            <select name="hotel" aria-label="Меҳмонхона">
+                                <option value="auto" th:if="${a.hotelHint != null and a.suggestedHotelId == null}"
+                                        th:text="'➕ Янги: ' + ${a.hotelHint}" selected></option>
+                                <option th:each="h : ${hotels}" th:value="${h.id}" th:text="${h.name}"
+                                        th:selected="${h.id == a.suggestedHotelId}"></option>
+                            </select>
+                            <button type="submit" class="btn btn-primary btn-sm">Тасдиқлаш</button>
+                        </form>
+                    </th:block>
+                </td>
+                <td th:text="${a.lastSeenAt} != null ? ${#temporals.format(a.lastSeenAt, 'dd.MM.yyyy HH:mm')} : '—'"></td>
+                <td class="num" th:text="${a.uploads}"></td>
+                <td>
+                    <form method="post" th:action="@{/admin/agents/{id}/delete(id=${a.id})}"
+                          onsubmit="return confirm('Агентни ўчирасизми? Унинг калити бошқа ишламайди.')">
+                        <button type="submit" class="btn btn-secondary btn-sm">Ўчириш</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card table-wrap reveal" th:if="${!uploads.isEmpty()}">
+        <h3 class="card-title">Юкланган файллар</h3>
+        <table class="debt-table">
+            <thead><tr><th>Сана</th><th>Меҳмонхона</th><th>Тури</th><th>Файл</th><th class="num">Ҳажми</th></tr></thead>
+            <tbody>
+            <tr th:each="u : ${uploads}">
+                <td th:text="${#temporals.format(u.createdAt, 'dd.MM.yyyy HH:mm')}"></td>
+                <td th:text="${u.hotelName} ?: '—'"></td>
+                <td th:text="${u.kind}"></td>
+                <td><a th:href="@{/admin/agents/uploads/{id}(id=${u.id})}" th:text="${u.name} ?: ('файл #' + ${u.id})"></a></td>
+                <td class="num" th:text="${@fmt.number(u.size / 1024)} + ' KB'"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>
