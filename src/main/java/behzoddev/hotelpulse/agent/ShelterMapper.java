@@ -288,7 +288,9 @@ public final class ShelterMapper {
             companyDebts.add(new CompanyDebt("sh:folio:" + id,
                     cut(name.isBlank() ? "Ҳисоб №" + id : name, 255), d(f, "BALANCE").negate(), date(f, "CREATIONDATE"),
                     companyServices.getOrDefault(id, BigDecimal.ZERO), companyPaid.getOrDefault(id, BigDecimal.ZERO),
-                    first != null ? first : days == null ? null : days[0], last != null ? last : days == null ? null : days[1],
+                    // Davr — shu hisobga yozilgan kunlar (uzoq yashashlar oylar bo'yicha turli hisoblarga bo'linadi);
+                    // oxirgi yozilgan tunning ertasi — ketish kuni.
+                    days != null ? days[0] : first, days != null ? days[1].plusDays(1) : last,
                     (int) merged.stream().filter(s -> s.room() != null).count(), people, merged));
         }
         return new Result(stays, services, payments, roomsCount, from, until, companyDebts);
