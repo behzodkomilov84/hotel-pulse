@@ -38,3 +38,23 @@ CREATE TABLE agent_uploads
     CONSTRAINT fk_agent_uploads_hotel FOREIGN KEY (hotel_id) REFERENCES hotels (id) ON DELETE CASCADE,
     INDEX idx_agent_uploads (hotel_id, kind, created_at)
 );
+
+--changeset behzod:33
+-- Agent sinxronlashi: har bir jadvalning oxirgi to'liq nusxasi (gzip JSON Lines, katta jadval — qismlarga bo'lingan).
+-- Har sinxronlashda almashtiriladi (tarix saqlanmaydi — hajm o'smasin).
+CREATE TABLE agent_tables
+(
+    hotel_id    BIGINT       NOT NULL,
+    table_name  VARCHAR(64)  NOT NULL,
+    part        INT          NOT NULL,
+    parts       INT          NOT NULL,
+    row_count   INT          NOT NULL,
+    sync_id     VARCHAR(40)  NULL,
+    payload     LONGBLOB     NOT NULL,
+    uploaded_at DATETIME(6)  NOT NULL,
+    PRIMARY KEY (hotel_id, table_name, part),
+    CONSTRAINT fk_agent_tables_hotel FOREIGN KEY (hotel_id) REFERENCES hotels (id) ON DELETE CASCADE
+);
+
+ALTER TABLE agents ADD COLUMN last_sync_at DATETIME(6) NULL;
+ALTER TABLE agents ADD COLUMN last_sync_message VARCHAR(500) NULL;

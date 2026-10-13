@@ -101,11 +101,39 @@ class AgentDbTest {
         assertArrayEquals(json, mvc.perform(get("/admin/agents/uploads/" + upload.id()).with(user(owner)))
                 .andReturn().getResponse().getContentAsByteArray());
 
+        // Jadval sinxronlashi: ikki qism, keyin qayta yuborilganda eski qismlar almashtiriladi.
+        byte[] p0 = gzip("{\"ID\":1}\n{\"ID\":2}\n");
+        byte[] p1 = gzip("{\"ID\":3}\n");
+        assertEquals(400, mvc.perform(post("/api/agent/table").header("X-Agent-Key", key).param("name", "ROOMS")
+                .content("plain".getBytes())).andReturn().getResponse().getStatus());
+        for (int i = 0; i < 2; i++) {
+            assertEquals(200, mvc.perform(post("/api/agent/table").header("X-Agent-Key", key).param("name", "ROOMS")
+                    .param("part", String.valueOf(i)).param("parts", "2").param("rows", i == 0 ? "2" : "1")
+                    .content(i == 0 ? p0 : p1)).andReturn().getResponse().getStatus());
+        }
+        assertEquals(3, agents.tableRows(hotel.getId(), "ROOMS").size());
+        mvc.perform(post("/api/agent/table").header("X-Agent-Key", key).param("name", "ROOMS")
+                .param("part", "0").param("parts", "1").param("rows", "1").content(gzip("{\"ID\":9}\n")));
+        assertEquals(java.util.List.of("{\"ID\":9}"), agents.tableRows(hotel.getId(), "ROOMS"));
+        assertEquals(200, mvc.perform(post("/api/agent/sync-done").header("X-Agent-Key", key).param("message", "1 та жадвал"))
+                .andReturn().getResponse().getStatus());
+        var synced = agents.agents().get(0);
+        assertEquals("1 та жадвал", synced.lastSyncMessage());
+        assertEquals(1, synced.tables());
+
         // Ikkinchi agent shu nom bilan — mavjud mehmonxona avtomatik tanlanadi.
         agents.pair("SHELTER", "WIN-2", "AYDARKO'L RESORT");
         var second = agents.agents().stream().filter(a -> !a.isApproved()).findFirst().orElseThrow();
         assertEquals(hotel.getId(), second.suggestedHotelId());
         assertEquals(hotel.getId(), agents.approveAgent(second.id(), null));
         assertEquals(1, hotelRepository.findAll().size());
+    }
+
+    private static byte[] gzip(String s) throws java.io.IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (GZIPOutputStream gz = new GZIPOutputStream(bos)) {
+            gz.write(s.getBytes(StandardCharsets.UTF_8));
+        }
+        return bos.toByteArray();
     }
 }

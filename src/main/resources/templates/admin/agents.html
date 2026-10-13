@@ -37,7 +37,7 @@
         <h3 class="card-title">Агентлар</h3>
         <table class="debt-table">
             <thead>
-            <tr><th>Тури</th><th>Компьютер</th><th>Меҳмонхона</th><th>Ҳолат</th><th>Охирги алоқа</th><th class="num">Файллар</th><th></th></tr>
+            <tr><th>Тури</th><th>Компьютер</th><th>Меҳмонхона</th><th>Ҳолат</th><th>Охирги алоқа</th><th>Охирги синхронлаш</th><th class="num">Жадваллар</th><th></th></tr>
             </thead>
             <tbody>
             <tr th:each="a : ${agents}">
@@ -60,7 +60,9 @@
                     </th:block>
                 </td>
                 <td th:text="${a.lastSeenAt} != null ? ${#temporals.format(a.lastSeenAt, 'dd.MM.yyyy HH:mm')} : '—'"></td>
-                <td class="num" th:text="${a.uploads}"></td>
+                <td class="wrap"><th:block th:if="${a.lastSyncAt != null}"><span th:text="${#temporals.format(a.lastSyncAt, 'dd.MM.yyyy HH:mm')}"></span>
+                    <div class="muted" th:text="${a.lastSyncMessage}"></div></th:block><span th:unless="${a.lastSyncAt != null}">—</span></td>
+                <td class="num" th:text="${a.tables}"></td>
                 <td>
                     <form method="post" th:action="@{/admin/agents/{id}/delete(id=${a.id})}"
                           onsubmit="return confirm('Агентни ўчирасизми? Унинг калити бошқа ишламайди.')">

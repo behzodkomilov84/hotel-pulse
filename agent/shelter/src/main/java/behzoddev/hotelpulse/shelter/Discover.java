@@ -262,7 +262,7 @@ public final class Discover {
         return r;
     }
 
-    private static char[] readPassword(String prompt) throws Exception {
+    static char[] readPassword(String prompt) throws Exception {
         Console console = System.console();
         if (console != null) {
             char[] p = console.readPassword(prompt);

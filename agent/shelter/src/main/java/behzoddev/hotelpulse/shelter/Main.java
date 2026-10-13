@@ -40,6 +40,7 @@ public final class Main {
         String server = option(rest, "server", "https://hotel-pulse.uz");
         switch (command) {
             case "pair" -> pair(server, option(rest, "hotel", null));
+            case "sync" -> Sync.run(rest, server);
             case "discover" -> {
                 Path out = Discover.run(rest);
                 if (out != null && Files.exists(KEY_FILE)) {
@@ -49,7 +50,7 @@ public final class Main {
                 }
             }
             default -> {
-                System.out.println("Buyruqlar: pair | discover");
+                System.out.println("Buyruqlar: pair | discover | sync");
                 System.exit(1);
             }
         }

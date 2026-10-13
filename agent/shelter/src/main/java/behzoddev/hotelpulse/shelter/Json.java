@@ -60,7 +60,7 @@ final class Json {
         }
     }
 
-    private static void string(StringBuilder sb, String s) {
+    static void string(StringBuilder sb, String s) {
         sb.append('"');
         for (char ch : s.toCharArray()) {
             switch (ch) {
@@ -79,6 +79,11 @@ final class Json {
             }
         }
         sb.append('"');
+    }
+
+    /** Butun son bo'lsa — kasrsiz (12.0 → 12). */
+    static String number(double d) {
+        return d == Math.rint(d) && Math.abs(d) < 1e15 ? Long.toString((long) d) : Double.toString(d);
     }
 
     private static void pad(StringBuilder sb, int indent) {

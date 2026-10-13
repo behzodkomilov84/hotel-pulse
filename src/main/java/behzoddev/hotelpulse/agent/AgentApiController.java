@@ -71,6 +71,35 @@ public class AgentApiController {
         return ResponseEntity.ok(Map.of("id", id, "size", data.length));
     }
 
+    /** Jadval qismi: tana — gzip JSON Lines (siqilgan holda saqlanadi). */
+    @PostMapping("/table")
+    public ResponseEntity<?> table(@RequestHeader(value = "X-Agent-Key", required = false) String key,
+                                   @RequestParam String name, @RequestParam(defaultValue = "0") int part,
+                                   @RequestParam(defaultValue = "1") int parts, @RequestParam(defaultValue = "0") int rows,
+                                   @RequestParam(required = false) String syncId, @RequestBody byte[] body) {
+        var agent = agents.authenticate(key);
+        if (agent.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "agent kaliti noto'g'ri yoki tasdiqlanmagan"));
+        }
+        if (body.length < 2 || (body[0] & 0xff) != 0x1f || (body[1] & 0xff) != 0x8b || part < 0 || parts < 1 || part >= parts) {
+            return ResponseEntity.badRequest().body(Map.of("error", "gzip tana va to'g'ri part/parts kerak"));
+        }
+        agents.saveTablePart(agent.get(), name, part, parts, rows, syncId, body);
+        return ResponseEntity.ok(Map.of("ok", true));
+    }
+
+    /** Sinxronlash yakuni: agent qisqa xabar yuboradi (nechta jadval/qator, xatolar). */
+    @PostMapping("/sync-done")
+    public ResponseEntity<?> syncDone(@RequestHeader(value = "X-Agent-Key", required = false) String key,
+                                      @RequestParam(required = false) String message) {
+        var agent = agents.authenticate(key);
+        if (agent.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "kalit noto'g'ri"));
+        }
+        agents.finishSync(agent.get(), message);
+        return ResponseEntity.ok(Map.of("ok", true));
+    }
+
     @GetMapping("/ping")
     public ResponseEntity<?> ping(@RequestHeader(value = "X-Agent-Key", required = false) String key) {
         return agents.authenticate(key)
