@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${table.title} + ' — ' + ${hotel.name})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-hotels')}"></header>
+<main class="container">
+    <div class="page-head reveal">
+        <div>
+            <a class="back-link" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">← <span th:text="${hotel.name}">Меҳмонхона</span></a>
+            <h1 th:text="${table.title}">Маълумотлар</h1>
+            <p class="subtitle">
+                <span th:text="${@fmt.number(total)} + ' та ёзув'"></span>
+                <span th:if="${q != null and !q.isBlank()}" th:text="'· «' + ${q} + '» бўйича'"></span>
+                <span th:text="'· UCS Shelter жадвали ' + ${table.key}"></span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Jadvallar orasida o'tish -->
+    <nav class="kind-tabs reveal" aria-label="Shelter жадваллари">
+        <a th:each="t : ${tables}" class="kind-tab" th:classappend="${t.key == table.key} ? 'active'"
+           th:href="@{/admin/hotels/{id}/shelter/data/{k}(id=${hotel.id}, k=${t.key})}">
+            <span th:text="${t.title}"></span>
+            <b th:text="${@fmt.number(counts[t.key] ?: 0)}">0</b>
+        </a>
+    </nav>
+
+    <form class="debt-filter reveal" method="get" th:action="@{/admin/hotels/{id}/shelter/data/{k}(id=${hotel.id}, k=${table.key})}">
+        <div class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" name="q" th:value="${q}" placeholder="ID, исм, рақам ёки исталган қиймат" aria-label="Қидирув">
+        </div>
+        <button type="submit" class="btn btn-primary">Қидириш</button>
+        <a class="btn btn-secondary" th:if="${q != null and !q.isBlank()}"
+           th:href="@{/admin/hotels/{id}/shelter/data/{k}(id=${hotel.id}, k=${table.key})}">Тозалаш</a>
+    </form>
+
+    <div class="card table-wrap reveal" th:if="${!rows.isEmpty()}">
+        <p class="table-caption">Қаторни босинг — Shelter'дан келган тўлиқ маълумот очилади.</p>
+        <table class="raw-table">
+            <thead>
+            <tr>
+                <th th:each="c : ${columns}" th:text="${c.label}" th:classappend="${c.numeric()} ? 'num'"></th>
+            </tr>
+            </thead>
+            <tbody>
+            <th:block th:each="r : ${rows}">
+                <tr class="raw-row" tabindex="0" th:attr="aria-controls='raw-' + ${r.index}" aria-expanded="false">
+                    <td th:each="v, st : ${r.cells}" th:text="${v}" th:classappend="${columns[st.index].numeric()} ? 'num'"></td>
+                </tr>
+                <tr class="raw-detail" th:id="'raw-' + ${r.index}" hidden>
+                    <td th:attr="colspan=${columns.size()}">
+                        <pre class="raw-json" th:text="${r.json}"></pre>
+                    </td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card empty reveal" th:if="${rows.isEmpty()}">
+        <p><strong>Ёзув топилмади</strong></p>
+    </div>
+
+    <nav class="pager reveal" th:if="${pages > 1}" aria-label="Саҳифалар">
+        <a class="btn btn-secondary" th:classappend="${page <= 1} ? 'disabled'" th:attr="aria-disabled=${page <= 1}"
+           th:href="@{/admin/hotels/{id}/shelter/data/{k}(id=${hotel.id}, k=${table.key}, q=${q}, page=${page - 1})}">← Олдинги</a>
+        <span class="pager-info" th:text="${page} + ' / ' + ${pages}"></span>
+        <a class="btn btn-secondary" th:classappend="${page >= pages} ? 'disabled'" th:attr="aria-disabled=${page >= pages}"
+           th:href="@{/admin/hotels/{id}/shelter/data/{k}(id=${hotel.id}, k=${table.key}, q=${q}, page=${page + 1})}">Кейинги →</a>
+    </nav>
+</main>
+<script>
+    document.querySelectorAll('.raw-row').forEach(function (row) {
+        function toggle() {
+            var detail = document.getElementById(row.getAttribute('aria-controls'));
+            var open = detail.hidden;
+            detail.hidden = !open;
+            row.setAttribute('aria-expanded', String(open));
+            row.classList.toggle('open', open);
+        }
+        row.addEventListener('click', toggle);
+        row.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+        });
+    });
+</script>
+</body>
+</html>

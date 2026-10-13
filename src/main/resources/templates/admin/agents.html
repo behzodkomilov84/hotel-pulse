@@ -37,13 +37,14 @@
         <h3 class="card-title">Агентлар</h3>
         <table class="debt-table">
             <thead>
-            <tr><th>Тури</th><th>Компьютер</th><th>Меҳмонхона</th><th>Ҳолат</th><th>Охирги алоқа</th><th>Охирги синхронлаш</th><th class="num">Жадваллар</th><th>Ҳисоблаш (бронлар, даромад)</th><th></th></tr>
+            <tr><th>Агент</th><th>Ҳолат</th><th>Синхронлаш</th><th>Ҳисоблаш</th><th></th></tr>
             </thead>
             <tbody>
             <tr th:each="a : ${agents}">
-                <td th:text="${a.kind}"></td>
-                <td class="mono" th:text="${a.machine} ?: '—'"></td>
-                <td th:text="${a.hotelName} ?: (${a.hotelHint} ?: '—')"></td>
+                <td class="wrap">
+                    <strong th:text="${a.hotelName} ?: (${a.hotelHint} ?: '—')"></strong>
+                    <div class="muted"><span th:text="${a.kind}"></span> · <span class="mono" th:text="${a.machine} ?: '—'"></span></div>
+                </td>
                 <td>
                     <span class="badge badge-ok" th:if="${a.approved}">Уланган</span>
                     <th:block th:unless="${a.approved}">
@@ -58,12 +59,11 @@
                             <button type="submit" class="btn btn-primary btn-sm">Тасдиқлаш</button>
                         </form>
                     </th:block>
+                    <div class="muted" th:if="${a.lastSeenAt != null}" th:text="'алоқа: ' + ${#temporals.format(a.lastSeenAt, 'dd.MM HH:mm')}"></div>
                 </td>
-                <td th:text="${a.lastSeenAt} != null ? ${#temporals.format(a.lastSeenAt, 'dd.MM.yyyy HH:mm')} : '—'"></td>
-                <td class="wrap"><th:block th:if="${a.lastSyncAt != null}"><span th:text="${#temporals.format(a.lastSyncAt, 'dd.MM.yyyy HH:mm')}"></span>
+                <td class="wrap agent-col"><th:block th:if="${a.lastSyncAt != null}"><span th:text="${#temporals.format(a.lastSyncAt, 'dd.MM.yyyy HH:mm')}"></span>
                     <div class="muted" th:text="${a.lastSyncMessage}"></div></th:block><span th:unless="${a.lastSyncAt != null}">—</span></td>
-                <td class="num" th:text="${a.tables}"></td>
-                <td class="wrap" th:with="st=${a.hotelId != null ? importStatus[a.hotelId] : null}, h=${a.hotelId != null ? hotelSync[a.hotelId] : null}">
+                <td class="wrap agent-col" th:with="st=${a.hotelId != null ? importStatus[a.hotelId] : null}, h=${a.hotelId != null ? hotelSync[a.hotelId] : null}">
                     <span class="badge badge-role" th:if="${st != null and st.running()}">
                         <span class="spinner"></span><span th:text="'Ҳисобланмоқда… ' + ${#temporals.format(st.since, 'HH:mm:ss')} + ' дан'"></span></span>
                     <span class="badge badge-off" th:if="${st != null and !st.running()}">Навбатда</span>
@@ -74,16 +74,16 @@
                     </th:block>
                     <span th:if="${st == null and (h == null or h.exelyLastSyncAt == null)}">—</span>
                 </td>
-                <td class="fk-form">
+                <td><div class="agent-actions">
                     <form method="post" th:if="${a.approved and a.kind == 'SHELTER' and a.tables > 0}"
                           th:action="@{/admin/agents/{id}/import(id=${a.id})}">
-                        <button type="submit" class="btn btn-primary btn-sm">Ҳозир қайта ҳисоблаш</button>
+                        <button type="submit" class="btn btn-primary btn-sm">Қайта ҳисоблаш</button>
                     </form>
                     <form method="post" th:action="@{/admin/agents/{id}/delete(id=${a.id})}"
                           onsubmit="return confirm('Агентни ўчирасизми? Унинг калити бошқа ишламайди.')">
                         <button type="submit" class="btn btn-secondary btn-sm">Ўчириш</button>
                     </form>
-                </td>
+                </div></td>
             </tr>
             </tbody>
         </table>

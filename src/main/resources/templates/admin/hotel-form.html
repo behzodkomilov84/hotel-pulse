@@ -135,7 +135,8 @@
     </form>
 
     <!-- ===== Exely sinxronlash holati ===== -->
-    <section class="card sync-card reveal" th:if="${hotel != null}" th:attr="data-running=${syncRunning}">
+    <!-- Shelter mehmonxonalarida (Exely ulanmagan) — ko'rsatilmaydi: holat UCS Shelter kartochkasida. -->
+    <section class="card sync-card reveal" th:if="${hotel != null and (hotel.exelyConnected or shelter == null)}" th:attr="data-running=${syncRunning}">
         <div class="sync-head">
             <div>
                 <h3 class="card-title">Exely синхронизацияси</h3>
@@ -249,10 +250,12 @@
             <h4 class="archive-title">Shelter'дан олинган маълумотлар
                 <span class="muted" th:text="'— ' + ${shelter.tables} + ' та жадвал, ' + ${@fmt.number(shelter.rows)} + ' та қатор; таҳлиллар учун базада сақланади'"></span></h4>
             <div class="archive-grid">
-                <div class="archive-item" th:each="e : ${shelter.tiles}">
-                    <b th:text="${@fmt.number(e.value)}">0</b>
-                    <span th:text="${e.key}"></span>
-                </div>
+                <a class="archive-item" th:each="t : ${shelter.tiles}"
+                   th:href="@{/admin/hotels/{id}/shelter/data/{k}(id=${hotel.id}, k=${t.table})}"
+                   th:title="'Очиш: ' + ${t.label}">
+                    <b th:text="${@fmt.number(t.rows)}">0</b>
+                    <span th:text="${t.label}"></span>
+                </a>
             </div>
         </div>
         <div class="sync-actions">

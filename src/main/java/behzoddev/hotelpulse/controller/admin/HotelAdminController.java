@@ -145,25 +145,11 @@ public class HotelAdminController {
         return "redirect:/admin/hotels/" + id;
     }
 
-    /** Shelter agenti yuborgan asosiy jadvallar: nom → qatorlar soni (bo'lmasa — null). */
-    public record ShelterArchive(java.util.Map<String, Long> tiles, int tables, long rows, java.time.LocalDateTime syncedAt) {
+    /** Shelter agenti yuborgan asosiy jadvallar (kartochkalar — bosilsa jadval ochiladi). */
+    public record ShelterArchive(List<ShelterTile> tiles, int tables, long rows, java.time.LocalDateTime syncedAt) {
     }
 
-    private static final java.util.Map<String, String> SHELTER_LABELS = new java.util.LinkedHashMap<>();
-
-    static {
-        SHELTER_LABELS.put("ROOM_SCHEDULE", "Бронлар ва яшашлар");
-        SHELTER_LABELS.put("GROUP_SCHEDULE", "Гуруҳ бронлари");
-        SHELTER_LABELS.put("GUESTS", "Меҳмонлар ва тўловчилар");
-        SHELTER_LABELS.put("ENTERPRISEDEBTOR", "Корхоналар (агентлар)");
-        SHELTER_LABELS.put("COMPANY_CONTRACTS", "Шартномалар");
-        SHELTER_LABELS.put("FOLIO", "Фолиолар (ҳисоблар)");
-        SHELTER_LABELS.put("FOLIO_CONTENTS", "Хизматлар ва тўловлар");
-        SHELTER_LABELS.put("INVOICES", "Касса чеклари");
-        SHELTER_LABELS.put("CASH_DOCUMENTS", "Касса ҳужжатлари");
-        SHELTER_LABELS.put("ROOMS", "Хоналар");
-        SHELTER_LABELS.put("ROOM_KINDS", "Хона турлари");
-        SHELTER_LABELS.put("OPERATIONS", "Хизмат турлари");
+    public record ShelterTile(String table, String label, long rows) {
     }
 
     private ShelterArchive shelterArchive(Long hotelId) {
@@ -179,12 +165,10 @@ public class HotelAdminController {
             rows += t.rows();
             synced = synced == null || (t.uploadedAt() != null && t.uploadedAt().isAfter(synced)) ? t.uploadedAt() : synced;
         }
-        java.util.Map<String, Long> tiles = new java.util.LinkedHashMap<>();
-        SHELTER_LABELS.forEach((table, label) -> {
-            if (byName.containsKey(table)) {
-                tiles.put(label, byName.get(table));
-            }
-        });
+        List<ShelterTile> tiles = ShelterDataController.TABLES.values().stream()
+                .filter(t -> byName.containsKey(t.key()))
+                .map(t -> new ShelterTile(t.key(), t.title(), byName.get(t.key())))
+                .toList();
         return new ShelterArchive(tiles, tables.size(), rows, synced);
     }
 

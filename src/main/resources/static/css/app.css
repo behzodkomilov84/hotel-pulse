@@ -1098,3 +1098,6 @@ table.rt td.heat-4 { background: color-mix(in srgb, var(--primary) 50%, transpar
 /* Agentlar sahifasi: kartochkalar orasidagi masofa */
 .agents-page > .card + .card { margin-top: 20px; }
 .agents-page .card-title { margin-bottom: 12px; }
+.agents-page .agent-col { min-width: 200px; max-width: 320px; }
+.agents-page .agent-actions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; white-space: nowrap; }
+.agents-page .agent-actions .btn { width: 100%; }

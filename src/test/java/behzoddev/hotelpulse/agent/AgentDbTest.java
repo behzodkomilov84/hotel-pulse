@@ -183,6 +183,13 @@ class AgentDbTest {
         String admin = html("/admin/hotels/" + hotel.getId());
         assertTrue(admin.contains("олинган маълумотлар") && admin.contains("Бронлар ва яшашлар"));
         assertTrue(html("/").contains("UCS Shelter уланган"));
+        assertTrue(admin.contains("/shelter/data/ROOM_SCHEDULE"), "kartochka bosiladigan");
+        assertFalse(admin.contains("Ҳозир синхронлаш"), "Exely kartochkasi yashirin");
+        // Jadval sahifasi: o'qiladigan sana, holat nomi, qidiruv.
+        String data = html("/admin/hotels/" + hotel.getId() + "/shelter/data/ROOM_SCHEDULE");
+        assertTrue(data.contains("Кетган (400)") && data.matches("(?s).*\\d\\d\\.\\d\\d\\.\\d{4}.*"), "sana va holat");
+        assertTrue(html("/admin/hotels/" + hotel.getId() + "/shelter/data/GUESTS?q=Rahimov").contains("Rahimov"));
+        assertTrue(html("/admin/hotels/" + hotel.getId() + "/shelter/data/GUESTS?q=yo%27q-qiymat").contains("Ёзув топилмади"));
     }
 
     private String html(String url) throws Exception {

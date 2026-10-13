@@ -50,7 +50,7 @@
             </thead>
             <tbody>
             <th:block th:each="r : ${rows}">
-                <tr class="raw-row" tabindex="0" th:attr="aria-controls='рав-' + ${r.id}" aria-expanded="false">
+                <tr class="raw-row" tabindex="0" th:attr="aria-controls='raw-' + ${r.id}" aria-expanded="false">
                     <td th:each="v, st : ${r.cells}" th:text="${v}"
                         th:classappend="${kind.columns[st.index].type.name() == 'MONEY' or kind.columns[st.index].type.name() == 'COUNT'} ? 'num'"></td>
                 </tr>

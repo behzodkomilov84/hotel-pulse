@@ -12,7 +12,7 @@
             <a class="back-link" th:href="@{/hotels/{id}(id=${hotel.id})}">← <span th:text="${hotel.name}">Меҳмонхона</span></a>
             <h1>Қарздорлик</h1>
             <p class="subtitle">
-                <span th:text="${s.count} + ' та яшаш тўлиқ тўланмаган'"></span>
+                <span th:text="${s.count} + ' та яшаш тўлиқ тўланмаган' + (${companyTotal.count > 0} ? ' · ' + ${companyTotal.count} + ' та корхона/гуруҳ ҳисобида қарз' : '')"></span>
                 <span>·</span>
                 <span th:text="'ҳолат: ' + ${#temporals.format(#temporals.createNow(), 'dd.MM.yyyy HH:mm')}"></span>
             </p>
@@ -36,8 +36,8 @@
         <a class="card stat stat-link stat-alert" th:href="@{/hotels/{id}/debts(id=${hotel.id})}"
            th:classappend="${category == null} ? 'selected'">
             <div class="stat-top"><span class="stat-label">Жами қарз<span th:replace="~{fragments/layout :: tip(#{tip.debt.total})}"></span></span></div>
-            <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.total, cur)}">0</div>
-            <div class="stat-sub" th:text="${s.count} + ' та яшаш'"></div>
+            <div class="stat-value" data-count th:text="${@fmt.moneyShort(s.total.add(companyTotal.amount), cur)}">0</div>
+            <div class="stat-sub" th:text="${s.count} + ' та яшаш' + (${companyTotal.count > 0} ? ' + ' + ${companyTotal.count} + ' та ҳисоб (' + ${@fmt.moneyShort(companyTotal.amount, cur)} + ')' : '')"></div>
         </a>
         <a class="card stat stat-link" th:href="@{/hotels/{id}/debts(id=${hotel.id}, category='IN_HOUSE')}"
            th:classappend="${category != null and category.name() == 'IN_HOUSE'} ? 'selected'">
