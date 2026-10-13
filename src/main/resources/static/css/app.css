@@ -1094,3 +1094,7 @@ table.rt td.heat-4 { background: color-mix(in srgb, var(--primary) 50%, transpar
 .usali-row .usali-faktura { grid-column: 1 / -1; text-align: right; margin-top: -2px; color: var(--primary); }
 .fk-providers { display: flex; flex-wrap: wrap; gap: 8px 20px; }
 .fk-connect .field[hidden] { display: none; }
+
+/* Agentlar sahifasi: kartochkalar orasidagi masofa */
+.agents-page > .card + .card { margin-top: 20px; }
+.agents-page .card-title { margin-bottom: 12px; }

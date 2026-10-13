@@ -229,9 +229,12 @@
                 <p class="subtitle">Меҳмонхона компьютеридаги агент Shelter базасини ҳар 2 соатда юборади; бронлар, даромад ва
                     тўловлар шундан қайта ҳисобланади.</p>
             </div>
-            <span class="badge" th:classappend="${hotel.exelyLastSyncOk == false} ? 'badge-warn' : 'badge-ok'"
+            <span class="badge badge-role" th:if="${shelterStatus != null and shelterStatus.running()}"><span class="spinner"></span>Ҳисобланмоқда…</span>
+            <span class="badge badge-off" th:if="${shelterStatus != null and !shelterStatus.running()}">Навбатда</span>
+            <span class="badge" th:if="${shelterStatus == null}" th:classappend="${hotel.exelyLastSyncOk == false} ? 'badge-warn' : 'badge-ok'"
                   th:text="${hotel.exelyLastSyncOk == false} ? 'Хатолик' : 'Ишлаяпти'"></span>
         </div>
+        <script th:if="${shelterStatus != null}">setTimeout(() => location.reload(), 5000);</script>
         <dl class="sync-meta">
             <div>
                 <dt>Охирги юклаш</dt>

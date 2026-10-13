@@ -28,7 +28,18 @@ public class AgentAdminController {
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("agents", agents.agents());
+        var list = agents.agents();
+        model.addAttribute("agents", list);
+        java.util.Map<Long, behzoddev.hotelpulse.agent.ShelterImportService.Status> importStatus = new java.util.HashMap<>();
+        list.stream().filter(a -> a.hotelId() != null).forEach(a -> {
+            var s = shelterImport.status(a.hotelId());
+            if (s != null) {
+                importStatus.put(a.hotelId(), s);
+            }
+        });
+        model.addAttribute("importStatus", importStatus);
+        model.addAttribute("hotelSync", list.stream().filter(a -> a.hotelId() != null)
+                .collect(java.util.stream.Collectors.toMap(a -> a.hotelId(), a -> hotelService.getById(a.hotelId()), (x, y) -> x)));
         model.addAttribute("uploads", agents.uploads(50));
         model.addAttribute("hotels", hotelService.findAll());
         return "admin/agents";
@@ -66,7 +77,10 @@ public class AgentAdminController {
         if (agent.isEmpty()) {
             ra.addFlashAttribute("error", "Агент топилмади ёки меҳмонхонага боғланмаган");
         } else {
-            ra.addFlashAttribute("success", shelterImport.importNow(agent.get().hotelId()));
+            boolean started = shelterImport.importAsync(agent.get().hotelId());
+            ra.addFlashAttribute("success", started
+                    ? "Қайта ҳисоблаш бошланди — жараён шу саҳифада кўринади (бир неча сония)"
+                    : "Ҳисоблаш аллақачон навбатда ёки ишлаяпти");
         }
         return "redirect:/admin/agents";
     }

@@ -17,7 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Agent yuborgan UCS Shelter jadvallaridan (agent_tables) mehmonxonaning bronlari, kunlik daromadi va to'lovlarini
@@ -34,27 +33,75 @@ public class ShelterImportService {
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
     private final Clock clock;
+    private final boolean autoImport;
 
-    public ShelterImportService(AgentService agents, JdbcTemplate jdbc, TransactionTemplate tx, Clock clock) {
+    /** Barcha importlar bitta navbatda (xotira bir vaqtda faqat bitta import uchun sarflanadi). */
+    private final java.util.concurrent.ExecutorService queue = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "shelter-import");
+        t.setDaemon(true);
+        return t;
+    });
+    /** Mehmonxona → holat: navbatda (since = null) yoki hisoblanmoqda (since — boshlangan vaqt). */
+    private final Map<Long, Status> status = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** @param since hisoblash boshlangan vaqt; null — navbatda kutmoqda */
+    public record Status(LocalDateTime queuedAt, LocalDateTime since) {
+
+        public boolean running() {
+            return since != null;
+        }
+    }
+
+    public ShelterImportService(AgentService agents, JdbcTemplate jdbc, TransactionTemplate tx, Clock clock,
+                                @org.springframework.beans.factory.annotation.Value("${app.exely.scheduler-enabled:true}") boolean autoImport) {
         this.agents = agents;
         this.jdbc = jdbc;
         this.tx = tx;
         this.clock = clock;
+        this.autoImport = autoImport;
     }
 
-    /** Fonda (sinxronlash yakunidan keyin); shu mehmonxona uchun allaqachon ishlayotgan bo'lsa — o'tkazib yuboriladi. */
-    public void importAsync(long hotelId) {
-        CompletableFuture.runAsync(() -> importNow(hotelId));
-    }
-
-    /**
-     * @return natija xabari (mehmonxonaning sinxronlash holatiga ham yoziladi). Bir vaqtda faqat bitta import —
-     * ikkinchisi darhol qaytadi (xotira ikki barobar sarflanmasin).
-     */
-    public String importNow(long hotelId) {
-        if (!IMPORT_LOCK.tryLock()) {
-            return "Ҳисоблаш аллақачон ишлаяпти — бир оздан сўнг натижани кўринг";
+    /** Server ishga tushganda (har deploy'dan keyin) — Shelter mehmonxonalari yangi kod bilan qayta hisoblanadi. */
+    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
+    public void onStartup() {
+        if (!autoImport) {
+            return;
         }
+        List<Long> hotels = jdbc.queryForList("""
+                select distinct a.hotel_id from agents a
+                where a.kind = 'SHELTER' and a.approved_at is not null and a.hotel_id is not null
+                  and exists (select 1 from agent_tables t where t.hotel_id = a.hotel_id and t.table_name = 'ROOM_SCHEDULE')""",
+                Long.class);
+        hotels.forEach(this::importAsync);
+        if (!hotels.isEmpty()) {
+            log.info("Shelter import navbatga qo'yildi (ishga tushish): {}", hotels);
+        }
+    }
+
+    /** Navbatga qo'yadi (sinxronlash yakuni, tugma, ishga tushish); shu mehmonxona navbatda/ishlayotgan bo'lsa — qo'shmaydi. */
+    public boolean importAsync(long hotelId) {
+        if (status.putIfAbsent(hotelId, new Status(LocalDateTime.now(clock), null)) != null) {
+            return false;
+        }
+        queue.submit(() -> {
+            try {
+                status.put(hotelId, new Status(status.get(hotelId).queuedAt(), LocalDateTime.now(clock)));
+                doImport(hotelId);
+            } finally {
+                status.remove(hotelId);
+            }
+        });
+        return true;
+    }
+
+    /** Joriy holat (navbatda / hisoblanmoqda) yoki null. */
+    public Status status(long hotelId) {
+        return status.get(hotelId);
+    }
+
+    /** Darhol (chaqiruvchi oqimda) — testlar uchun; navbatdagi import bilan bir vaqtda ishlamaydi. */
+    public String importNow(long hotelId) {
+        IMPORT_LOCK.lock();
         try {
             return doImport(hotelId);
         } finally {
@@ -62,10 +109,18 @@ public class ShelterImportService {
         }
     }
 
-    /** Barcha mehmonxonalar uchun bitta qulf: importlar navbat bilan. */
     private static final java.util.concurrent.locks.ReentrantLock IMPORT_LOCK = new java.util.concurrent.locks.ReentrantLock();
 
     private String doImport(long hotelId) {
+        IMPORT_LOCK.lock();
+        try {
+            return doImportLocked(hotelId);
+        } finally {
+            IMPORT_LOCK.unlock();
+        }
+    }
+
+    private String doImportLocked(long hotelId) {
         String message;
         boolean ok;
         try {

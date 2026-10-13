@@ -28,6 +28,7 @@ public class HotelAdminController {
     private final ExelyRawStore exelyRawStore;
     private final FakturaService fakturaService;
     private final behzoddev.hotelpulse.agent.AgentService agentService;
+    private final behzoddev.hotelpulse.agent.ShelterImportService shelterImport;
     private final behzoddev.hotelpulse.faktura.DidoxClient didoxClient;
 
     @GetMapping
@@ -54,6 +55,7 @@ public class HotelAdminController {
         model.addAttribute("archiveLabels", ARCHIVE_LABELS);
         model.addAttribute("faktura", fakturaService.account(id).orElse(null));
         model.addAttribute("shelter", shelterArchive(id));
+        model.addAttribute("shelterStatus", shelterImport.status(id));
         model.addAttribute("fakturaRunning", fakturaService.isRunning(id));
         model.addAttribute("didoxConfigured", didoxClient.configured());
         return "admin/hotel-form";
