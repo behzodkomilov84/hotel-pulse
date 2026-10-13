@@ -222,7 +222,27 @@ public class AgentService {
                 hotelId);
     }
 
-    /** Jadvalning barcha qatorlari (JSON Lines, ochilgan) — mapper va tekshirish uchun. */
+    /**
+     * Jadval qatorlarini birma-bir beradi (xotiraga butun jadval o'qilmaydi): qism-qism, gzip oqimidan qatorma-qator.
+     */
+    @Transactional(readOnly = true)
+    public void forEachRow(long hotelId, String table, java.util.function.Consumer<String> action) {
+        jdbc.query("select payload from agent_tables where hotel_id = ? and table_name = ? order by part", rs -> {
+            try (var in = new java.io.BufferedReader(new java.io.InputStreamReader(
+                    new java.util.zip.GZIPInputStream(rs.getBinaryStream(1)), StandardCharsets.UTF_8))) {
+                String line;
+                while ((line = in.readLine()) != null) {
+                    if (!line.isBlank()) {
+                        action.accept(line);
+                    }
+                }
+            } catch (java.io.IOException e) {
+                throw new IllegalStateException("agent_tables " + table + ": gzip o'qilmadi", e);
+            }
+        }, hotelId, table);
+    }
+
+    /** Jadvalning barcha qatorlari (JSON Lines, ochilgan) — kichik jadvallar va testlar uchun. */
     @Transactional(readOnly = true)
     public List<String> tableRows(long hotelId, String table) {
         List<byte[]> parts = jdbc.query("select payload from agent_tables where hotel_id = ? and table_name = ? order by part",

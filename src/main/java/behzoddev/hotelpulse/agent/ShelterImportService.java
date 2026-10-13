@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Agent yuborgan UCS Shelter jadvallaridan (agent_tables) mehmonxonaning bronlari, kunlik daromadi va to'lovlarini
@@ -35,7 +34,6 @@ public class ShelterImportService {
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
     private final Clock clock;
-    private final Set<Long> running = ConcurrentHashMap.newKeySet();
 
     public ShelterImportService(AgentService agents, JdbcTemplate jdbc, TransactionTemplate tx, Clock clock) {
         this.agents = agents;
@@ -46,20 +44,28 @@ public class ShelterImportService {
 
     /** Fonda (sinxronlash yakunidan keyin); shu mehmonxona uchun allaqachon ishlayotgan bo'lsa — o'tkazib yuboriladi. */
     public void importAsync(long hotelId) {
-        if (!running.add(hotelId)) {
-            return;
-        }
-        CompletableFuture.runAsync(() -> {
-            try {
-                importNow(hotelId);
-            } finally {
-                running.remove(hotelId);
-            }
-        });
+        CompletableFuture.runAsync(() -> importNow(hotelId));
     }
 
-    /** @return natija xabari (mehmonxonaning sinxronlash holatiga ham yoziladi) */
+    /**
+     * @return natija xabari (mehmonxonaning sinxronlash holatiga ham yoziladi). Bir vaqtda faqat bitta import —
+     * ikkinchisi darhol qaytadi (xotira ikki barobar sarflanmasin).
+     */
     public String importNow(long hotelId) {
+        if (!IMPORT_LOCK.tryLock()) {
+            return "Ҳисоблаш аллақачон ишлаяпти — бир оздан сўнг натижани кўринг";
+        }
+        try {
+            return doImport(hotelId);
+        } finally {
+            IMPORT_LOCK.unlock();
+        }
+    }
+
+    /** Barcha mehmonxonalar uchun bitta qulf: importlar navbat bilan. */
+    private static final java.util.concurrent.locks.ReentrantLock IMPORT_LOCK = new java.util.concurrent.locks.ReentrantLock();
+
+    private String doImport(long hotelId) {
         String message;
         boolean ok;
         try {
@@ -77,11 +83,21 @@ public class ShelterImportService {
 
     String rebuild(long hotelId) {
         LocalDate today = LocalDate.now(clock);
-        ShelterMapper.Result r = ShelterMapper.map(rows(hotelId, "ROOM_SCHEDULE"), rows(hotelId, "FOLIO_CONTENTS"),
-                rows(hotelId, "OPERATIONS"), rows(hotelId, "GUESTS"), rows(hotelId, "ENTERPRISEDEBTOR"),
-                rows(hotelId, "ROOMS"), today);
-        List<JsonNode> roomKinds = rows(hotelId, "ROOM_KINDS");
-        List<JsonNode> rooms = rows(hotelId, "ROOMS");
+        // Xotira tejash: har qatordan faqat kerakli ustunlar; mehmonlardan — faqat bron/korxonalarda uchraydiganlari.
+        List<JsonNode> schedule = rows(hotelId, "ROOM_SCHEDULE", SCHEDULE_FIELDS, null);
+        List<JsonNode> debtors = rows(hotelId, "ENTERPRISEDEBTOR", Set.of("ID", "OWNER"), null);
+        Set<Long> guestIds = new java.util.HashSet<>();
+        schedule.forEach(n -> guestIds.add(ShelterMapper.l(n, "GUEST")));
+        debtors.forEach(n -> guestIds.add(ShelterMapper.l(n, "OWNER")));
+        List<JsonNode> guests = rows(hotelId, "GUESTS", Set.of("ID", "FULLNAME", "NAME", "NAME1", "NAME2"), guestIds);
+        List<JsonNode> rooms = rows(hotelId, "ROOMS", Set.of("ID", "ROOMKIND", "ENABLED", "NUMBER", "NAME"), null);
+        List<JsonNode> roomKinds = rows(hotelId, "ROOM_KINDS", Set.of("ID", "NAME"), null);
+        ShelterMapper.Result r = ShelterMapper.map(schedule,
+                rows(hotelId, "FOLIO_CONTENTS", FOLIO_FIELDS, null),
+                rows(hotelId, "OPERATIONS", Set.of("ID", "CODE", "NAME", "CATEGORY", "ISSERVICE"), null),
+                guests, debtors, rooms, today);
+        schedule = null;
+        guests = null;
         if (r.stays().isEmpty()) {
             throw new IllegalStateException("ROOM_SCHEDULE bo'sh — agent hali sinxronlamagan");
         }
@@ -161,11 +177,33 @@ public class ShelterImportService {
         return msg;
     }
 
-    private List<JsonNode> rows(long hotelId, String table) {
+    static final Set<String> SCHEDULE_FIELDS = Set.of("ID", "RESID", "STATE", "ENABLED", "ARRIVAL", "DEPARTURE", "GUEST",
+            "Q_GUESTS", "Q_CHILDS", "FOLIO", "ROOMKIND", "IDROOM", "TRAVELAGENT", "AGENTREF", "DEBTORREF", "PAYER",
+            "CREATIONDATE", "UPDATEDATE", "QUANTCANCEL", "COST");
+    static final Set<String> FOLIO_FIELDS = Set.of("ID", "FOLIO", "OPERATION", "ISSERVICE", "ENABLED", "COST",
+            "SHIFTDATE", "CREATIONDATE");
+
+    /**
+     * Jadvalni oqim bilan o'qiydi va har qatordan faqat {@code fields} ustunlarni qoldiradi.
+     *
+     * @param onlyIds null bo'lmasa — faqat shu ID'li qatorlar
+     */
+    private List<JsonNode> rows(long hotelId, String table, Set<String> fields, Set<Long> onlyIds) {
         List<JsonNode> result = new ArrayList<>();
-        for (String line : agents.tableRows(hotelId, table)) {
-            result.add(JSON.readTree(line));
-        }
+        agents.forEachRow(hotelId, table, line -> {
+            JsonNode full = JSON.readTree(line);
+            if (onlyIds != null && !onlyIds.contains(ShelterMapper.l(full, "ID"))) {
+                return;
+            }
+            tools.jackson.databind.node.ObjectNode slim = JSON.createObjectNode();
+            for (String f : fields) {
+                JsonNode v = full.get(f);
+                if (v != null && !v.isNull()) {
+                    slim.set(f, v);
+                }
+            }
+            result.add(slim);
+        });
         return result;
     }
 }
