@@ -52,9 +52,7 @@ public class ShelterVerifyService {
     private static final class Sums {
         BigDecimal services = BigDecimal.ZERO;            // COSTALL, bekor qilinganlar bilan
         BigDecimal servicesCost = BigDecimal.ZERO;        // COST (chegirmagacha)
-        BigDecimal servicesNoCancel = BigDecimal.ZERO;    // COSTALL, CANCELED=1 siz
         BigDecimal payments = BigDecimal.ZERO;
-        BigDecimal paymentsNoCancel = BigDecimal.ZERO;
     }
 
     public Report verify(long hotelId) {
@@ -77,20 +75,13 @@ public class ShelterVerifyService {
                     return;
                 }
                 boolean service = l(fc, "ISSERVICE") == 1;
-                boolean cancelled = l(fc, "CANCELED") == 1;
                 BigDecimal v = amount(fc);
                 Sums s = byFolio.computeIfAbsent(l(fc, "FOLIO"), k -> new Sums());
                 if (service) {
                     s.services = s.services.add(v);
                     s.servicesCost = s.servicesCost.add(d(fc, "COST"));
-                    if (!cancelled) {
-                        s.servicesNoCancel = s.servicesNoCancel.add(v);
-                    }
                 } else {
                     s.payments = s.payments.add(v);
-                    if (!cancelled) {
-                        s.paymentsNoCancel = s.paymentsNoCancel.add(v);
-                    }
                 }
                 if (ShelterMapper.TRANSFER_OPERATIONS.contains(l(fc, "OPERATION"))) {
                     return;
@@ -137,31 +128,32 @@ public class ShelterVerifyService {
         return report;
     }
 
-    /** Shelter ichida: har folio'ning SERVICEBALANCE/PAYMENTBALANCE'i uning qatorlari yig'indisiga tengmi. */
+    /**
+     * Shelter ichida, har folio bo'yicha: PAYMENTBALANCE = to'lov qatorlari; BALANCE (qarz manbai) = to'lovlar − xizmatlar
+     * chegirmadan keyin (COSTALL) — saytdagi daromad shu summadan olinadi. SERVICEBALANCE Shelter'da chegirmagacha
+     * (COST) yuritiladi — u faqat ma'lumot uchun solishtiriladi.
+     */
     private Check integrity(List<JsonNode> folios, Map<Long, Sums> byFolio) {
         boolean hasBalances = folios.stream().anyMatch(f -> f.has("SERVICEBALANCE") && f.has("PAYMENTBALANCE"));
         if (!hasBalances) {
             return new Check("Shelter ички яхлитлиги", true, "FOLIO'да SERVICEBALANCE/PAYMENTBALANCE йўқ — текширилмади", List.of());
         }
-        int badMain = 0, badCost = 0, badNoCancel = 0, badPay = 0, badPayNoCancel = 0, badBalance = 0;
+        int badPay = 0, badBalance = 0, badGross = 0, discounted = 0;
         List<String> details = new ArrayList<>();
-        BigDecimal shelterServices = BigDecimal.ZERO, rowServices = BigDecimal.ZERO;
+        BigDecimal gross = BigDecimal.ZERO, net = BigDecimal.ZERO;
         for (JsonNode f : folios) {
+            if (!f.has("SERVICEBALANCE") || !f.has("PAYMENTBALANCE")) {
+                continue;
+            }
             Sums s = byFolio.getOrDefault(l(f, "ID"), new Sums());
             BigDecimal sb = d(f, "SERVICEBALANCE"), pb = d(f, "PAYMENTBALANCE"), bal = d(f, "BALANCE");
-            shelterServices = shelterServices.add(sb);
-            rowServices = rowServices.add(s.services);
+            gross = gross.add(sb);
+            net = net.add(s.services);
             if (differs(sb, s.services)) {
-                badMain++;
-                if (details.size() < MAX_DETAILS) {
-                    details.add("Фолио " + l(f, "ID") + ": хизматлар Shelter " + money(sb) + ", қаторлар " + money(s.services));
-                }
+                discounted++;
             }
             if (differs(sb, s.servicesCost)) {
-                badCost++;
-            }
-            if (differs(sb, s.servicesNoCancel)) {
-                badNoCancel++;
+                badGross++;
             }
             if (differs(pb, s.payments)) {
                 badPay++;
@@ -169,18 +161,21 @@ public class ShelterVerifyService {
                     details.add("Фолио " + l(f, "ID") + ": тўловлар Shelter " + money(pb) + ", қаторлар " + money(s.payments));
                 }
             }
-            if (differs(pb, s.paymentsNoCancel)) {
-                badPayNoCancel++;
-            }
-            if (differs(bal, pb.subtract(sb))) {
+            BigDecimal expected = s.payments.subtract(s.services);
+            if (differs(bal, expected)) {
                 badBalance++;
+                if (details.size() < MAX_DETAILS) {
+                    details.add("Фолио " + l(f, "ID") + ": қолдиқ Shelter " + money(bal) + ", қаторлардан " + money(expected));
+                }
             }
         }
-        boolean ok = badMain == 0 && badPay == 0;
-        String summary = folios.size() + " та фолио; хизматлар Shelter " + money(shelterServices) + ", қаторлар " + money(rowServices)
-                + (ok ? " — мос" : "; фарқ: хизмат " + badMain + ", тўлов " + badPay + " фолиода")
-                + " (таққослаш: COST билан " + badCost + ", бекорларсиз " + badNoCancel + "/" + badPayNoCancel
-                + ", қолдиқ≠тўлов−хизмат " + badBalance + ")";
+        if (badGross > 0) {
+            details.add("Маълумот: " + badGross + " та фолиода SERVICEBALANCE чегирмагача нархга (COST) ҳам тенг эмас");
+        }
+        boolean ok = badPay == 0 && badBalance == 0;
+        String summary = folios.size() + " та фолио: тўловлар ва қолдиқлар " + (ok ? "мос" : "фарқ — тўлов " + badPay
+                + ", қолдиқ " + badBalance + " фолиода") + "; хизматлар чегирмагача " + money(gross) + ", чегирмадан кейин "
+                + money(net) + " (" + discounted + " та фолиода чегирма)";
         return new Check("Shelter ички яхлитлиги", ok, summary, details);
     }
 
