@@ -2,7 +2,7 @@
 chcp 65001 >nul
 rem HotelPulse - UCS Shelter bazasi tuzilishini aniqlash (FAQAT O'QIYDI) va HotelPulse'ga yuklash.
 set HOST=172.10.0.2
-set DB=D:\Shelter\IBDATA\SHELTER_TEST.FDB
+set DB=D:\Shelter\IBDATA\SHELTER.FDB
 set FBUSER=SYSDBA
 
 cd /d "%~dp0"

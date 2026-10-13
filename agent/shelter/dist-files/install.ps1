@@ -1,4 +1,4 @@
-# HotelPulse Shelter agentini himoyalangan papkaga o'rnatadi: C:\ProgramData\HotelPulse\shelter-agent
+﻿# HotelPulse Shelter agentini himoyalangan papkaga o'rnatadi: C:\ProgramData\HotelPulse\shelter-agent
 # Papkaga faqat SYSTEM, Administratorlar va joriy foydalanuvchi kira oladi (kalit fayli shu yerda saqlanadi).
 $ErrorActionPreference = 'Stop'
 $src = Split-Path -Parent $MyInvocation.MyCommand.Path

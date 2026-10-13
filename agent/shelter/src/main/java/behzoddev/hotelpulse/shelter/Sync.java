@@ -54,7 +54,11 @@ final class Sync {
         String key = Files.readString(Main.KEY_FILE, StandardCharsets.UTF_8).trim();
         // Rejalashtiruvchidan (sync.ps1) — parol stdin orqali keladi (DPAPI bilan shifrlangan fayldan).
         char[] password;
-        if (java.util.Arrays.asList(args).contains("--password-stdin")) {
+        String fromEnv = System.getenv("HOTELPULSE_FB_PASSWORD");
+        if (java.util.Arrays.asList(args).contains("--password-env") && fromEnv != null) {
+            // sync.ps1 — DPAPI'dan ochilgan parol faqat shu jarayon muhitida (Unicode, buyruq satrida ko'rinmaydi).
+            password = fromEnv.toCharArray();
+        } else if (java.util.Arrays.asList(args).contains("--password-stdin")) {
             String line = new java.io.BufferedReader(new java.io.InputStreamReader(System.in, StandardCharsets.UTF_8)).readLine();
             password = line == null ? new char[0] : line.toCharArray();
         } else {
