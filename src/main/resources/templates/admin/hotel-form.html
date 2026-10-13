@@ -258,6 +258,32 @@
                 </a>
             </div>
         </div>
+        <div class="verify">
+            <div class="verify-head">
+                <h4 class="archive-title">Shelter билан солиштириш
+                    <span class="muted" th:if="${verify != null}"
+                          th:text="'— ' + ${#temporals.format(verify.at, 'dd.MM.yyyy HH:mm')}"></span></h4>
+                <span class="badge badge-ok" th:if="${verify != null and verify.ok}">Ҳаммаси мос</span>
+                <span class="badge badge-warn" th:if="${verify != null and !verify.ok}">Фарқ бор</span>
+                <span class="badge badge-off" th:if="${verify == null}">Ҳали текширилмаган</span>
+            </div>
+            <p class="ai-error" th:if="${verify != null and verify.error != null}" th:text="${verify.error}"></p>
+            <div class="verify-list" th:if="${verify != null}">
+                <details class="verify-item" th:each="c : ${verify.checks}" th:classappend="${c.ok} ? 'ok' : 'bad'"
+                         th:open="${!c.ok and !c.details.isEmpty()}">
+                    <summary>
+                        <span class="verify-dot"></span>
+                        <b th:text="${c.name}"></b>
+                        <span class="muted" th:text="${c.summary}"></span>
+                    </summary>
+                    <ul th:if="${!c.details.isEmpty()}">
+                        <li th:each="d : ${c.details}" th:text="${d}"></li>
+                    </ul>
+                </details>
+            </div>
+            <p class="hint">Ҳар ҳисоблашдан кейин автоматик: Shelter'нинг ўз жамилари (фолио қолдиқлари, хизмат ва тўлов қаторлари)
+                сайтдаги даромад, тўловлар, қарздорлик ва бронлар билан солиштирилади.</p>
+        </div>
         <div class="sync-actions">
             <a class="btn btn-secondary" th:href="@{/admin/agents}">Агентлар →</a>
         </div>

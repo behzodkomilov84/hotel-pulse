@@ -150,7 +150,7 @@ class AgentDbTest {
                 + "{\"ID\":85,\"CODE\":\"02\",\"NAME\":\"Uzcard\",\"CATEGORY\":902,\"ISSERVICE\":0}");
         put(auth, "GUESTS", "{\"ID\":5,\"NAME\":\"Rahimov\",\"NAME1\":\"Sardor\"}\n{\"ID\":900,\"FULLNAME\":\"Sitora Tour 25-26.07\"}");
         // Mehmon folio'si (qoldiq 0 — to'langan) va to'lovchi korxona hisobi (KIND=1, qarz 7 000 000).
-        put(auth, "FOLIO", "{\"ID\":100,\"KIND\":2,\"BALANCE\":-500000}\n"
+        put(auth, "FOLIO", "{\"ID\":100,\"KIND\":2,\"BALANCE\":-500000,\"SERVICEBALANCE\":2000000,\"PAYMENTBALANCE\":1500000}\n"
                 + "{\"ID\":500,\"KIND\":1,\"OWNER\":900,\"BALANCE\":-7000000,\"CREATIONDATE\":" + a + "}");
         put(auth, "ENTERPRISEDEBTOR", "");
         put(auth, "ROOMS", "{\"ID\":7,\"ROOMKIND\":1,\"ENABLED\":1,\"NUMBER\":\"101\"}\n{\"ID\":8,\"ROOMKIND\":1,\"ENABLED\":1,\"NUMBER\":\"102\"}");
@@ -184,6 +184,12 @@ class AgentDbTest {
         assertTrue(admin.contains("олинган маълумотлар") && admin.contains("Бронлар ва яшашлар"));
         assertTrue(html("/").contains("UCS Shelter уланган"));
         assertTrue(admin.contains("/shelter/data/ROOM_SCHEDULE"), "kartochka bosiladigan");
+        // Har importdan keyin Shelter bilan solishtirish: test ma'lumotida hammasi mos.
+        var verify = behzoddev.hotelpulse.exely.ExelyVerifyService.read(hotelRepository.findById(hotel.getId()).orElseThrow());
+        assertNotNull(verify);
+        assertTrue(verify.ok(), String.valueOf(verify));
+        assertEquals(5, verify.checks().size());
+        assertTrue(admin.contains("Shelter билан солиштириш") && admin.contains("Ҳаммаси мос"));
         assertFalse(admin.contains("Ҳозир синхронлаш"), "Exely kartochkasi yashirin");
         // Jadval sahifasi: o'qiladigan sana, holat nomi, qidiruv.
         String data = html("/admin/hotels/" + hotel.getId() + "/shelter/data/ROOM_SCHEDULE");

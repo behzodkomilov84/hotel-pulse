@@ -32,6 +32,7 @@ public class ShelterImportService {
     private final AgentService agents;
     private final JdbcTemplate jdbc;
     private final TransactionTemplate tx;
+    private final ShelterVerifyService verifier;
     private final Clock clock;
     private final boolean autoImport;
 
@@ -52,11 +53,12 @@ public class ShelterImportService {
         }
     }
 
-    public ShelterImportService(AgentService agents, JdbcTemplate jdbc, TransactionTemplate tx, Clock clock,
+    public ShelterImportService(AgentService agents, JdbcTemplate jdbc, TransactionTemplate tx, ShelterVerifyService verifier, Clock clock,
                                 @org.springframework.beans.factory.annotation.Value("${app.exely.scheduler-enabled:true}") boolean autoImport) {
         this.agents = agents;
         this.jdbc = jdbc;
         this.tx = tx;
+        this.verifier = verifier;
         this.clock = clock;
         this.autoImport = autoImport;
     }
@@ -133,6 +135,10 @@ public class ShelterImportService {
         }
         jdbc.update("update hotels set exely_last_sync_at = ?, exely_last_sync_ok = ?, exely_last_sync_message = ? where id = ?",
                 Timestamp.valueOf(LocalDateTime.now(clock)), ok, message.length() > 500 ? message.substring(0, 500) : message, hotelId);
+        if (ok) {
+            var report = verifier.verify(hotelId);   // Shelter'ning o'z yig'indilari bilan solishtirish
+            log.info("Shelter solishtirish (mehmonxona {}): {}", hotelId, report.ok() ? "mos" : "farq bor");
+        }
         return message;
     }
 
@@ -264,15 +270,20 @@ public class ShelterImportService {
             if (onlyIds != null && !onlyIds.contains(ShelterMapper.l(full, "ID"))) {
                 return;
             }
-            tools.jackson.databind.node.ObjectNode slim = JSON.createObjectNode();
-            for (String f : fields) {
-                JsonNode v = full.get(f);
-                if (v != null && !v.isNull()) {
-                    slim.set(f, v);
-                }
-            }
-            result.add(slim);
+            result.add(project(full, fields));
         });
         return result;
+    }
+
+    /** Qatordan faqat {@code fields} ustunlar (null'lar tashlanadi). */
+    static JsonNode project(JsonNode full, Set<String> fields) {
+        tools.jackson.databind.node.ObjectNode slim = JSON.createObjectNode();
+        for (String f : fields) {
+            JsonNode v = full.get(f);
+            if (v != null && !v.isNull()) {
+                slim.set(f, v);
+            }
+        }
+        return slim;
     }
 }
