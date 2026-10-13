@@ -73,7 +73,7 @@ services:
       - default
       # StudyGrow'ning nginx'i hotelpulse-app:8081 ga shu tarmoq orqali murojaat qiladi.
       - studygrow
-    mem_limit: 512m
+    mem_limit: 640m
     logging: *logging
     restart: unless-stopped
 
