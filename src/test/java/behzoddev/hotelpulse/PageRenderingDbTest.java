@@ -141,6 +141,11 @@ class PageRenderingDbTest {
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("name=\"dailyReportTime\"")))
                 .andExpect(content().string(containsString("value=\"05:00\"")));
+        // Exely ulanishi Интеграциялар'da: asosiy formani saqlash uni o'chirmasligi kerak.
+        var a = hotelRepository.findById(hotelA.getId()).orElseThrow();
+        a.setExelyPropertyId("500360");
+        a.setExelyClientId("client-a");
+        hotelRepository.save(a);
 
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/admin/hotels/{id}", hotelA.getId())
                         .with(user(owner))
@@ -150,6 +155,20 @@ class PageRenderingDbTest {
                 .andExpect(status().is3xxRedirection());
 
         assertEquals(java.time.LocalTime.of(6, 30), hotelRepository.findById(hotelA.getId()).orElseThrow().getDailyReportTime());
+        assertEquals("500360", hotelRepository.findById(hotelA.getId()).orElseThrow().getExelyPropertyId(), "Exely Connect saqlanib qoladi");
+        assertEquals("client-a", hotelRepository.findById(hotelA.getId()).orElseThrow().getExelyClientId());
+
+        // Интеграциялар: umumiy ko'rinish va mehmonxona sahifasi — barcha usullar.
+        String all = mvc.perform(get("/admin/integrations").with(user(owner))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        assertTrue(all.contains("Test Hotel A") && all.contains("UCS Shelter") && all.contains("ЭСФ"), "umumiy jadval");
+        String page = mvc.perform(get("/admin/integrations/{id}", hotelA.getId()).with(user(owner))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        for (String s : new String[]{"id=\"exely\"", "Exely PMS калити", "Exely Connect", "id=\"shelter\"", "Shelter агентини улаш",
+                "id=\"1c\"", "1С агентини улаш", "id=\"faktura\"", "ЭСФ операторини улаш"}) {
+            assertTrue(page.contains(s), s);
+        }
+        mvc.perform(get("/admin/integrations").with(user(hotelOwner))).andExpect(status().isForbidden());
         assertEquals(java.time.LocalTime.of(5, 0), hotelRepository.findById(hotelB.getId()).orElseThrow().getDailyReportTime(),
                 "boshqa mehmonxona o'zgarmaydi");
     }

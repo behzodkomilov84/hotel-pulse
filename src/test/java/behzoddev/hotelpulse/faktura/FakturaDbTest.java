@@ -187,7 +187,7 @@ class FakturaDbTest {
         assertTrue(invoices.contains("Расмий ҳисоб-фактура") && invoices.contains("№ 5"));
         String exp = html("/reports/usali/expenses?hotel=" + hotel.getId() + "&month=" + lastMonth, owner);
         assertTrue(exp.contains("+ ЭСФ: 1"), "Faktura summasi modda yonida");
-        String form = html("/admin/hotels/" + hotel.getId(), admin);
+        String form = html("/admin/integrations/" + hotel.getId(), admin);
         assertTrue(form.contains(INN) && form.contains("Сақланган"));
         assertFalse(form.contains("hotel-pass") || form.contains("csecret"), "maxfiy ma'lumot sahifaga chiqmaydi");
 
@@ -230,7 +230,7 @@ class FakturaDbTest {
         faktura.assignLine(hotel.getId(), id, UsaliLine.UTILITIES, false);
         assertEquals(0, new BigDecimal("700000").compareTo(expenses.sum(hotel.getId(), lastMonth, lastMonth).get(UsaliLine.UTILITIES)));
 
-        String form = html("/admin/hotels/" + hotel.getId(), admin);
+        String form = html("/admin/integrations/" + hotel.getId(), admin);
         assertTrue(form.contains("Didox · ишлаяпти") || form.contains("Didox"));
         assertFalse(form.contains("didox-pass"));
     }

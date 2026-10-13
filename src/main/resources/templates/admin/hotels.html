@@ -37,7 +37,10 @@
                     <span class="badge badge-ok" th:if="${h.active}">Фаол</span>
                     <span class="badge badge-off" th:unless="${h.active}">Нофаол</span>
                 </td>
-                <td><a class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${h.id})}">Таҳрирлаш</a></td>
+                <td><div class="agent-actions">
+                    <a class="btn btn-secondary btn-sm" th:href="@{/admin/hotels/{id}(id=${h.id})}">Таҳрирлаш</a>
+                    <a class="btn btn-secondary btn-sm" th:href="@{/admin/integrations/{id}(id=${h.id})}">Интеграциялар</a>
+                </div></td>
             </tr>
             </tbody>
         </table>

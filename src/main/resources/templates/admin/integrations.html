@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${hotel == null} ? 'Интеграциялар' : 'Интеграциялар — ' + ${hotel.name})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-integrations')}"></header>
+<main class="container integrations-page">
+    <div class="page-head reveal">
+        <div>
+            <h1>Интеграциялар</h1>
+            <p class="subtitle">Ҳар бир меҳмонхона учун барча улаш усуллари — кераклисини уланг: Exely, UCS Shelter, 1С, ЭСФ оператори.</p>
+        </div>
+    </div>
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+    <!-- Mehmonxona tanlash (agents.html ham ishlatadi); ta'rif o'zi chiqmaydi — pastda chaqiriladi -->
+    <th:block th:if="${false}">
+    <nav class="kind-tabs reveal" aria-label="Меҳмонхоналар" th:fragment="tabs(current)">
+        <a class="kind-tab" th:classappend="${current == 'all'} ? 'active'" th:href="@{/admin/integrations}"><span>Умумий кўриниш</span></a>
+        <a th:each="h : ${hotels}" class="kind-tab" th:classappend="${current == h.id.toString()} ? 'active'"
+           th:href="@{/admin/integrations/{id}(id=${h.id})}"><span th:text="${h.name}"></span></a>
+        <a class="kind-tab" th:classappend="${current == 'agents'} ? 'active'" th:href="@{/admin/agents}"><span>Агентлар</span></a>
+    </nav>
+    </th:block>
+    <th:block th:if="${hotel == null}">
+        <nav th:replace="~{:: tabs('all')}"></nav>
+    </th:block>
+    <th:block th:if="${hotel != null}">
+        <nav th:replace="~{:: tabs(${hotel.id.toString()})}"></nav>
+    </th:block>
+
+    <!-- ===== Umumiy ko'rinish: mehmonxona × integratsiya ===== -->
+    <div class="card table-wrap reveal" th:if="${hotel == null}">
+        <table class="debt-table integ-matrix">
+            <thead><tr>
+                <th>Меҳмонхона</th><th>Exely PMS</th><th>Exely Connect</th><th>UCS Shelter</th><th>1С</th><th>ЭСФ</th><th></th>
+            </tr></thead>
+            <tbody>
+            <tr th:each="r : ${rows}">
+                <td class="wrap"><strong th:text="${r.hotel.name}"></strong>
+                    <div class="muted" th:text="${r.connectedCount()} + ' та уланган'"></div></td>
+                <td th:each="st : ${ {r.exelyPms, r.exelyConnect, r.shelter, r.onec, r.esf} }">
+                    <span class="integ-state" th:classappend="'lvl-' + ${st.level}"><span class="integ-dot"></span><span th:text="${st.text}"></span></span>
+                </td>
+                <td><a class="btn btn-secondary btn-sm" th:href="@{/admin/integrations/{id}(id=${r.hotel.id})}">Очиш →</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <th:block th:if="${hotel != null}">
+        <!-- Qisqa holat — bosilsa tegishli bo'limga o'tadi -->
+        <div class="integ-chips reveal">
+            <a class="integ-chip" href="#exely" th:classappend="'lvl-' + ${row.exelyPms.connected() ? row.exelyPms.level : row.exelyConnect.level}">
+                <span class="integ-dot"></span><b>Exely</b>
+                <span th:text="${row.exelyPms.connected()} ? 'PMS · ' + ${row.exelyPms.text} : (${row.exelyConnect.connected()} ? 'Connect · ' + ${row.exelyConnect.text} : 'Уланмаган')"></span></a>
+            <a class="integ-chip" href="#shelter" th:classappend="'lvl-' + ${row.shelter.level}">
+                <span class="integ-dot"></span><b>UCS Shelter</b><span th:text="${row.shelter.text}"></span></a>
+            <a class="integ-chip" href="#1c" th:classappend="'lvl-' + ${row.onec.level}">
+                <span class="integ-dot"></span><b>1С</b><span th:text="${row.onec.text}"></span></a>
+            <a class="integ-chip" href="#faktura" th:classappend="'lvl-' + ${row.esf.level}">
+                <span class="integ-dot"></span><b>ЭСФ</b><span th:text="${row.esf.text}"></span></a>
+        </div>
+
+        <!-- ===================== Exely ===================== -->
+        <section class="card sync-card reveal" id="exely" th:attr="data-running=${syncRunning}">
+            <div class="sync-head">
+                <div>
+                    <h3 class="card-title">Exely</h3>
+                    <p class="subtitle" th:unless="${hotel.exelyConnected}">Меҳмонхона Exely PMS ёки Exely booking engine ишлатса — қуйидаги усуллардан бири билан уланг.</p>
+                    <p class="subtitle" th:if="${hotel.exelyConnected}"
+                       th:text="(${hotel.hasPmsKey()} ? 'Exely PMS орқали' : 'Exely Connect орқали') + ' — автоматик равишда ҳар 30 дақиқада янгиланади.'"></p>
+                </div>
+                <span th:if="${syncRunning}" class="badge badge-role"><span class="spinner"></span>Синхронланмоқда…</span>
+                <span th:if="${!syncRunning and !hotel.exelyConnected}" class="badge badge-off">Уланмаган</span>
+                <span th:if="${!syncRunning and hotel.exelyConnected and hotel.exelyLastSyncOk == true}" class="badge badge-ok">Ишлаяпти</span>
+                <span th:if="${!syncRunning and hotel.exelyConnected and hotel.exelyLastSyncOk == false}" class="badge badge-warn">Хатолик</span>
+                <span th:if="${!syncRunning and hotel.exelyConnected and hotel.exelyLastSyncOk == null}" class="badge badge-off">Ҳали синхронланмаган</span>
+            </div>
+
+            <!-- 1-usul (tavsiya): Exely PMS Universal API kaliti -->
+            <details class="integration-option recommended" th:open="${!hotel.exelyConnected}">
+                <summary class="option-head">
+                    <span class="option-title">Exely PMS калити</span>
+                    <span class="badge badge-ok" th:if="${hotel.hasPmsKey()}">Уланган</span>
+                    <span class="badge badge-ok" th:unless="${hotel.hasPmsKey()}">Тавсия этилади</span>
+                </summary>
+                <p class="hint">Бронлар, ҳақиқий ҳолат (заселение/выселение), <b>тўловлар ва қарздорлик</b> келади. Меҳмонхонада Exely PMS (STANDART ёки юқори обуна) бўлиши керак.</p>
+                <details class="howto">
+                    <summary>Калит қаерда?</summary>
+                    <ol>
+                        <li>Exely экстранетда чап менюда <b>Управление отелем → Настройки</b>.</li>
+                        <li>Юқоридаги <b>Интеграции</b> ёрлиғи.</li>
+                        <li><b>Доступ к Универсальному API Exely PMS</b> бўлимидаги <b>Ключ интеграции</b>ни нусхалаб, шу ерга жойлаштиринг.</li>
+                    </ol>
+                    <p>⚠️ Бу калит билан брон ва тўловларни ўзгартириш ҳам мумкин — уни фақат шу формага киритинг, бошқа жойга юборманг.</p>
+                </details>
+                <form method="post" class="form" th:action="@{/admin/integrations/{id}/exely/pms(id=${hotel.id})}">
+                    <div class="field">
+                        <label for="exelyPmsKey">Ключ интеграции</label>
+                        <input type="password" id="exelyPmsKey" name="exelyPmsKey" maxlength="128" autocomplete="off" required
+                               th:placeholder="${hotel.hasPmsKey()} ? 'Сақланган — алмаштириш учун янгисини киритинг' : 'масалан: 6ac19413-0a62-…'">
+                        <span class="hint">Базада шифрланган ҳолда сақланади ва саҳифада ҳеч қачон кўрсатилмайди.</span>
+                    </div>
+                    <div class="form-actions"><button type="submit" class="btn btn-primary" th:text="${hotel.hasPmsKey()} ? 'Калитни алмаштириш' : 'Улаш'">Улаш</button></div>
+                </form>
+            </details>
+
+            <!-- 2-usul: Exely Connect (Read Reservation API) — PMS bo'lmasa -->
+            <details class="integration-option" th:open="${hotel.usesConnectApi() and !hotel.hasPmsKey()}">
+                <summary class="option-head">
+                    <span class="option-title">Exely PMS йўқми? Exely Connect орқали улаш</span>
+                    <span class="badge badge-ok" th:if="${hotel.usesConnectApi()}">Сақланган</span>
+                    <span class="badge badge-off" th:unless="${hotel.usesConnectApi()}">фақат бронлар</span>
+                </summary>
+                <p class="hint">Фақат бронлар ва олдиндан тўловлар келади — қарздорлик кўринмайди. PMS калити киритилса, у устун туради.</p>
+                <details class="howto">
+                    <summary>Меҳмонхона бу маълумотларни қаердан олади?</summary>
+                    <ol>
+                        <li>Exely экстранетда <b>Property settings → API connections</b> бўлимига кириб, <b>Create a connection</b> тугмасини босади.</li>
+                        <li>Уланишга ном беради (масалан, "HotelPulse").</li>
+                        <li><b>Публик APIs</b> ёрлиғида <b>Read Reservation API</b>'ни белгилайди.</li>
+                        <li><b>Save</b> → <b>Save and enable access</b> тугмаларини босади.</li>
+                        <li>Очилган саҳифадаги <b>клиент_ид</b> ва <b>клиент_секрет</b>'ни сизга юборади.</li>
+                    </ol>
+                    <p>Меҳмонхона ID — Exely'даги рақамли идентификатор (брон рақамининг ўртасидаги сон ҳам шу: 20210325-<b>500360</b>-6987835).</p>
+                </details>
+                <form method="post" class="form" th:action="@{/admin/integrations/{id}/exely/connect(id=${hotel.id})}">
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="exelyPropertyId">Меҳмонхона ID (property ID)</label>
+                            <input type="text" id="exelyPropertyId" name="exelyPropertyId" maxlength="64" inputmode="numeric"
+                                   placeholder="масалан, 500360" th:value="${hotel.exelyPropertyId}">
+                        </div>
+                        <div class="field">
+                            <label for="exelyClientId">Клиент ID</label>
+                            <input type="text" id="exelyClientId" name="exelyClientId" maxlength="128" autocomplete="off"
+                                   th:value="${hotel.exelyClientId}">
+                        </div>
+                        <div class="field field-wide">
+                            <label for="exelyClientSecret">Клиент Секрет</label>
+                            <input type="password" id="exelyClientSecret" name="exelyClientSecret" autocomplete="new-password"
+                                   th:placeholder="${hotel.hasExelySecret()} ? 'Сақланган — алмаштириш учун янгисини киритинг' : 'Меҳмонхона берган клиент_секрет (бўлмаса бўш қолдиринг)'">
+                            <span class="hint">Базада шифрланган ҳолда сақланади ва саҳифада ҳеч қачон кўрсатилмайди.</span>
+                        </div>
+                    </div>
+                    <div class="form-actions"><button type="submit" class="btn btn-primary">Сақлаш</button></div>
+                </form>
+            </details>
+
+            <th:block th:if="${hotel.exelyConnected}">
+                <dl class="sync-meta" th:if="${hotel.exelyLastSyncAt != null}">
+                    <div>
+                        <dt>Охирги синхронлаш</dt>
+                        <dd th:text="${#temporals.format(hotel.exelyLastSyncAt, 'dd.MM.yyyy HH:mm')}"></dd>
+                    </div>
+                    <div>
+                        <dt>Натижа</dt>
+                        <dd th:text="${hotel.exelyLastSyncMessage} ?: '—'" th:classappend="${hotel.exelyLastSyncOk == false} ? 'text-danger'"></dd>
+                    </div>
+                </dl>
+
+                <div class="archive" th:if="${archive != null and !archive.isEmpty()}">
+                    <h4 class="archive-title">Exely'дан олинган маълумотлар <span class="muted">— таҳлиллар учун базада сақланади</span></h4>
+                    <div class="archive-grid">
+                        <a class="archive-item" th:each="e : ${archive}"
+                           th:href="@{/admin/hotels/{id}/exely/data/{k}(id=${hotel.id}, k=${e.key})}"
+                           th:title="'Очиш: ' + (${archiveLabels[e.key]} ?: ${e.key})">
+                            <b th:text="${@fmt.number(e.value)}">0</b>
+                            <span th:text="${archiveLabels[e.key]} ?: ${e.key}"></span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="verify" th:if="${hotel.hasPmsKey()}">
+                    <div class="verify-head">
+                        <h4 class="archive-title">Exely билан солиштириш
+                            <span class="muted" th:if="${verify != null}" th:text="'— ' + ${#temporals.format(verify.at, 'dd.MM.yyyy HH:mm')}"></span></h4>
+                        <span class="badge badge-ok" th:if="${verify != null and verify.ok}">Ҳаммаси мос</span>
+                        <span class="badge badge-warn" th:if="${verify != null and !verify.ok}">Фарқ бор</span>
+                        <span class="badge badge-off" th:if="${verify == null}">Ҳали текширилмаган</span>
+                    </div>
+                    <p class="ai-error" th:if="${verify != null and verify.error != null}" th:text="${verify.error}"></p>
+                    <div class="verify-list" th:if="${verify != null}">
+                        <details class="verify-item" th:each="c : ${verify.checks}" th:classappend="${c.ok} ? 'ok' : 'bad'"
+                                 th:open="${!c.ok and !c.details.isEmpty()}">
+                            <summary><span class="verify-dot"></span><b th:text="${c.name}"></b><span class="muted" th:text="${c.summary}"></span></summary>
+                            <ul th:if="${!c.details.isEmpty()}"><li th:each="d : ${c.details}" th:text="${d}"></li></ul>
+                        </details>
+                    </div>
+                    <p class="hint">Ҳар куни 04:30 да автоматик текширилади: бронлар рўйхати, ҳар куннинг хизматлари (сони ва суммаси),
+                        ҳар ойнинг тўловлари — Exely'дан ҳозир олинган маълумот билан.</p>
+                </div>
+
+                <div class="sync-actions">
+                    <form method="post" th:action="@{/admin/integrations/{id}/exely/test(id=${hotel.id})}">
+                        <button type="submit" class="btn btn-secondary">Уланишни текшириш</button>
+                    </form>
+                    <form method="post" th:action="@{/admin/integrations/{id}/exely/sync(id=${hotel.id})}">
+                        <button type="submit" class="btn btn-primary" th:disabled="${syncRunning}">Ҳозир синхронлаш</button>
+                    </form>
+                    <form method="post" th:if="${hotel.hasPmsKey()}" th:action="@{/admin/integrations/{id}/exely/verify(id=${hotel.id})}">
+                        <button type="submit" class="btn btn-secondary" th:disabled="${syncRunning}">Exely билан солиштириш</button>
+                    </form>
+                    <form method="post" th:action="@{/admin/integrations/{id}/exely/reset(id=${hotel.id})}"
+                          onsubmit="return confirm('Exely\'даги барча маълумотлар бошидан қайта юкланади (бир неча дақиқа). Давом этасизми?')">
+                        <button type="submit" class="btn btn-secondary" th:disabled="${syncRunning}">Ҳаммасини бошидан юклаш</button>
+                    </form>
+                    <form method="post" class="push-right" th:action="@{/admin/integrations/{id}/exely/disconnect(id=${hotel.id})}"
+                          onsubmit="return confirm('Exely уланишини ўчирасизми? Олинган бронлар сақланиб қолади.')">
+                        <button type="submit" class="btn btn-danger">Уланишни ўчириш</button>
+                    </form>
+                </div>
+            </th:block>
+        </section>
+
+        <!-- ===================== UCS Shelter (agent) ===================== -->
+        <section class="card sync-card reveal" id="shelter">
+            <div class="sync-head">
+                <div>
+                    <h3 class="card-title">UCS Shelter</h3>
+                    <p class="subtitle">Меҳмонхона компьютеридаги агент Shelter базасини ҳар 2 соатда юборади; бронлар, даромад,
+                        тўловлар ва қарздорлик шундан ҳисобланади.</p>
+                </div>
+                <span class="badge badge-role" th:if="${shelterStatus != null and shelterStatus.running()}"><span class="spinner"></span>Ҳисобланмоқда…</span>
+                <span class="badge badge-off" th:if="${shelterStatus != null and !shelterStatus.running()}">Навбатда</span>
+                <span class="badge" th:if="${shelterStatus == null}"
+                      th:classappend="${row.shelter.level == 'ok'} ? 'badge-ok' : (${row.shelter.level == 'warn'} ? 'badge-warn' : 'badge-off')"
+                      th:text="${row.shelter.text}"></span>
+            </div>
+            <script th:if="${shelterStatus != null}">setTimeout(() => location.reload(), 5000);</script>
+
+            <th:block th:if="${shelter != null}">
+                <dl class="sync-meta">
+                    <div>
+                        <dt>Охирги юклаш</dt>
+                        <dd th:text="${shelter.syncedAt} != null ? ${#temporals.format(shelter.syncedAt, 'dd.MM.yyyy HH:mm')} : '—'"></dd>
+                    </div>
+                    <div th:unless="${hotel.exelyConnected}">
+                        <dt>Охирги ҳисоблаш</dt>
+                        <dd th:text="${hotel.exelyLastSyncMessage} ?: '—'" th:classappend="${hotel.exelyLastSyncOk == false} ? 'text-danger'"></dd>
+                    </div>
+                </dl>
+                <div class="archive">
+                    <h4 class="archive-title">Shelter'дан олинган маълумотлар
+                        <span class="muted" th:text="'— ' + ${shelter.tables} + ' та жадвал, ' + ${@fmt.number(shelter.rows)} + ' та қатор; таҳлиллар учун базада сақланади'"></span></h4>
+                    <div class="archive-grid">
+                        <a class="archive-item" th:each="t : ${shelter.tiles}"
+                           th:href="@{/admin/hotels/{id}/shelter/data/{k}(id=${hotel.id}, k=${t.table})}" th:title="'Очиш: ' + ${t.label}">
+                            <b th:text="${@fmt.number(t.rows)}">0</b>
+                            <span th:text="${t.label}"></span>
+                        </a>
+                    </div>
+                </div>
+                <div class="verify" th:unless="${hotel.hasPmsKey()}">
+                    <div class="verify-head">
+                        <h4 class="archive-title">Shelter билан солиштириш
+                            <span class="muted" th:if="${verify != null}" th:text="'— ' + ${#temporals.format(verify.at, 'dd.MM.yyyy HH:mm')}"></span></h4>
+                        <span class="badge badge-ok" th:if="${verify != null and verify.ok}">Ҳаммаси мос</span>
+                        <span class="badge badge-warn" th:if="${verify != null and !verify.ok}">Фарқ бор</span>
+                        <span class="badge badge-off" th:if="${verify == null}">Ҳали текширилмаган</span>
+                    </div>
+                    <p class="ai-error" th:if="${verify != null and verify.error != null}" th:text="${verify.error}"></p>
+                    <div class="verify-list" th:if="${verify != null}">
+                        <details class="verify-item" th:each="c : ${verify.checks}" th:classappend="${c.ok} ? 'ok' : 'bad'"
+                                 th:open="${!c.ok and !c.details.isEmpty()}">
+                            <summary><span class="verify-dot"></span><b th:text="${c.name}"></b><span class="muted" th:text="${c.summary}"></span></summary>
+                            <ul th:if="${!c.details.isEmpty()}"><li th:each="d : ${c.details}" th:text="${d}"></li></ul>
+                        </details>
+                    </div>
+                    <p class="hint">Ҳар ҳисоблашдан кейин автоматик: Shelter'нинг ўз жамилари (фолио қолдиқлари, хизмат ва тўлов қаторлари)
+                        сайтдаги даромад, тўловлар, қарздорлик ва бронлар билан солиштирилади.</p>
+                </div>
+            </th:block>
+
+            <div class="table-wrap" th:if="${!shelterAgents.isEmpty()}">
+                <table class="debt-table">
+                    <thead><tr><th>Агент (компьютер)</th><th>Ҳолат</th><th>Охирги юклаш</th></tr></thead>
+                    <tbody>
+                    <tr th:each="a : ${shelterAgents}">
+                        <td class="mono" th:text="${a.machine} ?: '—'"></td>
+                        <td>
+                            <span class="badge badge-ok" th:if="${a.approved}">Уланган</span>
+                            <span class="badge badge-warn" th:unless="${a.approved}">Тасдиқ кутилмоқда</span>
+                            <div class="muted" th:if="${a.lastSeenAt != null}" th:text="'алоқа: ' + ${#temporals.format(a.lastSeenAt, 'dd.MM HH:mm')}"></div>
+                        </td>
+                        <td class="wrap"><span th:text="${a.lastSyncAt} != null ? ${#temporals.format(a.lastSyncAt, 'dd.MM.yyyy HH:mm')} : '—'"></span>
+                            <div class="muted" th:text="${a.lastSyncMessage}"></div></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <details class="integration-option" th:open="${shelterAgents.isEmpty()}">
+                <summary class="option-head">
+                    <span class="option-title" th:text="${shelterAgents.isEmpty()} ? 'Shelter агентини улаш' : 'Яна бир компьютерни улаш'">Shelter агентини улаш</span>
+                </summary>
+                <ol class="hint">
+                    <li>Shelter сервери турган компьютерга агентни ўрнатинг (<code>C:\ProgramData\HotelPulse\shelter-agent</code>,
+                        <code>setup.ps1</code> — Firebird пароли ўша компьютерда, яширин киритилади).</li>
+                    <li><code>pair.bat</code> ишга туширилганда экранда 6 хонали код чиқади.</li>
+                    <li>Кодни шу ерга киритинг — агент калитни ўзи олади ва ҳар 2 соатда юклай бошлайди.</li>
+                </ol>
+                <form method="post" class="form fk-form" th:action="@{/admin/integrations/{id}/agents/approve(id=${hotel.id})}">
+                    <input type="hidden" name="anchor" value="shelter">
+                    <input type="text" name="code" inputmode="numeric" maxlength="7" pattern="\d{6}" required placeholder="123456" aria-label="Код">
+                    <button type="submit" class="btn btn-primary btn-sm">Тасдиқлаш</button>
+                </form>
+            </details>
+
+            <div class="sync-actions" th:if="${shelter != null}">
+                <form method="post" th:action="@{/admin/integrations/{id}/shelter/import(id=${hotel.id})}">
+                    <button type="submit" class="btn btn-primary" th:disabled="${shelterStatus != null}">Қайта ҳисоблаш</button>
+                </form>
+                <a class="btn btn-secondary" th:href="@{/admin/agents}">Барча агентлар →</a>
+            </div>
+        </section>
+
+        <!-- ===================== 1C (agent) ===================== -->
+        <section class="card sync-card reveal" id="1c">
+            <div class="sync-head">
+                <div>
+                    <h3 class="card-title">1С:Бухгалтерия</h3>
+                    <p class="subtitle">Бухгалтерия маълумотлари (харажатлар, контрагентлар, тўловлар) — меҳмонхона компьютеридаги агент орқали.</p>
+                </div>
+                <span class="badge" th:classappend="${row.onec.level == 'ok'} ? 'badge-ok' : (${row.onec.level == 'warn'} ? 'badge-warn' : 'badge-off')"
+                      th:text="${row.onec.text}"></span>
+            </div>
+            <p class="hint">1С агенти ҳозир тайёрланмоқда: аввал меҳмонхонанинг 1С базаси тузилмаси ўрганилади
+                (<code>agent/1c/discover.ps1</code>), шундан кейин маълумотлар автоматик юкланади.</p>
+            <div class="table-wrap" th:if="${!onecAgents.isEmpty()}">
+                <table class="debt-table">
+                    <thead><tr><th>Агент (компьютер)</th><th>Ҳолат</th><th>Охирги юклаш</th></tr></thead>
+                    <tbody>
+                    <tr th:each="a : ${onecAgents}">
+                        <td class="mono" th:text="${a.machine} ?: '—'"></td>
+                        <td><span class="badge badge-ok" th:if="${a.approved}">Уланган</span>
+                            <span class="badge badge-warn" th:unless="${a.approved}">Тасдиқ кутилмоқда</span></td>
+                        <td th:text="${a.lastSyncAt} != null ? ${#temporals.format(a.lastSyncAt, 'dd.MM.yyyy HH:mm')} : '—'"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <details class="integration-option">
+                <summary class="option-head"><span class="option-title">1С агентини улаш</span></summary>
+                <p class="hint">Агент ишга туширилганда экранда чиққан 6 хонали кодни киритинг.</p>
+                <form method="post" class="form fk-form" th:action="@{/admin/integrations/{id}/agents/approve(id=${hotel.id})}">
+                    <input type="hidden" name="anchor" value="1c">
+                    <input type="text" name="code" inputmode="numeric" maxlength="7" pattern="\d{6}" required placeholder="123456" aria-label="Код">
+                    <button type="submit" class="btn btn-primary btn-sm">Тасдиқлаш</button>
+                </form>
+            </details>
+        </section>
+
+        <!-- ===================== ЭСФ оператори (Didox / Faktura.uz) ===================== -->
+        <section class="card sync-card reveal" id="faktura" th:attr="data-running=${fakturaRunning}">
+            <div class="sync-head">
+                <div>
+                    <h3 class="card-title">Электрон ҳисоб-фактуралар (ЭСФ)</h3>
+                    <p class="subtitle">Меҳмонхона my.soliq.uz'да танлаган ЭСФ оператори орқали: кирувчи ҳисоб-фактуралар
+                        (етказиб берувчилардан) — USALI харажатларига; чиқувчилар — бронларга (расмий ҳисоб-фактура
+                        ёзилган-ёзилмагани). Ҳар куни 03:40 да автоматик янгиланади. Фақат ўқилади — ҳеч нарса имзоланмайди
+                        ва юборилмайди.</p>
+                </div>
+                <span th:if="${fakturaRunning}" class="badge badge-role"><span class="spinner"></span>Синхронланмоқда…</span>
+                <span th:if="${!fakturaRunning and faktura != null and faktura.syncOk == true}" class="badge badge-ok"
+                      th:text="${faktura.providerName} + ' · ишлаяпти'">Ишлаяпти</span>
+                <span th:if="${!fakturaRunning and faktura != null and faktura.syncOk == false}" class="badge badge-warn">Хатолик</span>
+                <span th:if="${!fakturaRunning and (faktura == null or faktura.syncOk == null)}" class="badge badge-off"
+                      th:text="${faktura == null} ? 'Уланмаган' : 'Ҳали синхронланмаган'"></span>
+            </div>
+
+            <details class="integration-option" th:open="${faktura == null}">
+                <summary class="option-head">
+                    <span class="option-title" th:text="${faktura == null} ? 'ЭСФ операторини улаш' : 'Уланиш маълумотлари'">ЭСФ операторини улаш</span>
+                </summary>
+                <form method="post" class="form fk-connect" th:action="@{/admin/integrations/{id}/faktura(id=${hotel.id})}"
+                      th:with="prov=${faktura != null ? faktura.provider : 'DIDOX'}">
+                    <div class="field">
+                        <label>ЭСФ оператори</label>
+                        <div class="fk-providers">
+                            <label class="check"><input type="radio" name="fakturaProvider" value="DIDOX"
+                                                        th:checked="${prov == 'DIDOX'}"> Didox <span class="muted">(тавсия)</span></label>
+                            <label class="check"><input type="radio" name="fakturaProvider" value="FAKTURA"
+                                                        th:checked="${prov == 'FAKTURA'}"> Faktura.uz</label>
+                        </div>
+                        <span class="hint">Қайси оператор эканини меҳмонхона бухгалтери билади (my.soliq.uz → «ЭДО операторини танлаш»).
+                            Кирувчи ҳисоб-фактуралар фақат шу операторда бўлади.</span>
+                        <span class="hint text-danger" th:unless="${didoxConfigured}">Didox учун HotelPulse'нинг ҳамкор токени ҳали
+                            созланмаган (Didox билан шартнома) — Didox танланса, текшириш хато беради.</span>
+                    </div>
+
+                    <details class="howto">
+                        <summary>Бу маълумотлар қаердан олинади?</summary>
+                        <ul>
+                            <li><b>ИНН</b> — меҳмонхона (ташкилот) СТИРи, 9 рақам.</li>
+                            <li><b>Didox:</b> фақат ИНН ва Didox пароли (didox.uz'га ИНН + парол билан кириладиган парол;
+                                бўлмаса, Didox профилида ўрнатилади).</li>
+                            <li><b>Faktura.uz:</b> Faktura.uz'га кириладиган логин ва парол. <b>Client ID ва Client Secret</b>ни
+                                Faktura.uz кабинетида ўзингиз яратасиз: Созламалар → «Доступ к API» → «Настройки клиентов» →
+                                «Добавить новый»; Client_id — ихтиёрий ном (масалан, <code>hotelpulse</code>), Callback URL —
+                                <code>https://hotel-pulse.uz</code>. Сақлангач, Client Secret кўрсатилади — шуни бу ерга киритинг.</li>
+                        </ul>
+                        <p>⚠️ ЭЦП калити (.pfx файли) ва унинг пароли <b>керак эмас</b> — уларни ҳеч кимга берманг.</p>
+                    </details>
+
+                    <div class="form-grid">
+                        <div class="field">
+                            <label for="fakturaInn">ИНН (СТИР)</label>
+                            <input type="text" id="fakturaInn" name="fakturaInn" maxlength="11" inputmode="numeric"
+                                   required th:value="${faktura?.companyInn}" placeholder="9 рақам">
+                        </div>
+                        <div class="field">
+                            <label for="fakturaPassword">Парол</label>
+                            <input type="password" id="fakturaPassword" name="fakturaPassword" autocomplete="new-password"
+                                   th:placeholder="${faktura != null and faktura.password != null} ? 'Сақланган — алмаштириш учун янгисини киритинг' : ''">
+                        </div>
+                        <div class="field" data-provider="FAKTURA">
+                            <label for="fakturaUsername">Логин (Faktura.uz)</label>
+                            <input type="text" id="fakturaUsername" name="fakturaUsername" maxlength="128" autocomplete="off"
+                                   th:value="${faktura?.username}">
+                        </div>
+                        <div class="field" data-provider="FAKTURA">
+                            <label for="fakturaClientId">Client ID (Faktura.uz)</label>
+                            <input type="text" id="fakturaClientId" name="fakturaClientId" maxlength="128" autocomplete="off"
+                                   th:value="${faktura?.clientId}">
+                        </div>
+                        <div class="field field-wide" data-provider="FAKTURA">
+                            <label for="fakturaClientSecret">Client Secret (Faktura.uz)</label>
+                            <input type="password" id="fakturaClientSecret" name="fakturaClientSecret" autocomplete="new-password"
+                                   th:placeholder="${faktura != null and faktura.clientSecret != null} ? 'Сақланган — алмаштириш учун янгисини киритинг' : ''">
+                        </div>
+                    </div>
+                    <span class="hint">Парол ва Client Secret базада шифрланган ҳолда сақланади ва саҳифада ҳеч қачон кўрсатилмайди.</span>
+                    <div class="form-actions"><button type="submit" class="btn btn-primary">Сақлаш</button></div>
+                </form>
+            </details>
+
+            <dl class="sync-meta" th:if="${faktura != null and faktura.syncedAt != null}">
+                <div>
+                    <dt>Охирги синхронлаш</dt>
+                    <dd th:text="${#temporals.format(faktura.syncedAt, 'dd.MM.yyyy HH:mm')}"></dd>
+                </div>
+                <div>
+                    <dt>Натижа</dt>
+                    <dd th:text="${faktura.syncMessage} ?: '—'" th:classappend="${faktura.syncOk == false} ? 'text-danger'"></dd>
+                </div>
+            </dl>
+
+            <div class="sync-actions" th:if="${faktura != null}">
+                <form method="post" th:action="@{/admin/integrations/{id}/faktura/test(id=${hotel.id})}">
+                    <button type="submit" class="btn btn-secondary">Уланишни текшириш</button>
+                </form>
+                <form method="post" th:action="@{/admin/integrations/{id}/faktura/sync(id=${hotel.id})}">
+                    <button type="submit" class="btn btn-primary" th:disabled="${fakturaRunning}">Ҳозир синхронлаш</button>
+                </form>
+                <a class="btn btn-secondary" th:href="@{/faktura(hotel=${hotel.id})}">Ҳужжатлар →</a>
+                <form method="post" class="push-right" th:action="@{/admin/integrations/{id}/faktura/disconnect(id=${hotel.id})}"
+                      onsubmit="return confirm('ЭСФ оператори уланишини ўчирасизми? Олинган ҳужжатлар сақланиб қолади.')">
+                    <button type="submit" class="btn btn-danger">Уланишни ўчириш</button>
+                </form>
+            </div>
+        </section>
+
+        <div class="integ-foot reveal">
+            <a class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">Меҳмонхона маълумотлари →</a>
+        </div>
+    </th:block>
+</main>
+<script>
+    // ЭСФ: operator tanloviga qarab faqat kerakli maydonlar ko'rinadi.
+    (function () {
+        const form = document.querySelector('.fk-connect');
+        if (!form) return;
+        const sync = () => {
+            const checked = form.querySelector('input[name=fakturaProvider]:checked');
+            const p = checked ? checked.value : 'DIDOX';
+            form.querySelectorAll('[data-provider]').forEach(el => el.hidden = el.dataset.provider !== p);
+        };
+        form.querySelectorAll('input[name=fakturaProvider]').forEach(r => r.addEventListener('change', sync));
+        sync();
+    })();
+</script>
+</body>
+</html>

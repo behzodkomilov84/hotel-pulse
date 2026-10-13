@@ -138,6 +138,35 @@ public class HotelService {
         return saved;
     }
 
+    /** Faqat asosiy ma'lumotlar (Бошқарув → Меҳмонхоналар): Exely ulanishi o'zgarmaydi. */
+    @Transactional
+    public Hotel saveBasic(Long id, String name, String city, int roomsCount, Boolean roomsCountManual, String currency,
+                           boolean active, LocalTime dailyReportTime) {
+        Hotel cur = id == null ? null : getById(id);
+        return save(id, name, city, roomsCount, roomsCountManual, currency,
+                cur == null ? null : cur.getExelyPropertyId(), cur == null ? null : cur.getExelyClientId(),
+                null, null, active, dailyReportTime);
+    }
+
+    /** Exely PMS kaliti (Интеграциялар): bo'sh — o'zgarmaydi. */
+    @Transactional
+    public Hotel saveExelyPmsKey(Long id, String pmsKey) {
+        Hotel h = getById(id);
+        if (pmsKey == null || pmsKey.isBlank()) {
+            throw new IllegalArgumentException("Exely PMS калитини киритинг");
+        }
+        return save(id, h.getName(), h.getCity(), h.getRoomsCount(), null, h.getCurrency(),
+                h.getExelyPropertyId(), h.getExelyClientId(), null, pmsKey, h.isActive(), null);
+    }
+
+    /** Exely Connect (Read Reservation API) ma'lumotlari (Интеграциялар); secret bo'sh — eskisi qoladi. */
+    @Transactional
+    public Hotel saveExelyConnect(Long id, String propertyId, String clientId, String clientSecret) {
+        Hotel h = getById(id);
+        return save(id, h.getName(), h.getCity(), h.getRoomsCount(), null, h.getCurrency(),
+                propertyId, clientId, clientSecret, null, h.isActive(), null);
+    }
+
     /** Exely ulanishini butunlay o'chiradi (allaqachon olingan bronlar qoladi). */
     @Transactional
     public void disconnectExely(Long id) {

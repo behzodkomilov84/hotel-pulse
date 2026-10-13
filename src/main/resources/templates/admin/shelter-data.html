@@ -6,7 +6,7 @@
 <main class="container">
     <div class="page-head reveal">
         <div>
-            <a class="back-link" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">← <span th:text="${hotel.name}">Меҳмонхона</span></a>
+            <a class="back-link" th:href="@{/admin/integrations/{id}(id=${hotel.id})}">← <span th:text="${hotel.name} + ' · Интеграциялар'">Меҳмонхона</span></a>
             <h1 th:text="${table.title}">Маълумотлар</h1>
             <p class="subtitle">
                 <span th:text="${@fmt.number(total)} + ' та ёзув'"></span>

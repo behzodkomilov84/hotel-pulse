@@ -191,7 +191,7 @@ class AgentDbTest {
         assertTrue(analysis.contains("корхона ҳисоблари") && analysis.contains("Sitora Tour 25-26.07"), analysis);
         String csv = html("/hotels/" + hotel.getId() + "/debts.csv");
         assertTrue(csv.contains("Sitora Tour 25-26.07") && csv.contains("7000000"), csv);
-        String admin = html("/admin/hotels/" + hotel.getId());
+        String admin = html("/admin/integrations/" + hotel.getId());
         assertTrue(admin.contains("олинган маълумотлар") && admin.contains("Бронлар ва яшашлар"));
         assertTrue(html("/").contains("UCS Shelter уланган"));
         assertTrue(admin.contains("/shelter/data/ROOM_SCHEDULE"), "kartochka bosiladigan");

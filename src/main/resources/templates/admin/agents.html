@@ -2,15 +2,16 @@
 <html lang="uz" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head('Агентлар')}"></head>
 <body>
-<header th:replace="~{fragments/layout :: header('admin-agents')}"></header>
+<header th:replace="~{fragments/layout :: header('admin-integrations')}"></header>
 <main class="container agents-page">
     <div class="page-head reveal">
         <div>
-            <h1>Агентлар</h1>
-            <p class="subtitle">Меҳмонхона компьютеридаги дастурлар (UCS Shelter, 1C) — маълумотни HotelPulse'га юборади</p>
+            <h1>Интеграциялар</h1>
+            <p class="subtitle">Агентлар — меҳмонхона компьютеридаги дастурлар (UCS Shelter, 1С): маълумотни HotelPulse'га юборади</p>
         </div>
     </div>
     <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+    <nav th:replace="~{admin/integrations :: tabs('agents')}"></nav>
 
     <form method="post" class="card form reveal" th:action="@{/admin/agents/approve}">
         <h3 class="card-title">Агентни улаш</h3>

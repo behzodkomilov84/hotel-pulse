@@ -1121,3 +1121,35 @@ table.rt td.heat-4 { background: color-mix(in srgb, var(--primary) 50%, transpar
 .agents-page .agent-col { min-width: 200px; max-width: 320px; }
 .agents-page .agent-actions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; white-space: nowrap; }
 .agents-page .agent-actions .btn { width: 100%; }
+
+/* ---------- Интеграциялар ---------- */
+.agent-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.integrations-page > .card + .card, .integrations-page > .card + .integ-foot { margin-top: 20px; }
+.integrations-page .integ-chips { margin-bottom: 20px; }
+.integrations-page .sync-card { display: grid; gap: 16px; scroll-margin-top: 90px; }
+.integrations-page .sync-card .table-wrap { margin: 0; }
+.integ-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.integ-chip {
+    display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: 13.5px;
+    text-decoration: none; transition: border-color var(--t-fast), transform var(--t-fast), box-shadow var(--t-fast);
+}
+a.integ-chip:hover { border-color: var(--primary); transform: translateY(-1px); box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,.06)); }
+.integ-chip span:last-child { color: var(--muted); }
+.integ-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--border); flex: none; }
+.lvl-ok .integ-dot { background: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
+.lvl-warn .integ-dot { background: var(--danger); box-shadow: 0 0 0 3px var(--danger-soft); }
+.lvl-pending .integ-dot { background: var(--warning); box-shadow: 0 0 0 3px var(--warning-soft); }
+.integ-state { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; white-space: nowrap; }
+.integ-state.lvl-off { color: var(--muted); }
+.integ-matrix td { vertical-align: middle; }
+.integ-summary .integ-chips { margin-top: 14px; }
+.integ-foot { display: flex; justify-content: flex-end; }
+@media (max-width: 760px) {
+    .integ-chip { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+    a.integ-chip { transition: none; }
+    a.integ-chip:hover { transform: none; }
+}
+.integ-summary { margin-top: 18px; }

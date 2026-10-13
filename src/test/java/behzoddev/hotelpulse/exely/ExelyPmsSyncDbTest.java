@@ -233,7 +233,7 @@ class ExelyPmsSyncDbTest {
                 s -> org.springframework.test.web.servlet.result.MockMvcResultMatchers.content().string(org.hamcrest.Matchers.containsString(s));
 
         // Admin sahifasidagi arxiv kartalari — havola.
-        mvc.perform(get.apply("/admin/hotels/" + hotel.getId())).andExpect(ok)
+        mvc.perform(get.apply("/admin/integrations/" + hotel.getId())).andExpect(ok)
                 .andExpect(has.apply("/exely/data/booking"));
         // Ro'yxat: ustunlar, yozuv va to'liq JSON tafsiloti.
         mvc.perform(get.apply("/admin/hotels/" + hotel.getId() + "/exely/data/booking")).andExpect(ok)
