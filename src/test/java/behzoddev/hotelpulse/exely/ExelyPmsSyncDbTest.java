@@ -257,6 +257,18 @@ class ExelyPmsSyncDbTest {
     }
 
     @Test
+    void bookingMoneyReadsCurrencyAndSumsRoomStayPrices() {
+        // Exely PMS bron JSON'i: valyuta yuqorida, narx — har bir xona-yashashda.
+        rawStore.upsert(hotel.getId(), ExelyRawStore.BOOKING, new ExelyRawStore.Row("N-USD", "N-USD", null,
+                "{\"number\": \"N-USD\", \"currencyId\": \"USD\", \"roomStays\": [{\"totalPrice\": {\"amount\": 159.12}},"
+                        + " {\"totalPrice\": {\"amount\": 40.88}}]}"));
+        var m = rawStore.bookingMoney(hotel.getId(), List.of("N-USD", "N-NONE"));
+        assertEquals("USD", m.get("N-USD").currency());
+        assertEquals(0, new java.math.BigDecimal("200.00").compareTo(m.get("N-USD").total()));
+        assertFalse(m.containsKey("N-NONE"));
+    }
+
+    @Test
     void manualRoomsCountIsNotOverwritten() {
         expectPms();
         Hotel h = hotelRepository.findById(hotel.getId()).orElseThrow();

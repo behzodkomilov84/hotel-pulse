@@ -144,3 +144,7 @@ ALTER TABLE hotels
 -- Chet valyutadagi bronlar to'lovlari (Exely belgisi "UZS", summa — bron valyutasida) to'g'rilandi:
 -- PMS to'lovlari keyingi sinxronlashda boshidan qayta yuklanadi.
 UPDATE hotels SET pms_payments_synced_until = NULL WHERE exely_pms_key IS NOT NULL;
+
+--changeset behzod:37
+-- 36-o'zgarishdagi bron narxi yo'li (roomStays[*].totalPrice) to'g'rilandi — PMS to'lovlari yana boshidan yuklanadi.
+UPDATE hotels SET pms_payments_synced_until = NULL WHERE exely_pms_key IS NOT NULL;

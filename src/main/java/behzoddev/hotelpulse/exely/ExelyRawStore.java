@@ -104,19 +104,32 @@ public class ExelyRawStore {
             List<Object> args = new java.util.ArrayList<>();
             args.add(hotelId);
             args.addAll(chunk);
+            // Narx har bir xona-yashashda (roomStays[*].totalPrice.amount) — bron narxi ularning yig'indisi.
             jdbc.query("select external_id, json_unquote(json_extract(payload, '$.currencyId')), "
-                            + "json_extract(payload, '$.totalPrice.amount') from exely_raw "
+                            + "json_extract(payload, '$.roomStays[*].totalPrice.amount') from exely_raw "
                             + "where hotel_id = ? and kind = 'booking' and external_id in (" + in + ")",
                     rs -> {
                         String cur = rs.getString(2);
-                        String total = rs.getString(3);
                         if (cur != null && !cur.equals("null")) {
-                            result.put(rs.getString(1), new BookingMoney(cur,
-                                    total == null || total.equals("null") ? null : new BigDecimal(total)));
+                            result.put(rs.getString(1), new BookingMoney(cur, sum(rs.getString(3))));
                         }
                     }, args.toArray());
         }
         return result;
+    }
+
+    /** "[159.12, 80.5]" → 239.62; bo'sh/null — null. */
+    static BigDecimal sum(String jsonArray) {
+        if (jsonArray == null || jsonArray.isBlank() || jsonArray.equals("null")) {
+            return null;
+        }
+        BigDecimal total = BigDecimal.ZERO;
+        for (String part : jsonArray.replaceAll("[\\[\\]\\s]", "").split(",")) {
+            if (!part.isEmpty() && !part.equals("null")) {
+                total = total.add(new BigDecimal(part));
+            }
+        }
+        return total;
     }
 
     /** Tur bo'yicha yozuvlar soni (admin sahifasi uchun). */
