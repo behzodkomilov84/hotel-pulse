@@ -42,7 +42,7 @@ public class DebtAnalyzer {
     public DebtAnalysis analyze(DebtReport report, String currency, boolean paymentsComplete) {
         String warning = paymentsComplete ? null
                 : "Бу меҳмонхона Exely Connect орқали уланган — тўлов маълумоти тўлиқ эмас, "
-                + "шунинг учун қарз амалдагидан катта кўриниши мумкин. Аниқ таҳлил учун Exely PMS калитини уланг.";
+                + "шунинг учун қарз амалдагидан катта кўриниши мумкин. Аниқ таҳлил учун меҳмонхона PMS'ини уланг (Exely PMS калити ёки 1С:Отель агенти).";
         DebtReport.Summary s = report.summary();
         BigDecimal companyTotal = report.companyTotal();
         boolean guests = s.count() > 0 && s.total().signum() > 0;

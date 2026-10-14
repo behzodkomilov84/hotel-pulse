@@ -132,7 +132,7 @@ public class TelegramReportService {
                 continue;
             }
             if (!kpiService.paymentsComplete(h)) {
-                sb.append("• ").append(esc(h.getName())).append(" — <i>Exely PMS API уланганда кўринади</i>\n");
+                sb.append("• ").append(esc(h.getName())).append(" — <i>Exely Connect жойидаги тўловларни бермайди — PMS (Exely PMS ёки 1С:Отель) уланганда кўринади</i>\n");
                 any = true;
                 continue;
             }
