@@ -60,6 +60,8 @@ public final class KpiCalculator {
         long noShows = 0;
         long losNights = 0;
         long losCount = 0;
+        long guests = 0;
+        long guestNights = 0;
 
         for (Booking b : bookings) {
             LocalDate arrival = b.getArrivalDate();
@@ -81,6 +83,10 @@ public final class KpiCalculator {
             LocalDate start = arrival.isBefore(from) ? from : arrival;
             LocalDate lastNight = b.getDepartureDate().minusDays(1);
             LocalDate end = lastNight.isAfter(to) ? to : lastNight;
+            if (!start.isAfter(end)) {
+                guests += b.getGuests();
+                guestNights += (long) b.getGuests() * (ChronoUnit.DAYS.between(start, end) + 1);
+            }
 
             for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
                 int i = (int) ChronoUnit.DAYS.between(from, d);
@@ -145,7 +151,9 @@ public final class KpiCalculator {
                 noShows,
                 losCount == 0 ? 0 : (double) losNights / losCount,
                 daily,
-                sources);
+                sources,
+                guests,
+                guestNights);
     }
 
     private static double ratio(long part, long whole) {

@@ -71,6 +71,22 @@ class KpiCalculatorTest {
     }
 
     @Test
+    void guestsAndGuestNightsCountOnlyNightsInsidePeriod() {
+        Period p = new Period("custom", D1, D1.plusDays(1));   // 2 kun
+        Booking family = booking(D1.minusDays(1), 3, 1, 300_000, BookingStatus.CHECKED_OUT, "Sayt");  // 2 kechasi davrda
+        family.setGuests(3);
+        Booking single = booking(D1.plusDays(1), 1, 1, 100_000, BookingStatus.CHECKED_IN, "Sayt");    // 1 kechasi davrda
+        Booking left = booking(D1.minusDays(3), 2, 1, 100_000, BookingStatus.CHECKED_OUT, "Sayt");    // davrdan oldin ketgan
+        Booking cancelled = booking(D1, 1, 1, 100_000, BookingStatus.CANCELLED, "Sayt");
+        cancelled.setGuests(4);
+
+        StayMetrics m = KpiCalculator.calculate(List.of(family, single, left, cancelled), 10, p);
+
+        assertEquals(4, m.guests(), "3 kishilik oila + 1 kishi; ketgan va bekor qilingan — yo'q");
+        assertEquals(7, m.guestNights(), "3 × 2 + 1 × 1");
+    }
+
+    @Test
     void bookingSpanningPeriodBoundaryIsProrated() {
         // 4 kechalik bron, davrga faqat oxirgi 2 kechasi tushadi.
         Period p = new Period("custom", D1, D1.plusDays(4));

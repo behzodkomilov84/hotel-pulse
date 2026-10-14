@@ -26,7 +26,10 @@ public record StayMetrics(
         long noShows,
         double avgLengthOfStay,
         List<DailyPoint> daily,
-        List<SourceShare> sources) {
+        List<SourceShare> sources,
+        // davrda yashagan mehmonlar (kamida bir kechasi davrga tushgan faol bronlar kishilari) va mehmon-kechalar
+        long guests,
+        long guestNights) {
 
     /** Jami daromad: yashash + xizmatlar (Exely'dagi "Выручка"). */
     public BigDecimal totalRevenue() {

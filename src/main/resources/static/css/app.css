@@ -307,6 +307,7 @@ td.wrap { white-space: normal; }
 .hotel-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; border-top: 1px solid var(--border); padding-top: 14px; margin-top: 2px; }
 .hotel-stats .k { color: var(--muted); font-size: 12px; font-weight: 600; }
 .hotel-stats .v { font-weight: 800; font-size: 18px; letter-spacing: -.02em; }
+.hotel-stats .sub { color: var(--muted); font-size: 12px; margin-top: 6px; }
 
 /* Progress (bandlik) chizig'i — kenglik JS orqali 0 dan to'ladi */
 .meter { height: 6px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); overflow: hidden; margin-top: 8px; }

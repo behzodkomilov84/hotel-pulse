@@ -9,6 +9,7 @@ import java.math.BigDecimal;
  * @param debt         kelgan mehmonlarning to'lanmagan qoldig'i (korxona va guruh hisoblari bilan)
  * @param debtorCount  to'liq to'lanmagan bronlar va korxona hisoblari soni
  * @param companyCount shulardan korxona va guruh hisoblari soni (UCS Shelter)
+ * @param inHouseGuests hozir yashayotgan mehmonlar (kishilar) soni
  */
 public record TodaySnapshot(
         long arrivals,
@@ -17,10 +18,11 @@ public record TodaySnapshot(
         double occupancy,
         BigDecimal debt,
         long debtorCount,
-        long companyCount) {
+        long companyCount,
+        long inHouseGuests) {
 
     public TodaySnapshot(long arrivals, long departures, long inHouseRooms, double occupancy, BigDecimal debt, long debtorCount) {
-        this(arrivals, departures, inHouseRooms, occupancy, debt, debtorCount, 0);
+        this(arrivals, departures, inHouseRooms, occupancy, debt, debtorCount, 0, 0);
     }
 
     /** Qarzdorlar soni: bronlar va korxona hisoblari alohida. */

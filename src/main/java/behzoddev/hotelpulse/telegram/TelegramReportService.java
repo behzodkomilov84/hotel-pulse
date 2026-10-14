@@ -51,7 +51,8 @@ public class TelegramReportService {
                 .append(": ").append(period.label()).append("\n\n");
 
         sb.append("🛏 Бандлик: <b>").append(fmt.pct(s.occupancy())).append("</b>")
-                .append(paren(fmt.pointChange(s.occupancy(), ps.occupancy()))).append("\n");
+                .append(paren(fmt.pointChange(s.occupancy(), ps.occupancy())))
+                .append(s.guests() > 0 ? " · 👥 " + s.guests() + " меҳмон" : "").append("\n");
         boolean hasExtras = s.extrasRevenue().signum() != 0;
         sb.append(hasExtras ? "💰 Яшаш даромади: <b>" : "💰 Хона даромади: <b>")
                 .append(fmt.moneyShort(s.roomRevenue(), cur)).append("</b>")

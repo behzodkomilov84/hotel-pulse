@@ -68,6 +68,7 @@
                     <div class="k">Бандлик (шу ой)<span th:replace="~{fragments/layout :: tip(#{tip.home.occupancy})}"></span></div>
                     <div class="v" data-count th:text="${@fmt.pct(m.occupancy)}">0%</div>
                     <div class="meter"><div class="meter-fill" th:attr="data-fill=${m.occupancy}"></div></div>
+                    <div class="sub" th:text="${m.guests} + ' меҳмон · ' + ${m.soldRoomNights} + ' хона-кеча'"></div>
                 </div>
                 <div>
                     <div class="k">Даромад (шу ой)<span th:replace="~{fragments/layout :: tip(#{tip.home.revenue})}"></span></div>

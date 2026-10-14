@@ -57,6 +57,7 @@ public class KpiService {
         long arrivals = 0;
         long departures = 0;
         long inHouse = 0;
+        long inHouseGuests = 0;
         for (Booking b : around) {
             if (!b.getStatus().isActive()) {
                 continue;
@@ -69,6 +70,7 @@ public class KpiService {
             }
             if (!b.getArrivalDate().isAfter(today) && b.getDepartureDate().isAfter(today)) {
                 inHouse += b.getRooms();
+                inHouseGuests += b.getGuests();
             }
         }
 
@@ -89,7 +91,7 @@ public class KpiService {
         debtors += company.count();
 
         double occupancy = hotel.getRoomsCount() == 0 ? 0 : (double) inHouse / hotel.getRoomsCount();
-        return new TodaySnapshot(arrivals, departures, inHouse, occupancy, debt, debtors, company.count());
+        return new TodaySnapshot(arrivals, departures, inHouse, occupancy, debt, debtors, company.count(), inHouseGuests);
     }
 
     /**

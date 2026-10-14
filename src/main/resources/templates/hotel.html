@@ -87,7 +87,7 @@
                 </div>
                 <div class="stat-value" data-count th:text="${@fmt.pct(today.occupancy)}">0%</div>
                 <div class="meter"><div class="meter-fill" th:attr="data-fill=${today.occupancy}"></div></div>
-                <div class="stat-sub" th:text="${today.inHouseRooms} + ' / ' + ${hotel.roomsCount} + ' хона банд'"></div>
+                <div class="stat-sub" th:text="${today.inHouseRooms} + ' / ' + ${hotel.roomsCount} + ' хона банд · ' + ${today.inHouseGuests} + ' меҳмон'"></div>
             </div>
             <div class="card stat">
                 <div class="stat-top">
@@ -136,7 +136,7 @@
                 <div class="stat-value" data-count th:text="${@fmt.pct(s.occupancy)}">0%</div>
                 <div class="delta" th:classappend="${@fmt.trend(s.occupancy, ps.occupancy)}"
                      th:text="${@fmt.pointChange(s.occupancy, ps.occupancy)}"></div>
-                <div class="stat-sub" th:text="${s.soldRoomNights} + ' / ' + ${s.availableRoomNights} + ' хона-кеча'"></div>
+                <div class="stat-sub" th:text="${s.soldRoomNights} + ' / ' + ${s.availableRoomNights} + ' хона-кеча · ' + ${s.guests} + ' меҳмон'"></div>
             </div>
             <div class="card stat">
                 <div class="stat-top">
