@@ -128,6 +128,25 @@ class ExelyPmsMapperTest {
     }
 
     @Test
+    void paymentLabelledHotelCurrencyOnForeignBookingUsesBookingCurrency() {
+        // Real holat (Karvon): bron $159.12, to'lov 159.12 "UZS" belgisi bilan — aslida dollar.
+        var bookings = Map.of("USD-1", new ExelyRawStore.BookingMoney("USD", new BigDecimal("159.12")),
+                "UZS-1", new ExelyRawStore.BookingMoney("UZS", new BigDecimal("900000")));
+        List<ExelyPmsApi.Payment> fixed = ExelyPmsMapper.withBookingCurrency(List.of(
+                new ExelyPmsApi.Payment(1L, "USD-1", 0, new BigDecimal("159.12"), "202610130656", null, 0, null, "UZS", null),
+                // Mehmon so'mda to'lagan (summa bron narxidan ancha katta) — o'zgarmaydi.
+                new ExelyPmsApi.Payment(2L, "USD-1", 0, new BigDecimal("1900000"), "202610130656", null, 0, null, "UZS", null),
+                // So'mdagi bron (turistik soliq 3 296) — o'zgarmaydi.
+                new ExelyPmsApi.Payment(3L, "UZS-1", 0, new BigDecimal("3296"), "202610130656", null, 0, null, "UZS", null),
+                // Bron xom ma'lumoti yo'q — o'zgarmaydi.
+                new ExelyPmsApi.Payment(4L, "X", 0, new BigDecimal("50"), "202610130656", null, 0, null, "UZS", null)),
+                "UZS", bookings);
+        assertEquals(List.of("USD", "UZS", "UZS", "UZS"), fixed.stream().map(ExelyPmsApi.Payment::currency).toList());
+        MoneyConverter x10000 = (amount, currency, date) -> "USD".equals(currency) ? amount.multiply(BigDecimal.valueOf(10000)) : amount;
+        assertEquals(0, new BigDecimal("1591200").compareTo(ExelyPmsMapper.toPayment(fixed.get(0), 5L, x10000).getAmount()));
+    }
+
+    @Test
     void servicesUseExelyRateAndKeepDuplicateServiceIdsPerStay() {
         // Real ma'lumotdagi holat: bitta nonushta id'si ikki xil yashashda (bronda) takrorlanadi.
         ExelyPmsApi.ServicesData data = new ExelyPmsApi.ServicesData(List.of(

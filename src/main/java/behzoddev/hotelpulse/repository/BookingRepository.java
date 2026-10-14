@@ -39,6 +39,26 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
                                @Param("toExclusive") LocalDateTime toExclusive);
 
     /**
+     * Bronlar (rezervatsiyalar) soni: ko'p xonali bron — bitta (qatorlar "{raqam}#{xona}" — raqam bo'yicha).
+     * Yuqoridagi countBookedBetween xonalarni sanaydi.
+     */
+    @Query(value = """
+            select count(distinct substring_index(external_id, '#', 1)) from bookings
+            where hotel_id = :hotelId and booked_at >= :from and booked_at < :toExclusive
+            """, nativeQuery = true)
+    long countBookedReservations(@Param("hotelId") Long hotelId,
+                                 @Param("from") LocalDateTime from,
+                                 @Param("toExclusive") LocalDateTime toExclusive);
+
+    @Query(value = """
+            select count(distinct substring_index(external_id, '#', 1)) from bookings
+            where hotel_id = :hotelId and cancelled_at >= :from and cancelled_at < :toExclusive
+            """, nativeQuery = true)
+    long countCancelledReservations(@Param("hotelId") Long hotelId,
+                                    @Param("from") LocalDateTime from,
+                                    @Param("toExclusive") LocalDateTime toExclusive);
+
+    /**
      * Mehmon kelgan (kelish sanasi bugun yoki undan oldin) va to'liq to'lanmagan
      * bronlar: har bir qator [bron narxi, to'langan summa].
      */

@@ -183,7 +183,10 @@ public class ExelyVerifyService {
             Set<String> seen = new HashSet<>();
             long eCount = 0;
             BigDecimal eSum = BigDecimal.ZERO;
-            for (ExelyPmsApi.Payment p : pmsClient.payments(key, from, to)) {
+            List<ExelyPmsApi.Payment> fetched = pmsClient.payments(key, from, to);
+            fetched = ExelyPmsMapper.withBookingCurrency(fetched, hotel.getCurrency(),
+                    raw.bookingMoney(hotel.getId(), fetched.stream().map(ExelyPmsApi.Payment::bookingNumber).toList()));
+            for (ExelyPmsApi.Payment p : fetched) {
                 behzoddev.hotelpulse.entity.Payment pay = ExelyPmsMapper.toPayment(p, hotel.getId(), money);
                 if (pay != null && !pay.getPaidAt().isBefore(from) && pay.getPaidAt().isBefore(to) && seen.add(pay.getExternalId())) {
                     eCount++;

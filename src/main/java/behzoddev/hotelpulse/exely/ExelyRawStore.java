@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.Clock;
@@ -86,6 +87,36 @@ public class ExelyRawStore {
     public void replaceAll(Long hotelId, String kind, List<Row> rows) {
         jdbc.update("delete from exely_raw where hotel_id = ? and kind = ?", hotelId, kind);
         upsertAll(hotelId, kind, rows);
+    }
+
+    /** Bron valyutasi va narxi (Exely PMS bron JSON'idagi currencyId, totalPrice.amount). */
+    public record BookingMoney(String currency, BigDecimal total) {
+    }
+
+    /** Xom bronlardan: bron raqami → valyuta va narx (to'lov valyutasini aniqlash uchun). */
+    @Transactional(readOnly = true)
+    public Map<String, BookingMoney> bookingMoney(Long hotelId, java.util.Collection<String> numbers) {
+        Map<String, BookingMoney> result = new java.util.HashMap<>();
+        List<String> list = numbers.stream().filter(java.util.Objects::nonNull).distinct().toList();
+        for (int i = 0; i < list.size(); i += 500) {
+            List<String> chunk = list.subList(i, Math.min(list.size(), i + 500));
+            String in = String.join(",", java.util.Collections.nCopies(chunk.size(), "?"));
+            List<Object> args = new java.util.ArrayList<>();
+            args.add(hotelId);
+            args.addAll(chunk);
+            jdbc.query("select external_id, json_unquote(json_extract(payload, '$.currencyId')), "
+                            + "json_extract(payload, '$.totalPrice.amount') from exely_raw "
+                            + "where hotel_id = ? and kind = 'booking' and external_id in (" + in + ")",
+                    rs -> {
+                        String cur = rs.getString(2);
+                        String total = rs.getString(3);
+                        if (cur != null && !cur.equals("null")) {
+                            result.put(rs.getString(1), new BookingMoney(cur,
+                                    total == null || total.equals("null") ? null : new BigDecimal(total)));
+                        }
+                    }, args.toArray());
+        }
+        return result;
     }
 
     /** Tur bo'yicha yozuvlar soni (admin sahifasi uchun). */

@@ -131,6 +131,30 @@ public final class ExelyPmsMapper {
      * Bronga bog'lanmaydi (booking_id = null): bron qayta yozilganda (o'chirib-qo'shish)
      * FK cascade to'lovni ham o'chirib yuborardi; qarz baribir PMS'ning toPayAmount'idan olinadi.
      */
+    /**
+     * Exely chet valyutadagi (masalan, USD) bron to'lovini ba'zan mehmonxona valyutasi belgisi bilan beradi, summa esa
+     * bron valyutasida bo'ladi (159.12 "UZS" — aslida $159.12, bron narxi $159.12). Belgi mehmonxona valyutasi (yoki bo'sh),
+     * bron boshqa valyutada va summa bron narxidan ko'p emas (1.5 barobar) bo'lsa — to'lov bron valyutasida deb olinadi.
+     * Katta summa (mehmon so'mda to'lagan) o'zgarmaydi.
+     */
+    public static List<ExelyPmsApi.Payment> withBookingCurrency(List<ExelyPmsApi.Payment> payments, String hotelCurrency,
+                                                               Map<String, ExelyRawStore.BookingMoney> bookings) {
+        List<ExelyPmsApi.Payment> result = new ArrayList<>(payments.size());
+        for (ExelyPmsApi.Payment p : payments) {
+            ExelyRawStore.BookingMoney b = p.bookingNumber() == null ? null : bookings.get(p.bookingNumber());
+            boolean labelIsHotel = p.currency() == null || p.currency().isBlank() || p.currency().equalsIgnoreCase(hotelCurrency);
+            if (b != null && labelIsHotel && p.amount() != null && b.currency() != null && b.total() != null
+                    && !b.currency().equalsIgnoreCase(hotelCurrency) && b.total().signum() > 0
+                    && p.amount().abs().compareTo(b.total().multiply(new BigDecimal("1.5"))) <= 0) {
+                result.add(new ExelyPmsApi.Payment(p.id(), p.bookingNumber(), p.actionKind(), p.amount(), p.paymentDateTime(),
+                        p.dateTime(), p.paymentMethod(), p.paymentSystem(), b.currency(), p.cancellationDateTime()));
+            } else {
+                result.add(p);
+            }
+        }
+        return result;
+    }
+
     public static Payment toPayment(ExelyPmsApi.Payment p, Long hotelId) {
         return toPayment(p, hotelId, MoneyConverter.NONE);
     }

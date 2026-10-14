@@ -139,3 +139,8 @@ WHERE exely_pms_key IS NOT NULL;
 ALTER TABLE hotels
     ADD COLUMN daily_report_time    TIME NOT NULL DEFAULT '05:00:00',
     ADD COLUMN daily_report_sent_on DATE NULL;
+
+--changeset behzod:36
+-- Chet valyutadagi bronlar to'lovlari (Exely belgisi "UZS", summa — bron valyutasida) to'g'rilandi:
+-- PMS to'lovlari keyingi sinxronlashda boshidan qayta yuklanadi.
+UPDATE hotels SET pms_payments_synced_until = NULL WHERE exely_pms_key IS NOT NULL;

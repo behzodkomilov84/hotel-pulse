@@ -70,8 +70,8 @@ public class TelegramReportService {
         BigDecimal gap = s.totalRevenue().subtract(kpi.paymentsReceived());
         sb.append("↔️ Фарқ: <b>").append(fmt.signedMoneyShort(gap, cur)).append("</b> — ")
                 .append(fmt.gapNote(gap)).append("\n\n");
-        sb.append("🆕 Янги бронлар: ").append(kpi.newBookings())
-                .append(" · ❌ Бекор: ").append(kpi.cancellations()).append("\n");
+        sb.append("🆕 Янги бронлар: ").append(reservations(kpi.newReservations(), kpi.newBookings()))
+                .append(" · ❌ Бекор: ").append(reservations(kpi.cancelledReservations(), kpi.cancellations())).append("\n");
 
         TodaySnapshot t = kpiService.todaySnapshot(hotel);
         sb.append("\n<b>Бугун</b>: 🛬 келади ").append(t.arrivals())
@@ -79,7 +79,7 @@ public class TelegramReportService {
                 .append(" · 🛏 банд ").append(t.inHouseRooms()).append("/").append(hotel.getRoomsCount()).append("\n");
         if (paymentsComplete && t.debtorCount() > 0) {
             sb.append("⚠️ Қарздорлик: <b>").append(fmt.moneyShort(t.debt(), cur)).append("</b> (")
-                    .append(t.debtorCount()).append(" та брон)\n");
+                    .append(debtors(t)).append(")\n");
         }
         return sb.toString();
     }
@@ -140,11 +140,28 @@ public class TelegramReportService {
             if (t.debtorCount() == 0) {
                 sb.append("қарз йўқ ✅\n");
             } else {
-                sb.append(fmt.money(t.debt(), h.getCurrency())).append(" (").append(t.debtorCount()).append(" та брон)\n");
+                sb.append(fmt.money(t.debt(), h.getCurrency())).append(" (").append(debtors(t)).append(")\n");
             }
             any = true;
         }
         return any ? sb.toString() : "Ҳали маълумот йўқ.";
+    }
+
+    /** "34 та корхона/гуруҳ ҳисоби", "5 та брон", "2 та брон, 34 та корхона/гуруҳ ҳисоби". */
+    static String debtors(TodaySnapshot t) {
+        List<String> parts = new java.util.ArrayList<>();
+        if (t.bookingDebtors() > 0) {
+            parts.add(t.bookingDebtors() + " та брон");
+        }
+        if (t.companyCount() > 0) {
+            parts.add(t.companyCount() + " та корхона/гуруҳ ҳисоби");
+        }
+        return String.join(", ", parts);
+    }
+
+    /** "6 (60 хона)" — ko'p xonali bronlar bo'lsa xonalar soni ham; aks holda faqat son. */
+    static String reservations(long reservations, long rooms) {
+        return rooms > reservations ? reservations + " (" + rooms + " хона)" : String.valueOf(rooms);
     }
 
     private static String paren(String change) {

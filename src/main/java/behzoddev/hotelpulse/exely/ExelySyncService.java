@@ -269,6 +269,8 @@ public class ExelySyncService {
             ExelyPmsApi.PaymentsResponse r = json == null ? null : ExelyPmsClient.parse(json, ExelyPmsApi.PaymentsResponse.class);
             List<ExelyPmsApi.Payment> list = r == null || r.data() == null || r.data().payments() == null
                     ? List.of() : r.data().payments();
+            list = ExelyPmsMapper.withBookingCurrency(list, hotel.getCurrency(),
+                    raw.bookingMoney(hotelId, list.stream().map(ExelyPmsApi.Payment::bookingNumber).toList()));
             payments += writer.replacePmsPayments(hotelId, payFrom, to, list, money);
             if (json != null) {
                 raw.upsertAll(hotelId, ExelyRawStore.PAYMENT, ExelyRawRows.payments(json));

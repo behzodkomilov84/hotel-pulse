@@ -44,7 +44,9 @@ public class KpiService {
                 bookingRepository.countCancelledBetween(hotel.getId(), period.from().atStartOfDay(), period.toExclusive().atStartOfDay()),
                 prev,
                 stays(hotel, prev),
-                paymentRepository.sumPaidBetween(hotel.getId(), prev.from().atStartOfDay(), prev.toExclusive().atStartOfDay()));
+                paymentRepository.sumPaidBetween(hotel.getId(), prev.from().atStartOfDay(), prev.toExclusive().atStartOfDay()),
+                bookingRepository.countBookedReservations(hotel.getId(), period.from().atStartOfDay(), period.toExclusive().atStartOfDay()),
+                bookingRepository.countCancelledReservations(hotel.getId(), period.from().atStartOfDay(), period.toExclusive().atStartOfDay()));
     }
 
     @Transactional(readOnly = true)
@@ -87,7 +89,7 @@ public class KpiService {
         debtors += company.count();
 
         double occupancy = hotel.getRoomsCount() == 0 ? 0 : (double) inHouse / hotel.getRoomsCount();
-        return new TodaySnapshot(arrivals, departures, inHouse, occupancy, debt, debtors);
+        return new TodaySnapshot(arrivals, departures, inHouse, occupancy, debt, debtors, company.count());
     }
 
     /**
