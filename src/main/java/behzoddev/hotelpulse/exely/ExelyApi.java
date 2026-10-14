@@ -15,6 +15,11 @@ public final class ExelyApi {
     private ExelyApi() {
     }
 
+    /** PMS Analytics API: daily-occupancy (bizga faqat mehmonxona profilidagi xonalar soni kerak). */
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public record DailyOccupancy(Integer propertyRoomCount) {
+    }
+
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record TokenResponse(
             @JsonProperty("access_token") String accessToken,

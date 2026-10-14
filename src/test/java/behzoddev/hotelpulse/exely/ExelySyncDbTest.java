@@ -93,6 +93,11 @@ class ExelySyncDbTest {
                 .andRespond(withSuccess(ExelySamples.BOOKING_ACTIVE, MediaType.APPLICATION_JSON));
         server.expect(requestTo("https://exely.test/api/read-reservation/v1/properties/500821/bookings/20210325-500360-6987835"))
                 .andRespond(withSuccess(ExelySamples.BOOKING_CANCELLED, MediaType.APPLICATION_JSON));
+        // Xonalar soni — PMS Analytics API (mehmonxona profilidagi propertyRoomCount).
+        server.expect(requestTo(org.hamcrest.Matchers.startsWith(
+                        "https://exely.test/api/pms-analytics/v1/properties/500821/daily-occupancy?startStayDate=")))
+                .andRespond(withSuccess("{\"currencyCode\":\"UZS\",\"propertyRoomCount\":25,\"dailyOccupancies\":[]}",
+                        MediaType.APPLICATION_JSON));
 
         ExelySyncService.SyncResult result = syncService.sync(hotel.getId());
 
@@ -116,7 +121,32 @@ class ExelySyncDbTest {
         assertEquals("TOKEN-2", after.getExelyContinueToken());
         assertEquals(Boolean.TRUE, after.getExelyLastSyncOk());
         assertNotNull(after.getExelyLastSyncAt());
-        assertEquals("2 та брон янгиланди", after.getExelyLastSyncMessage());
+        assertEquals("2 та брон янгиланди; хоналар сони: 25", after.getExelyLastSyncMessage());
+        assertEquals(25, after.getRoomsCount());
+    }
+
+    @Test
+    void roomsCountWithoutAnalyticsAccessDoesNotBreakSync() {
+        MockRestServiceServer server = MockExely.SERVER;
+        hotel.setRoomsCount(0);
+        hotel.setExelyContinueToken("TOKEN-X");
+        hotelRepository.save(hotel);
+        server.expect(ExpectedCount.between(0, 5), requestTo("https://exely.test/auth/token"))
+                .andRespond(withSuccess(ExelySamples.TOKEN, MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://exely.test/api/read-reservation/v1/properties/500821/bookings?count=1000&continueToken=TOKEN-X"))
+                .andRespond(withSuccess("{\"bookingSummaries\": [], \"continueToken\": \"TOKEN-X\", \"hasMoreData\": false}",
+                        MediaType.APPLICATION_JSON));
+        server.expect(requestTo(org.hamcrest.Matchers.startsWith(
+                        "https://exely.test/api/pms-analytics/v1/properties/500821/daily-occupancy")))
+                .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators.withStatus(
+                        org.springframework.http.HttpStatus.FORBIDDEN));
+
+        ExelySyncService.SyncResult result = syncService.sync(hotel.getId());
+
+        assertTrue(result.ok(), result.message());
+        Hotel after = hotelRepository.findById(hotel.getId()).orElseThrow();
+        assertEquals(0, after.getRoomsCount());
+        assertTrue(after.getExelyLastSyncMessage().contains("PMS Analytics API"), after.getExelyLastSyncMessage());
     }
 
     @Test
@@ -134,6 +164,9 @@ class ExelySyncDbTest {
         server.expect(ExpectedCount.twice(),
                         requestTo("https://exely.test/api/read-reservation/v1/properties/500821/bookings/20230622-500821-12025196"))
                 .andRespond(withSuccess(ExelySamples.BOOKING_ACTIVE, MediaType.APPLICATION_JSON));
+        server.expect(ExpectedCount.twice(), requestTo(org.hamcrest.Matchers.startsWith(
+                        "https://exely.test/api/pms-analytics/v1/properties/500821/daily-occupancy")))
+                .andRespond(withSuccess("{\"propertyRoomCount\":20}", MediaType.APPLICATION_JSON));
 
         assertTrue(syncService.sync(hotel.getId()).ok());
         assertTrue(syncService.sync(hotel.getId()).ok());
@@ -146,6 +179,9 @@ class ExelySyncDbTest {
 
     @Test
     void wrongCredentialsAreRecordedAsFailedStatus() {
+        // Boshqa client_id — oldingi testlardan keshlangan token ishlatilmasin.
+        hotel.setExelyClientId("client-wrong");
+        hotelRepository.save(hotel);
         MockExely.SERVER.expect(requestTo("https://exely.test/auth/token"))
                 .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators
                         .withStatus(org.springframework.http.HttpStatus.UNAUTHORIZED));

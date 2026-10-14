@@ -180,6 +180,7 @@ public class ExelySyncService {
             String message = processed == 0 && failed == 0
                     ? "Янги ўзгариш йўқ"
                     : processed + " та брон янгиланди" + (failed > 0 ? ", " + failed + " таси ўтказиб юборилди" : "");
+            message += connectRoomsCount(hotel, creds);
             writer.saveStatus(hotelId, true, message);
             log.info("Exely sinxronlash (mehmonxona {}): {}", hotelId, message);
             return new SyncResult(true, processed, message);
@@ -193,6 +194,30 @@ public class ExelySyncService {
             return new SyncResult(false, 0, e.getMessage());
         } finally {
             running.remove(hotelId);
+        }
+    }
+
+    /**
+     * Exely Connect: xonalar soni mehmonxona profilidan (PMS Analytics API, propertyRoomCount) — bandlik va RevPAR uchun.
+     * Qo'lda belgilangan bo'lsa tegilmaydi. API ulanishda PMS Analytics tanlanmagan bo'lsa — sinxronlash davom etadi,
+     * xonalar soni hali yo'q bo'lsa — sababi xabarda.
+     */
+    private String connectRoomsCount(Hotel hotel, ExelyClient.Credentials creds) {
+        if (hotel.isRoomsCountManual()) {
+            return "";
+        }
+        try {
+            Integer rooms = client.propertyRoomCount(creds, LocalDate.now(clock));
+            if (rooms != null && rooms > 0 && rooms != hotel.getRoomsCount()) {
+                writer.saveRoomsCount(hotel.getId(), rooms);
+                return "; хоналар сони: " + rooms;
+            }
+            return "";
+        } catch (ExelyException e) {
+            log.info("Exely: xonalar sonini olib bo'lmadi (mehmonxona {}): {}", hotel.getId(), e.getMessage());
+            return hotel.getRoomsCount() == 0
+                    ? "; хоналар сони олинмади — Exely API уланишда «PMS Analytics API»ни ҳам белгиланг ёки сонини қўлда киритинг"
+                    : "";
         }
     }
 

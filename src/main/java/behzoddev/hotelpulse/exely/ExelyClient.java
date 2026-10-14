@@ -80,6 +80,23 @@ public class ExelyClient {
         return details.booking();
     }
 
+    /**
+     * Mehmonxonadagi xonalar soni (Exely profilidagi): PMS Analytics API — daily-occupancy javobidagi propertyRoomCount.
+     * API ulanishda "PMS Analytics API" tanlanmagan bo'lsa (403/404) — ExelyException.
+     */
+    public Integer propertyRoomCount(Credentials c, java.time.LocalDate day) {
+        ExelyApi.DailyOccupancy r = withToken(c, token -> rest.get()
+                .uri(b -> b.path("/api/pms-analytics/v1/properties/{propertyId}/daily-occupancy")
+                        .queryParam("startStayDate", day.toString())
+                        .queryParam("endStayDate", day.toString())
+                        .build(c.propertyId()))
+                .headers(h -> h.setBearerAuth(token))
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .body(ExelyApi.DailyOccupancy.class));
+        return r == null ? null : r.propertyRoomCount();
+    }
+
     /** So'rovni token bilan bajaradi; 401 bo'lsa tokenni yangilab bir marta qayta urinadi. */
     private <T> T withToken(Credentials c, Function<String, T> call) {
         try {
