@@ -116,12 +116,16 @@
                 <details class="howto">
                     <summary>Меҳмонхона бу маълумотларни қаердан олади?</summary>
                     <ol>
-                        <li>Exely экстранетда <b>Property settings → API connections</b> бўлимига кириб, <b>Create a connection</b> тугмасини босади.</li>
-                        <li>Уланишга ном беради (масалан, "HotelPulse").</li>
-                        <li><b>Публик APIs</b> ёрлиғида <b>Read Reservation API</b>'ни белгилайди.</li>
-                        <li><b>Save</b> → <b>Save and enable access</b> тугмаларини босади.</li>
-                        <li>Очилган саҳифадаги <b>клиент_ид</b> ва <b>клиент_секрет</b>'ни сизга юборади.</li>
+                        <li>Exely экстранетида чап менюда <b>«Настройки гостиницы» → «API-подключения»</b>
+                            (инглизча: Property settings → API connections). Бу бўлим одатда ёпиқ — йўқ бўлса,
+                            Exely қўллаб-қувватлашидан ёқиб беришни сўранг (support@exely.uz).</li>
+                        <li><b>«Создать подключение»</b> (Create a connection) тугмасини босиб, номига «HotelPulse» деб ёзади.</li>
+                        <li><b>«Public APIs»</b> ёрлиғида <b>Read Reservation API</b>'ни белгилайди; шахсий маълумотлар учун
+                            розилик сўраса — <b>«Дать согласие»</b> (Give consent).</li>
+                        <li><b>«Сохранить»</b> → <b>«Сохранить и включить доступ»</b> (Save → Save and enable access).</li>
+                        <li>Очилган саҳифадаги <b>client_id</b> ва <b>client_secret</b>'ни шу формага киритади.</li>
                     </ol>
+                    <p>⚠️ «АСУ интеграция» бўлимидаги логин/парол (TLConnect…) — бошқа нарса (PMS билан алоқа учун), уни киритманг.</p>
                     <p>Меҳмонхона ID — Exely'даги рақамли идентификатор (брон рақамининг ўртасидаги сон ҳам шу: 20210325-<b>500360</b>-6987835).</p>
                 </details>
                 <form method="post" class="form" th:action="@{/admin/integrations/{id}/exely/connect(id=${hotel.id})}">
