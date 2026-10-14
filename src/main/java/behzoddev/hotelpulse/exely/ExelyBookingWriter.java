@@ -42,11 +42,17 @@ public class ExelyBookingWriter {
     /** Bronning eski qatorlarini o'chirib, eng so'nggi versiyasini yozadi (upsert). */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void upsert(Long hotelId, ExelyApi.Booking src) {
+        upsert(hotelId, src, MoneyConverter.NONE);
+    }
+
+    /** @param money bron valyutasi (USD va h.k.) — mehmonxona valyutasiga (narx va oldindan to'lov) */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void upsert(Long hotelId, ExelyApi.Booking src, MoneyConverter money) {
         String prefix = ExelyBookingMapper.externalPrefix(src.number());
         paymentRepository.deleteByExternalPrefix(hotelId, DataOrigin.EXELY, prefix);
         bookingRepository.deleteByExternalPrefix(hotelId, DataOrigin.EXELY, prefix);
 
-        List<Booking> rows = ExelyBookingMapper.toBookings(src, hotelId, clock.getZone(), LocalDate.now(clock));
+        List<Booking> rows = ExelyBookingMapper.toBookings(src, hotelId, clock.getZone(), LocalDate.now(clock), money);
         if (rows.isEmpty()) {
             return;
         }
@@ -55,6 +61,7 @@ public class ExelyBookingWriter {
         BigDecimal prepaid = ExelyBookingMapper.prepaid(src);
         if (prepaid.signum() > 0) {
             Booking first = rows.get(0);
+            prepaid = money.convert(prepaid, src.currencyCode(), first.getBookedAt().toLocalDate());
             Payment p = new Payment();
             p.setHotelId(hotelId);
             p.setBookingId(first.getId());

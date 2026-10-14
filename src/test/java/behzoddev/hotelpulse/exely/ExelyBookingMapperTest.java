@@ -30,6 +30,25 @@ class ExelyBookingMapperTest {
     }
 
     @Test
+    void foreignCurrencyPriceIsConvertedOnArrivalDate() {
+        // Real holat (Al Anvar): Trip.com broni USD'da — 4 kecha $542.04.
+        ExelyApi.Booking usd = new ExelyApi.Booking("503260", "N-USD", "Active", "2026-09-01T10:00:00Z", "2026-09-01T10:00:00Z",
+                new ExelyApi.GuaranteeInfo(BigDecimal.ZERO), "USD",
+                List.of(stay("2026-10-11T14:00", "2026-10-15T12:00", 2, new BigDecimal("542.04"), null)), null, null,
+                new ExelyApi.Source("Channel", "CTP"), null);
+        List<String> calls = new java.util.ArrayList<>();
+        MoneyConverter x12000 = (amount, currency, date) -> {
+            calls.add(currency + "@" + date);
+            return "USD".equals(currency) ? amount.multiply(BigDecimal.valueOf(12000)) : amount;
+        };
+
+        Booking row = ExelyBookingMapper.toBookings(usd, 5L, TASHKENT, LocalDate.of(2026, 10, 14), x12000).get(0);
+
+        assertEquals(0, new BigDecimal("6504480").compareTo(row.getTotalAmount()));
+        assertEquals(List.of("USD@2026-10-11"), calls);
+    }
+
+    @Test
     void eachRoomStayBecomesSeparateRow() {
         ExelyApi.Booking src = booking("Active", List.of(
                 stay("2026-10-01T14:00", "2026-10-04T12:00", 2, new BigDecimal("1650000"), new BigDecimal("1500000")),

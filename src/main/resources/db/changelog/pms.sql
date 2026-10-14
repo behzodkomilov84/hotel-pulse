@@ -148,3 +148,7 @@ UPDATE hotels SET pms_payments_synced_until = NULL WHERE exely_pms_key IS NOT NU
 --changeset behzod:37
 -- 36-o'zgarishdagi bron narxi yo'li (roomStays[*].totalPrice) to'g'rilandi — PMS to'lovlari yana boshidan yuklanadi.
 UPDATE hotels SET pms_payments_synced_until = NULL WHERE exely_pms_key IS NOT NULL;
+
+--changeset behzod:38
+-- Exely Connect bronlari bron valyutasidan (currencyCode) o'giriladigan bo'ldi — shu mehmonxonalar bronlari qayta yuklanadi.
+UPDATE hotels SET exely_continue_token = NULL WHERE exely_client_id IS NOT NULL AND exely_pms_key IS NULL;

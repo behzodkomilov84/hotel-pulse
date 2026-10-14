@@ -138,6 +138,9 @@ public class ExelySyncService {
             ExelyClient.Credentials creds = new ExelyClient.Credentials(
                     hotel.getExelyPropertyId().trim(), hotel.getExelyClientId().trim(), hotel.getExelyClientSecret());
 
+            // Kanal bronlari (Booking.com, Trip.com) ko'pincha USD'da — mehmonxona valyutasiga o'giriladi.
+            String hotelCurrency = hotel.getCurrency();
+            MoneyConverter money = (amount, currency, date) -> rates.convert(amount, currency, hotelCurrency, date);
             String token = hotel.getExelyContinueToken();
             Instant since = Instant.now(clock).minus(Duration.ofDays(props.initialDays()));
             int processed = 0;
@@ -153,7 +156,7 @@ public class ExelySyncService {
                 for (ExelyApi.BookingSummary s : summaries) {
                     pause();
                     try {
-                        writer.upsert(hotelId, client.getBooking(creds, s.number()));
+                        writer.upsert(hotelId, client.getBooking(creds, s.number()), money);
                         processed++;
                     } catch (ExelyException e) {
                         // Bitta bron xatosi butun sinxronlashni to'xtatmasin (masalan, 404).

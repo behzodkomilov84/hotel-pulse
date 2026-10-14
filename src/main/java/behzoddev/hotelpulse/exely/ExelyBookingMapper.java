@@ -45,6 +45,13 @@ public final class ExelyBookingMapper {
     }
 
     public static List<Booking> toBookings(ExelyApi.Booking src, Long hotelId, ZoneId zone, LocalDate today) {
+        return toBookings(src, hotelId, zone, today, MoneyConverter.NONE);
+    }
+
+    /**
+     * @param money bron valyutasi (currencyCode, masalan USD) mehmonxonanikidan farq qilsa — kelish kunidagi kurs bo'yicha o'giriladi
+     */
+    public static List<Booking> toBookings(ExelyApi.Booking src, Long hotelId, ZoneId zone, LocalDate today, MoneyConverter money) {
         List<Booking> result = new ArrayList<>();
         List<ExelyApi.RoomStay> stays = src.roomStays() == null ? List.of() : src.roomStays();
         boolean cancelled = "Cancelled".equalsIgnoreCase(src.status());
@@ -77,7 +84,7 @@ public final class ExelyBookingMapper {
             b.setDepartureDate(departure);
             b.setRooms(1);
             b.setGuests(guests(rs.guestCount()));
-            b.setTotalAmount(price(rs.total()));
+            b.setTotalAmount(money.convert(price(rs.total()), src.currencyCode(), arrival));
             b.setBookedAt(bookedAt != null ? bookedAt : arrival.atStartOfDay());
             if (cancelled) {
                 b.setStatus(BookingStatus.CANCELLED);

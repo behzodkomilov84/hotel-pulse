@@ -66,6 +66,9 @@ class ExelySyncDbTest {
     @BeforeEach
     void setUp() {
         MockExely.SERVER.reset();
+        // Namuna bronlar EUR'da — so'mga Markaziy bank kursi bilan o'giriladi (kurs keshlangani uchun 0 marta ham bo'lishi mumkin).
+        MockExely.SERVER.expect(ExpectedCount.between(0, 20), requestTo(org.hamcrest.Matchers.startsWith("https://cbu.uz/")))
+                .andRespond(withSuccess("[{\"Ccy\":\"EUR\",\"Rate\":\"14000.00\",\"Nominal\":\"1\"}]", MediaType.APPLICATION_JSON));
         hotelRepository.deleteAll();
         Hotel h = new Hotel();
         h.setName("Exely Test Hotel");
