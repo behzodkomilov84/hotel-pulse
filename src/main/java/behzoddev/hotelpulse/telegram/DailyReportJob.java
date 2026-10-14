@@ -38,6 +38,14 @@ public class DailyReportJob {
     private final TelegramProperties props;
     private final Clock clock;
 
+    /**
+     * UCS Shelter kechagi tun xizmatlarini tungi yopishda (night audit, odatda ertalab) yozadi, agent esa har 2 soatda
+     * yuboradi: yopilmagan kun hisoboti noto'g'ri (yashash daromadi va ADR past) chiqmasligi uchun shuncha kutiladi.
+     */
+    static final Duration NIGHT_AUDIT_WAIT = Duration.ofHours(6);
+
+    private final ReportReadiness readiness;
+
     @Scheduled(cron = "0 * * * * *", zone = "${app.zone:Asia/Tashkent}")
     public void run() {
         if (!props.enabled()) {
@@ -45,7 +53,24 @@ public class DailyReportJob {
         }
         LocalDateTime now = LocalDateTime.now(clock);
         for (Hotel hotel : hotelRepository.findAll()) {
-            if (hotel.isActive() && isDue(hotel, now)) {
+            if (!hotel.isActive()) {
+                continue;
+            }
+            boolean waits = readiness.waitsForNightAudit(hotel);
+            if (!isDue(hotel, now, waits ? NIGHT_AUDIT_WAIT : CATCH_UP)) {
+                continue;
+            }
+            if (waits) {
+                LocalDate yesterday = now.toLocalDate().minusDays(1);
+                boolean closed = readiness.nightClosed(hotel, yesterday);
+                boolean lastChance = !now.isBefore(now.toLocalDate().atTime(hotel.getDailyReportTime())
+                        .plus(NIGHT_AUDIT_WAIT).minusMinutes(2));
+                if (!closed && !lastChance) {
+                    continue;   // keyingi daqiqada (agent yangi ma'lumot yuborgach) yana tekshiriladi
+                }
+                send(hotel, now.toLocalDate(), closed ? null
+                        : "⚠️ Shelter'да кечаги тун ҳали ёпилмаган (night audit) — яшаш даромади ва ADR тўлиқ эмас.");
+            } else {
                 send(hotel, now.toLocalDate());
             }
         }
@@ -53,16 +78,27 @@ public class DailyReportJob {
 
     /** Vaqti kelgan (CATCH_UP ichida) va bugun hali yuborilmagan. */
     static boolean isDue(Hotel hotel, LocalDateTime now) {
+        return isDue(hotel, now, CATCH_UP);
+    }
+
+    static boolean isDue(Hotel hotel, LocalDateTime now, Duration window) {
         LocalDate today = now.toLocalDate();
         if (today.equals(hotel.getDailyReportSentOn())) {
             return false;
         }
         LocalDateTime at = today.atTime(hotel.getDailyReportTime());
-        return !now.isBefore(at) && now.isBefore(at.plus(CATCH_UP));
+        return !now.isBefore(at) && now.isBefore(at.plus(window));
     }
 
-    /** @return hisobot yuborilgan foydalanuvchilar soni */
     int send(Hotel hotel, LocalDate today) {
+        return send(hotel, today, null);
+    }
+
+    /**
+     * @param note hisobot oxiriga qo'shiladigan ogohlantirish (yo'q — null)
+     * @return hisobot yuborilgan foydalanuvchilar soni
+     */
+    int send(Hotel hotel, LocalDate today, String note) {
         markSent(hotel.getId(), today);   // avval belgilanadi — xato bo'lsa ham takror yuborilmasin
         int sent = 0;
         String text = null;
@@ -72,7 +108,8 @@ public class DailyReportJob {
             }
             try {
                 if (text == null) {
-                    text = "☀️ <b>Хайрли тонг!</b> Кечаги кун натижалари:\n\n" + reports.hotelReport(hotel, "yesterday");
+                    text = "☀️ <b>Хайрли тонг!</b> Кечаги кун натижалари:\n\n" + reports.hotelReport(hotel, "yesterday")
+                            + (note == null ? "" : "\n\n" + note);
                 }
                 gateway.sendMessage(user.getTelegramChatId(), text, null);
                 sent++;

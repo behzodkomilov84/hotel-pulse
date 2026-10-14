@@ -42,6 +42,7 @@ class AgentDbTest {
     @Autowired private UserRepository userRepository;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private WebApplicationContext context;
+    @Autowired private behzoddev.hotelpulse.telegram.ReportReadiness readiness;
 
     private MockMvc mvc;
     private CustomUserDetails owner;
@@ -166,6 +167,12 @@ class AgentDbTest {
         assertEquals(0, new java.math.BigDecimal("2000000").compareTo((java.math.BigDecimal) booking.get("total_amount")));
         assertEquals(0, new java.math.BigDecimal("500000").compareTo((java.math.BigDecimal) booking.get("balance_due")));
         assertEquals(3, jdbc.queryForObject("select count(*) from service_revenue where hotel_id = ?", Integer.class, hotel.getId()));
+        // Kunlik hisobot: Shelter mehmonxonasi tungi yopishni kutadi; ikkala kecha xona xizmati yozilgan — yopilgan.
+        var h4 = hotelRepository.findById(hotel.getId()).orElseThrow();
+        assertTrue(readiness.waitsForNightAudit(h4));
+        assertTrue(readiness.nightClosed(h4, today.minusDays(3)) && readiness.nightClosed(h4, today.minusDays(2)));
+        jdbc.update("delete from service_revenue where hotel_id = ? and service_date = ?", hotel.getId(), java.sql.Date.valueOf(today.minusDays(2)));
+        assertFalse(readiness.nightClosed(h4, today.minusDays(2)), "xona xizmati yozilmagan kecha — yopilmagan");
         assertEquals(1, jdbc.queryForObject("select count(*) from payments where hotel_id = ? and booking_id is not null", Integer.class, hotel.getId()));
         var h = hotelRepository.findById(hotel.getId()).orElseThrow();
         assertEquals(2, h.getRoomsCount());
