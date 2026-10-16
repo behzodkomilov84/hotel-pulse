@@ -1,0 +1,7 @@
+/* News */
+.news{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px}
+.news article{display:flex; flex-direction:column; gap:10px; padding-top:18px; border-top:2px solid var(--ink)}
+.news time{font-size:13px; color:var(--gold-d); font-weight:600; letter-spacing:.06em; text-transform:uppercase}
+.news p{color:var(--muted); font-size:15px}
+@media (max-width:860px){.news{grid-template-columns:1fr}}
+

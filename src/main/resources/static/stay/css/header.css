@@ -1,0 +1,29 @@
+/* Header */
+.hdr{position:sticky; top:env(safe-area-inset-top,0px); z-index:50; background:rgba(255,255,255,.96); backdrop-filter:blur(8px); border-bottom:1px solid var(--line)}
+.hdr .wrap{display:flex; align-items:center; gap:20px; height:72px}
+.logo{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--ink); flex-shrink:0}
+.logo svg{width:34px; height:40px}
+.logo .wm{display:flex; flex-direction:column; line-height:1}
+.logo .wm b{font-family:var(--display); font-weight:700; font-size:21px; letter-spacing:.14em}
+.logo .wm span{font-size:10.5px; font-weight:600; letter-spacing:.62em; color:var(--gold); margin-top:4px; padding-left:2px}
+.nav{display:flex; gap:22px; margin-left:auto; align-items:center}
+.nav a{text-decoration:none; font-size:15px; font-weight:500; color:var(--text)}
+.nav a:hover{color:var(--teal)}
+.nav a.res{color:var(--gold-d); font-weight:600; border:1.5px solid var(--gold); border-radius:999px; padding:7px 14px}
+.nav a.res:hover,.nav a.res[aria-current="page"]{background:var(--gold); color:var(--white)}
+.lang{display:flex; border:1px solid var(--line); border-radius:999px; overflow:hidden; flex-shrink:0}
+.lang button{border:0; background:transparent; font:600 12px var(--body); padding:7px 10px; cursor:pointer; color:var(--muted)}
+.lang button[aria-pressed="true"]{background:var(--ink); color:var(--white)}
+.burger{display:none; margin-left:auto; border:0; background:transparent; padding:8px; cursor:pointer}
+.burger span{display:block; width:24px; height:2px; background:var(--ink); margin:5px 0}
+.hdr .book-top{flex-shrink:0}
+@media (max-width:1060px){
+  .nav{position:absolute; top:72px; left:0; right:0; background:var(--white); flex-direction:column; align-items:stretch; gap:0; padding:8px max(20px,env(safe-area-inset-right,0px)) 20px max(20px,env(safe-area-inset-left,0px)); border-bottom:1px solid var(--line); display:none}
+  .nav.open{display:flex}
+  .nav a{padding:12px 0; border-bottom:1px solid var(--line)}
+  .nav a.res{margin-top:12px; text-align:center; border-bottom:1.5px solid var(--gold)}
+  .burger{display:block}
+  .hdr .book-top{display:none}
+}
+@media (max-width:420px){.logo .wm b{font-size:18px} .hdr .wrap{gap:12px}}
+

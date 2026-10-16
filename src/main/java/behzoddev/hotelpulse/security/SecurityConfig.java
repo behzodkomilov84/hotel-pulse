@@ -28,11 +28,13 @@ public class SecurityConfig {
                         .requestMatchers("/dev-login").permitAll()
                         // Mehmonxona agentlari: juftlash va yuklash — sessiyasiz, X-Agent-Key bilan (AgentApiController).
                         .requestMatchers("/api/agent/**").permitAll()
+                        // Chorvoq Stay mehmonlar sayti (chorvoqstay.uz — StaySiteFilter) va uning so'rovlar API'si.
+                        .requestMatchers("/stay/**", "/api/stay/**").permitAll()
                         // Mehmonxona/foydalanuvchi boshqaruvi — faqat platforma egasi.
                         .requestMatchers("/admin/**").hasRole("OWNER")
                         .requestMatchers("/team/**").hasAnyRole("OWNER", "HOTEL_OWNER", "MANAGEMENT_COMPANY")
                         .anyRequest().authenticated())
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/agent/**"))
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/agent/**", "/api/stay/**"))
                 .formLogin(form -> form
                         .loginPage("/login")
                         .defaultSuccessUrl("/", true)

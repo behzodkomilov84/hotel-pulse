@@ -1,0 +1,11 @@
+/* Hero */
+.hero{position:relative; color:var(--white); background:var(--ink)}
+.hero-img{position:absolute; inset:0; background-size:cover; background-position:center 40%}
+.hero::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,45,48,.55) 0%, rgba(10,45,48,.15) 40%, rgba(10,45,48,.75) 100%)}
+.hero .wrap{position:relative; z-index:1; padding-block:clamp(64px,10vw,120px) 40px; display:flex; flex-direction:column; gap:22px}
+.hero h1{color:var(--white); font-size:clamp(38px,6vw,72px); font-weight:600; max-width:15ch}
+.hero p{font-size:clamp(17px,1.6vw,20px); max-width:46ch; color:#E6EFEE}
+.hero .meta{display:flex; flex-wrap:wrap; gap:10px 22px; font-size:14px; color:#D4E3E2}
+.hero .meta span{display:flex; align-items:center; gap:8px}
+.hero .meta span::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--gold)}
+

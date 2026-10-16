@@ -1,0 +1,41 @@
+/* Layout: lakeside resort site — full-bleed photo hero with an inset booking bar, then alternating paper / mist / deep-teal bands. Resident programme lives on its own view (#rezident). */
+:root{
+  --ink:#0E4246; --teal:#1A6A6F; --teal-2:#2B7F84; --gold:#BD8A2E; --gold-d:#94681C;
+  --sand:#F3EADA; --mist:#EDF3F2; --paper:#FBFAF6; --white:#FFFFFF;
+  --text:#18292A; --muted:#566868; --line:#D7E1DF; --on-ink:#E9F1F0; --on-ink-muted:#A9C2C1;
+  --ok:#2E7D4F; --err:#B2412E;
+  --display:"Spectral", "Georgia", "Times New Roman", serif;
+  --body:"Golos Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --r:10px; --wrap:1180px;
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{scroll-behavior:smooth; scroll-padding-top:84px}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto} *{transition:none!important;animation:none!important}}
+body{margin:0;background:var(--paper); color:var(--text); font-family:var(--body); font-size:16px; line-height:1.6}
+body::before{content:""; position:fixed; inset:0 0 auto; height:env(safe-area-inset-top,0px); z-index:60; background:var(--white)}
+html[lang="uz"] x-ru, html[lang="ru"] x-uz{display:none}
+a{color:inherit}
+h1,h2,h3{font-family:var(--display); color:var(--ink); line-height:1.15; margin:0; text-wrap:balance; font-weight:600}
+h2{font-size:clamp(28px,3.6vw,42px)}
+h3{font-size:22px}
+p{margin:0}
+.wrap{max-width:var(--wrap); margin:0 auto; padding-left:max(20px, env(safe-area-inset-left,0px)); padding-right:max(20px, env(safe-area-inset-right,0px))}
+.eyebrow{font-size:12px; font-weight:600; letter-spacing:.22em; text-transform:uppercase; color:var(--gold-d)}
+.lead{font-size:18px; color:var(--muted); max-width:62ch}
+.sec{padding-block:clamp(56px,8vw,96px)}
+.sec-head{display:flex; flex-direction:column; gap:12px; margin-bottom:36px}
+.sec-head.row{flex-direction:row; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px}
+.band-mist{background:var(--mist)}
+.band-ink{background:var(--ink); color:var(--on-ink)}
+.band-ink h2,.band-ink h3{color:var(--white)}
+.band-ink .eyebrow{color:var(--gold)}
+.band-ink .lead{color:var(--on-ink-muted)}
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; font:600 15px/1 var(--body); padding:14px 22px; border-radius:999px; border:1.5px solid transparent; cursor:pointer; text-decoration:none; transition:background .2s, color .2s, border-color .2s; white-space:nowrap}
+.btn-gold{background:var(--gold); color:var(--white)} .btn-gold:hover{background:var(--gold-d)}
+.btn-ink{background:var(--ink); color:var(--white)} .btn-ink:hover{background:var(--teal)}
+.btn-line{border-color:var(--gold); color:var(--gold-d); background:transparent} .btn-line:hover{background:var(--gold); color:var(--white)}
+.btn-ghost-w{border-color:rgba(255,255,255,.5); color:var(--white)} .btn-ghost-w:hover{background:rgba(255,255,255,.12)}
+:focus-visible{outline:3px solid var(--gold); outline-offset:2px}
+

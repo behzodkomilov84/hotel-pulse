@@ -58,6 +58,7 @@
                 <a sec:authorize="hasRole('OWNER')" th:href="@{/admin/hotels}" th:classappend="${active == 'admin-hotels'} ? 'active'">Меҳмонхоналар</a>
                 <a sec:authorize="hasRole('OWNER')" th:href="@{/admin/users}" th:classappend="${active == 'admin-users'} ? 'active'">Фойдаланувчилар</a>
                 <a sec:authorize="hasRole('OWNER')" th:href="@{/admin/integrations}" th:classappend="${active == 'admin-integrations'} ? 'active'">Интеграциялар</a>
+                <a sec:authorize="hasRole('OWNER')" th:href="@{/admin/stay}" th:classappend="${active == 'admin-stay'} ? 'active'">Chorvoq Stay</a>
             </div>
         </div>
     </nav>

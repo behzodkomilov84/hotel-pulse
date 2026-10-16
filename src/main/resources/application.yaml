@@ -45,6 +45,11 @@ app:
     bot-token: ${TELEGRAM_BOT_TOKEN:}
     # Botdagi "Saytda batafsil" tugmasi uchun ommaviy manzil (localhost bo'lsa tugma chiqmaydi).
     site-url: ${APP_SITE_URL:http://localhost:8081}
+  # Chorvoq Stay mehmonlar sayti (docs/chorvoqstay.md): shu domenlardan kelgan so'rovlarga sayt ochiladi.
+  stay:
+    hosts: ${STAY_HOSTS:chorvoqstay.uz,www.chorvoqstay.uz}
+    # So'rovlar Telegram'da kimga boradi (chat_id, vergul bilan). Bo'sh bo'lsa — Telegram'ni ulagan platforma egalariga.
+    telegram-chat-ids: ${STAY_TELEGRAM_CHAT_IDS:}
   didox:
     # Didox hamkor API (api-partners.didox.uz). Hamkor tokeni Didox bilan shartnoma asosida beriladi —
     # HotelPulse uchun bitta; mehmonxonalar faqat INN va Didox parolini kiritadi. Bo'sh bo'lsa — Didox o'chirilgan.

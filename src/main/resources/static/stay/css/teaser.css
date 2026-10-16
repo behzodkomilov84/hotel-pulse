@@ -1,0 +1,5 @@
+/* Resident teaser */
+.teaser{display:grid; grid-template-columns:1fr auto; gap:28px; align-items:center; background:var(--sand); border-radius:14px; padding:clamp(28px,4vw,44px)}
+.teaser .pct{font-family:var(--display); font-size:64px; color:var(--gold-d); font-weight:700; line-height:1}
+@media (max-width:760px){.teaser{grid-template-columns:1fr}}
+

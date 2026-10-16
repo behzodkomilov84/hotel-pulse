@@ -1,0 +1,7 @@
+/* Footer */
+.ftr{background:var(--ink); color:var(--on-ink-muted); font-size:14px}
+.ftr .wrap{padding-block:40px; display:flex; flex-wrap:wrap; gap:24px; justify-content:space-between; align-items:center}
+.ftr .logo{color:var(--white)}
+.ftr nav{display:flex; gap:18px; flex-wrap:wrap}
+.ftr nav a{text-decoration:none; color:var(--on-ink)}
+

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Chorvoq Stay — сўровлар')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-stay')}"></header>
+<main class="container">
+    <div class="page-head reveal">
+        <div>
+            <h1>Chorvoq Stay</h1>
+            <p class="subtitle">chorvoqstay.uz саҳифасидан келган сўровлар: брон, резидент (квартира эгаси), қўнғироқ.
+                Ҳар бир сўров Telegram'га ҳам юборилади.</p>
+        </div>
+        <a class="btn btn-secondary" th:href="@{/stay/index.html}" target="_blank" rel="noopener">Сайтни очиш ↗</a>
+    </div>
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+    <nav class="kind-tabs reveal" aria-label="Сўровлар">
+        <a class="kind-tab" th:classappend="${show == 'new'} ? 'active'" th:href="@{/admin/stay(show='new')}">
+            <span>Янги</span><b th:text="${countNew}">0</b></a>
+        <a class="kind-tab" th:classappend="${show == 'all'} ? 'active'" th:href="@{/admin/stay(show='all')}">
+            <span>Ҳаммаси</span></a>
+    </nav>
+
+    <div class="card table-wrap reveal" th:if="${!requests.isEmpty()}">
+        <table class="debt-table stay-table">
+            <thead><tr><th>Сана</th><th>Тури</th><th>Мижоз</th><th>Тафсилот</th><th>Ҳолат</th></tr></thead>
+            <tbody>
+            <tr th:each="r : ${requests}" th:classappend="${r.isNew()} ? 'is-new'">
+                <td>
+                    <span th:text="${#temporals.format(r.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+                    <div class="muted mono" th:text="'№' + ${r.id}"></div>
+                </td>
+                <td class="wrap"><span class="badge badge-role" th:text="${r.kind} ?: 'Сўров'"></span></td>
+                <td class="wrap">
+                    <strong th:text="${r.name} ?: '—'"></strong>
+                    <div th:if="${r.phone != null}"><a th:href="'tel:' + ${#strings.replace(r.phone, ' ', '')}" th:text="${r.phone}"></a></div>
+                </td>
+                <td class="wrap">
+                    <dl class="stay-fields">
+                        <th:block th:each="f : ${r.fields}" th:unless="${f.key == 'So''rov turi' or f.key == 'Ism' or f.key == 'F.I.Sh.' or f.key == 'Telefon'}">
+                            <dt th:text="${f.key}"></dt><dd th:text="${f.value}"></dd>
+                        </th:block>
+                    </dl>
+                </td>
+                <td>
+                    <form method="post" th:if="${r.isNew()}" th:action="@{/admin/stay/requests/{id}/done(id=${r.id}, show=${show})}">
+                        <button type="submit" class="btn btn-primary btn-sm">Кўриб чиқилди</button>
+                    </form>
+                    <th:block th:unless="${r.isNew()}">
+                        <span class="badge badge-ok">Кўриб чиқилган</span>
+                        <div class="muted" th:if="${r.handledAt != null}"
+                             th:text="${#temporals.format(r.handledAt, 'dd.MM HH:mm')} + (${r.handledBy} != null ? ' · ' + ${r.handledBy} : '')"></div>
+                    </th:block>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card empty reveal" th:if="${requests.isEmpty()}">
+        <p><strong th:text="${show == 'new'} ? 'Янги сўров йўқ' : 'Ҳали сўров келмаган'">Сўров йўқ</strong></p>
+    </div>
+</main>
+</body>
+</html>

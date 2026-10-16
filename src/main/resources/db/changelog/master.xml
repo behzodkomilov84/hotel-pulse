@@ -16,4 +16,5 @@
     <include file="/db/changelog/reports.sql"/>
     <include file="/db/changelog/faktura.sql"/>
     <include file="/db/changelog/agent.sql"/>
+    <include file="/db/changelog/stay.sql"/>
 </databaseChangeLog>

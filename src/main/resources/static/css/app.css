@@ -1154,3 +1154,14 @@ a.integ-chip:hover { border-color: var(--primary); transform: translateY(-1px); 
     a.integ-chip:hover { transform: none; }
 }
 .integ-summary { margin-top: 18px; }
+
+/* ---------- Chorvoq Stay so'rovlari ---------- */
+.stay-table td { vertical-align: top; }
+.stay-table tr.is-new td:first-child { box-shadow: inset 3px 0 0 var(--primary); }
+.stay-fields { display: grid; grid-template-columns: max-content 1fr; gap: 3px 12px; margin: 0; font-size: 13px; }
+.stay-fields dt { color: var(--muted); font-weight: 600; }
+.stay-fields dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 760px) {
+    .stay-fields { grid-template-columns: 1fr; }
+    .stay-fields dd { margin-bottom: 6px; }
+}

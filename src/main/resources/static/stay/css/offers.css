@@ -1,0 +1,12 @@
+/* Offers */
+.offers{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px}
+.offer{border-radius:var(--r); padding:28px; display:flex; flex-direction:column; gap:14px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.14)}
+.offer.feat{background:var(--gold); border-color:var(--gold); color:var(--white)}
+.offer.feat .eyebrow{color:var(--ink)}
+.offer .big{font-family:var(--display); font-size:46px; font-weight:700; color:var(--gold); line-height:1}
+.offer.feat .big{color:var(--white)}
+.offer p{color:var(--on-ink-muted); font-size:15px}
+.offer.feat p{color:#FFF6E6}
+.offer .terms{font-size:12.5px; margin-top:auto; opacity:.8}
+@media (max-width:900px){.offers{grid-template-columns:1fr}}
+

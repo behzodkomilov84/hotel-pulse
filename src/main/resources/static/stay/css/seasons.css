@@ -1,0 +1,6 @@
+/* Seasons */
+.seasons{display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:32px}
+.season{border-radius:var(--r); padding:26px; background:var(--white); border:1px solid var(--line); display:flex; flex-direction:column; gap:8px}
+.season .eyebrow{color:var(--teal)}
+@media (max-width:700px){.seasons{grid-template-columns:1fr}}
+
