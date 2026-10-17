@@ -16,4 +16,13 @@ public interface HotelRepository extends JpaRepository<Hotel, Long> {
 
     @Query("select count(u) > 0 from User u join u.hotels h where u.id = :userId and h.id = :hotelId")
     boolean isUserLinked(@Param("userId") Long userId, @Param("hotelId") Long hotelId);
+
+    /** Mehmonxonada tasdiqlangan PMS agenti (UCS Shelter yoki 1С:Отель) bor — u Exely Connect'dan ustun. */
+    @Query(value = "select count(*) from agents where hotel_id = :hotelId and kind in ('SHELTER', '1C') and approved_at is not null",
+            nativeQuery = true)
+    long countPmsAgents(@Param("hotelId") Long hotelId);
+
+    default boolean hasPmsAgent(Long hotelId) {
+        return countPmsAgents(hotelId) > 0;
+    }
 }

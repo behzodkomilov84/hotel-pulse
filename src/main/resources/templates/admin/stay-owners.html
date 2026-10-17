@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Chorvoq Stay — мулкдорлар')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-stay')}"></header>
+<main class="container stay-page">
+    <th:block th:replace="~{admin/stay-tabs :: head('Агентлик хизматига қўшилмоқчи бўлган хонадон мулкдорлари. Сайтдаги сўровнома шу ерга ўзи тушади; ҳар янги ариза ва ҳолат ўзгариши ботга юборилади, ҳар куни соат 9:00 да — ҳисобот.')}"></th:block>
+
+    <!-- Bosqichlar bo'yicha filtr -->
+    <nav class="kind-tabs reveal" aria-label="Ҳолат бўйича">
+        <a class="kind-tab" th:classappend="${status == null} ? 'active'" th:href="@{/admin/stay/owners}">
+            <span>Барчаси</span><b th:text="${#aggregates.sum(ownerCounts.values())}">0</b></a>
+        <a class="kind-tab" th:each="s : ${statuses}" th:classappend="${status == s.key} ? 'active'"
+           th:href="@{/admin/stay/owners(status=${s.key})}">
+            <span th:text="${s.value}"></span><b th:text="${ownerCounts[s.key]}">0</b></a>
+    </nav>
+
+    <div class="card table-wrap reveal" th:if="${!owners.isEmpty()}">
+        <table class="debt-table">
+            <thead><tr><th>№</th><th>Мулкдор</th><th>Квартира</th><th>Ариза</th><th>Ҳолат ва изоҳ</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="o : ${owners}" th:id="'owner-' + ${o.id}">
+                <td class="mono" th:text="${o.id}"></td>
+                <td class="wrap">
+                    <strong th:text="${o.name}"></strong>
+                    <div th:if="${o.phone != null}"><a th:href="'tel:' + ${#strings.replace(o.phone, ' ', '')}" th:text="${o.phone}"></a></div>
+                    <div class="muted" th:if="${o.lang != null}" th:text="'Тил: ' + (${o.lang == 'RU'} ? 'русча' : 'ўзбекча')"></div>
+                </td>
+                <td class="wrap">
+                    <span th:text="${o.apartmentLabel()} ?: '—'"></span>
+                    <div class="muted" th:if="${o.area != null}" th:text="${o.area} + ' м²'"></div>
+                    <div class="muted" th:if="${o.renovation != null}" th:text="${o.renovation}"></div>
+                    <div th:if="${o.unitLabel != null}"><a class="badge badge-ok" th:href="@{/admin/stay/units}" th:text="'Квартиралар рўйхатида'"></a></div>
+                </td>
+                <td class="wrap">
+                    <span th:text="${#temporals.format(o.createdAt, 'dd.MM.yyyy HH:mm')}"></span>
+                    <div class="muted" th:text="${o.requestId != null} ? 'Сайтдан (сўров №' + ${o.requestId} + ')' : 'Қўлда қўшилган'"></div>
+                    <div class="muted wrap" th:if="${o.note != null}" th:text="'«' + ${o.note} + '»'"></div>
+                </td>
+                <td>
+                    <form method="post" class="form owner-status" th:action="@{/admin/stay/owners/{id}/status(id=${o.id})}">
+                        <input type="hidden" name="filter" th:value="${status}">
+                        <select name="status" aria-label="Ҳолат">
+                            <option th:each="s : ${statuses}" th:value="${s.key}" th:text="${s.value}" th:selected="${o.status == s.key}"></option>
+                        </select>
+                        <input type="text" name="comment" maxlength="1000" th:value="${o.comment}" placeholder="Изоҳ (қўнғироқ натижаси, кўрик санаси…)" aria-label="Изоҳ">
+                        <button type="submit" class="btn btn-primary btn-sm">Сақлаш</button>
+                    </form>
+                    <div class="muted" th:text="${#temporals.format(o.statusChangedAt, 'dd.MM.yyyy HH:mm')} + (${o.updatedBy != null} ? ' · ' + ${o.updatedBy} : '')"></div>
+                </td>
+                <td><a class="btn btn-secondary btn-sm" th:href="@{/admin/stay/owners(edit=${o.id})} + '#owner-form'">Таҳрирлаш</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card empty reveal" th:if="${owners.isEmpty()}">
+        <p><strong th:text="${status == null} ? 'Ҳали ариза йўқ' : 'Бу ҳолатда мулкдор йўқ'">Ҳали ариза йўқ</strong></p>
+        <p class="muted">Сайтдаги «Квартирангизни апарт-отелга қўшинг» сўровномаси тўлдирилганда шу ерда пайдо бўлади.</p>
+    </div>
+
+    <!-- ===== Qo'shish / tahrirlash ===== -->
+    <section class="card reveal" id="owner-form">
+        <h3 class="card-title" th:text="${edit == null} ? 'Мулкдорни қўлда қўшиш' : 'Мулкдор №' + ${edit.id} + ' — таҳрирлаш'">Мулкдорни қўлда қўшиш</h3>
+        <p class="hint" th:if="${edit == null}">Телефон орқали мурожаат қилган мулкдор учун. «Уланди» ҳолатига ўтганда квартира «Квартиралар» рўйхатига ўзи қўшилади.</p>
+        <form method="post" class="form" th:action="${edit == null} ? @{/admin/stay/owners} : @{/admin/stay/owners/{id}/edit(id=${edit.id})}">
+            <div class="form-grid">
+                <div class="field field-wide">
+                    <label for="oName">Ф.И.Ш. *</label>
+                    <input type="text" id="oName" name="name" maxlength="150" required th:value="${edit?.name}">
+                </div>
+                <div class="field">
+                    <label for="oPhone">Телефон *</label>
+                    <input type="tel" id="oPhone" name="phone" maxlength="40" required th:value="${edit != null ? edit.phone : '+998 '}">
+                </div>
+                <div class="field">
+                    <label for="oArea">Майдон, м²</label>
+                    <input type="number" id="oArea" name="area" min="10" max="400" step="0.1" th:value="${edit?.area}">
+                </div>
+                <div class="field">
+                    <label for="oBldg">Уй рақами</label>
+                    <input type="text" id="oBldg" name="building" maxlength="20" th:value="${edit?.building}">
+                </div>
+                <div class="field">
+                    <label for="oApt">Квартира рақами</label>
+                    <input type="text" id="oApt" name="apartment" maxlength="20" th:value="${edit?.apartment}">
+                </div>
+                <div class="field field-wide">
+                    <label for="oRen">Ремонт ҳолати</label>
+                    <input type="text" id="oRen" name="renovation" maxlength="100" th:value="${edit?.renovation}" list="renovations">
+                    <datalist id="renovations">
+                        <option value="Ремонт бор, мебел ва техника йўқ"></option>
+                        <option value="Ремонт ва мебел бор"></option>
+                        <option value="Қисман ремонт"></option>
+                        <option value="Ремонтсиз (қора сувоқ)"></option>
+                    </datalist>
+                </div>
+                <div class="field field-wide">
+                    <label for="oNote">Мулкдор изоҳи</label>
+                    <input type="text" id="oNote" name="note" maxlength="1000" th:value="${edit?.note}">
+                </div>
+            </div>
+            <div class="form-actions">
+                <a class="btn btn-secondary" th:if="${edit != null}" th:href="@{/admin/stay/owners}">Бекор қилиш</a>
+                <button type="submit" class="btn btn-primary" th:text="${edit == null} ? 'Қўшиш' : 'Сақлаш'">Қўшиш</button>
+            </div>
+        </form>
+    </section>
+</main>
+</body>
+</html>

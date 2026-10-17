@@ -10,5 +10,7 @@ public enum DataOrigin {
     EXELY_PMS,
     /** UCS Shelter (mehmonxona kompyuteridagi agent orqali, Firebird bazasidan). */
     SHELTER,
+    /** 1С:Отель (mehmonxona kompyuteridagi agent orqali, COM ulanish). */
+    ONEC,
     MANUAL
 }

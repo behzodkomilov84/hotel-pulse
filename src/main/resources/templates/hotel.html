@@ -24,6 +24,7 @@
                     Таҳрирлаш
                 </button>
             </th:block>
+            <a sec:authorize="hasRole('OWNER')" class="btn btn-secondary" th:href="@{/admin/hotels/{id}/data(id=${hotel.id})}">PMS маълумотлари</a>
             <a sec:authorize="hasRole('OWNER')" class="btn btn-secondary" th:href="@{/admin/hotels/{id}(id=${hotel.id})}">Созламалар</a>
         </div>
     </div>
@@ -35,7 +36,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
         </div>
         <p><strong>Ҳали маълумот йўқ</strong></p>
-        <p th:unless="${@pms.connected(hotel)}">PMS (Exely ёки UCS Shelter) улангач, бронлар ва тўловлар шу ерда автоматик кўринади.</p>
+        <p th:unless="${@pms.connected(hotel)}">PMS (Exely, UCS Shelter ёки 1С:Отель) улангач, бронлар ва тўловлар шу ерда автоматик кўринади.</p>
         <p th:if="${@pms.connected(hotel)}" th:text="${@pms.name(hotel)} + ' уланган — биринчи синхронлаш тугагач, маълумотлар шу ерда кўринади.'"></p>
     </div>
 

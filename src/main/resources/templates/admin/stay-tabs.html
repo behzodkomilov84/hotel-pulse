@@ -16,6 +16,8 @@
             <span>Сўровлар</span><b th:if="${countNew > 0}" th:text="${countNew}">0</b></a>
         <a class="kind-tab" th:classappend="${tab == 'catalog'} ? 'active'" th:href="@{/admin/stay/catalog}">
             <span>Тоифалар ва нархлар</span></a>
+        <a class="kind-tab" th:classappend="${tab == 'owners'} ? 'active'" th:href="@{/admin/stay/owners}">
+            <span>Мулкдорлар</span></a>
         <a class="kind-tab" th:classappend="${tab == 'units'} ? 'active'" th:href="@{/admin/stay/units}">
             <span>Квартиралар</span></a>
     </nav>

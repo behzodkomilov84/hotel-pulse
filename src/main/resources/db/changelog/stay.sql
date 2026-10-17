@@ -86,3 +86,53 @@ CREATE TABLE stay_units
     CONSTRAINT fk_stay_units_category FOREIGN KEY (category_id) REFERENCES stay_categories (id),
     CONSTRAINT uq_stay_units_number UNIQUE (building, number)
 );
+
+--changeset behzod:41
+-- Chorvoq Stay: agentlik xizmatiga qo'shilmoqchi bo'lgan xonadon mulkdorlari (sayt so'rovnomasidan yoki qo'lda).
+-- status: NEW — yangi, CONTACTED — bog'lanildi, VIEWING — ko'rik belgilandi/o'tkazildi, AGREED — kelishildi (shartnoma),
+-- CONNECTED — kvartira ulandi (stay_units), REJECTED — rad etildi / bekor.
+CREATE TABLE stay_owners
+(
+    id                BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name              VARCHAR(150)  NOT NULL,
+    phone             VARCHAR(40)   NULL,
+    building          VARCHAR(20)   NULL,
+    apartment         VARCHAR(20)   NULL,
+    area              DECIMAL(6, 1) NULL,
+    renovation        VARCHAR(100)  NULL,
+    note              VARCHAR(1000) NULL,
+    lang              VARCHAR(8)    NULL,
+    status            VARCHAR(16)   NOT NULL DEFAULT 'NEW',
+    comment           VARCHAR(1000) NULL,
+    request_id        BIGINT        NULL,
+    unit_id           BIGINT        NULL,
+    created_at        DATETIME(6)   NOT NULL,
+    updated_at        DATETIME(6)   NOT NULL,
+    status_changed_at DATETIME(6)   NOT NULL,
+    updated_by        VARCHAR(100)  NULL,
+    CONSTRAINT fk_stay_owners_unit FOREIGN KEY (unit_id) REFERENCES stay_units (id) ON DELETE SET NULL,
+    INDEX idx_stay_owners_status (status, status_changed_at)
+);
+-- Oldin kelgan rezident so'rovnomalari reyestrga ko'chiriladi.
+INSERT INTO stay_owners (name, phone, building, apartment, area, renovation, note, lang, status, request_id,
+                         created_at, updated_at, status_changed_at)
+SELECT COALESCE(NULLIF(name, ''), '—'), phone,
+       LEFT(JSON_UNQUOTE(JSON_EXTRACT(payload, '$."Uy raqami"')), 20),
+       LEFT(JSON_UNQUOTE(JSON_EXTRACT(payload, '$."Kvartira raqami"')), 20),
+       CASE WHEN REPLACE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$."Maydon, m²"')), ',', '.') REGEXP '^[0-9]+(\.[0-9]+)?$'
+            THEN CAST(REPLACE(JSON_UNQUOTE(JSON_EXTRACT(payload, '$."Maydon, m²"')), ',', '.') AS DECIMAL(6, 1)) END,
+       LEFT(JSON_UNQUOTE(JSON_EXTRACT(payload, '$."Remont holati"')), 100),
+       NULLIF(LEFT(JSON_UNQUOTE(JSON_EXTRACT(payload, '$."Izoh"')), 1000), '—'),
+       lang, CASE WHEN status = 'DONE' THEN 'CONTACTED' ELSE 'NEW' END, id,
+       created_at, COALESCE(handled_at, created_at), COALESCE(handled_at, created_at)
+FROM stay_requests
+WHERE kind LIKE 'Rezident%';
+
+--changeset behzod:42
+-- Mulkdorlar reyestrida remont holati kirillcha (HotelPulse interfeysi faqat kirillcha).
+UPDATE stay_owners SET renovation = CASE renovation
+    WHEN 'Remont bor, mebel va texnika yo''q' THEN 'Ремонт бор, мебел ва техника йўқ'
+    WHEN 'Remont va mebel bor' THEN 'Ремонт ва мебел бор'
+    WHEN 'Qisman remont' THEN 'Қисман ремонт'
+    WHEN 'Remontsiz (qora suvoq)' THEN 'Ремонтсиз (қора сувоқ)'
+    ELSE renovation END;

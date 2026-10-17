@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('PMS маълумотлари')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-data')}"></header>
+<main class="container">
+    <div class="page-head reveal">
+        <div>
+            <h1>PMS маълумотлари</h1>
+            <p class="subtitle">Меҳмонхоналар PMS'идан (Exely, UCS Shelter, 1С:Отель) олиниб базада сақланаётган жадваллар. Меҳмонхонани танланг.</p>
+        </div>
+    </div>
+
+    <div class="archive-grid reveal">
+        <a class="archive-item" th:each="r : ${rows}" th:href="@{/admin/hotels/{id}/data(id=${r.hotel.id})}"
+           th:title="'Очиш: ' + ${r.hotel.name}">
+            <b th:text="${r.hotel.name}">Меҳмонхона</b>
+            <span th:if="${r.pms != null}" th:text="${r.pms} + ' · ' + ${@fmt.number(r.exelyRows + r.agentRows)} + ' та ёзув'"></span>
+            <span th:if="${r.pms == null}" class="muted">Маълумот олинмаган</span>
+        </a>
+    </div>
+</main>
+</body>
+</html>

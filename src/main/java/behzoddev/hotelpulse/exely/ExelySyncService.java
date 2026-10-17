@@ -113,7 +113,7 @@ public class ExelySyncService {
             return;
         }
         List<Long> ids = hotelRepository.findAll().stream()
-                .filter(h -> h.isActive() && h.isExelyConnected())
+                .filter(h -> h.isActive() && h.isExelyConnected() && (h.hasPmsKey() || !hotelRepository.hasPmsAgent(h.getId())))
                 .map(Hotel::getId)
                 .toList();
         for (Long id : ids) {
@@ -130,6 +130,10 @@ public class ExelySyncService {
             Hotel hotel = writer.load(hotelId);
             if (hotel == null || !hotel.isExelyConnected()) {
                 return new SyncResult(false, 0, "Exely уланмаган");
+            }
+            if (!hotel.hasPmsKey() && hotelRepository.hasPmsAgent(hotelId)) {
+                // Agent (Shelter/1C) to'liq PMS ma'lumotini beradi — Connect bronlari uni takrorlab qo'ymasin.
+                return new SyncResult(false, 0, "Exely Connect ўчирилган: маълумот PMS агентидан келади");
             }
             if (hotel.hasPmsKey()) {
                 // Tavsiya etilgan yo'l: PMS Universal API (to'lovlar va qarzdorlik bilan).

@@ -104,6 +104,8 @@ public class DebtService {
             id = id.substring(4);
         } else if (b.getOrigin() == DataOrigin.SHELTER && id.startsWith("sh:")) {
             id = id.substring(3);   // "sh:{RESID}#{yashash}" → bron raqami RESID
+        } else if (b.getOrigin() == DataOrigin.ONEC && id.startsWith("oc:")) {
+            id = id.substring(3);   // "oc:{raqam}#{a|r}{ref}" → 1C hujjat raqami
         }
         int hash = id.lastIndexOf('#');
         return hash > 0 && b.getOrigin() != DataOrigin.DEMO ? id.substring(0, hash) : id;

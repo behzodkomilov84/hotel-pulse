@@ -44,7 +44,9 @@ public class IntegrationStatus {
     public Row row(Hotel h, List<AgentService.Agent> agents) {
         State pms = h.hasPmsKey() ? syncState(h) : State.OFF;
         State connect = !h.usesConnectApi() ? State.OFF
-                : h.hasPmsKey() ? new State("pending", "Захира (PMS устун)") : syncState(h);
+                : h.hasPmsKey() ? new State("pending", "Захира (PMS устун)")
+                : agents.stream().anyMatch(a -> h.getId().equals(a.hotelId()) && a.isApproved() && List.of("SHELTER", "1C").contains(a.kind()))
+                ? new State("pending", "Ўчирилган (агент устун)") : syncState(h);
         return new Row(h, pms, connect, agentState(h, agents, "SHELTER"), agentState(h, agents, "1C"), esfState(h.getId()));
     }
 
@@ -58,7 +60,7 @@ public class IntegrationStatus {
     private static State agentState(Hotel h, List<AgentService.Agent> agents, String kind) {
         List<AgentService.Agent> mine = agents.stream().filter(a -> h.getId().equals(a.hotelId()) && kind.equals(a.kind())).toList();
         if (mine.stream().anyMatch(AgentService.Agent::isApproved)) {
-            if ("SHELTER".equals(kind) && Boolean.FALSE.equals(h.getExelyLastSyncOk())) {
+            if (!h.hasPmsKey() && Boolean.FALSE.equals(h.getExelyLastSyncOk())) {
                 return new State("warn", "Хатолик");
             }
             LocalDateTime last = mine.stream().map(AgentService.Agent::lastSyncAt).filter(Objects::nonNull)

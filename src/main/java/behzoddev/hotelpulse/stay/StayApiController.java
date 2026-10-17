@@ -36,15 +36,17 @@ public class StayApiController {
 
     private final StayRequestService requests;
     private final StayCatalogService catalog;
+    private final StayOwnerService owners;
     private final Clock clock;
     private final java.util.Set<String> allowedOrigins;
     private final Map<String, Deque<Instant>> hits = new ConcurrentHashMap<>();
 
-    public StayApiController(StayRequestService requests, StayCatalogService catalog, Clock clock,
+    public StayApiController(StayRequestService requests, StayCatalogService catalog, StayOwnerService owners, Clock clock,
                              @Value("${app.stay.hosts:chorvoqstay.uz,www.chorvoqstay.uz}") String hosts,
                              @Value("${app.telegram.site-url:}") String siteUrl) {
         this.requests = requests;
         this.catalog = catalog;
+        this.owners = owners;
         this.clock = clock;
         java.util.Set<String> origins = new java.util.HashSet<>();
         for (String h : hosts.split(",")) {
@@ -89,6 +91,16 @@ public class StayApiController {
             return ResponseEntity.ok(Map.of("ok", true));   // bot — jimgina qabul qilingandek
         }
         long id = requests.save(data, ip);
+        if (String.valueOf(data.get("So'rov turi")).startsWith("Rezident")) {
+            // Xonadon mulkdori — reyestrga ham (holat bosqichlari, kunlik hisobot).
+            Map<String, String> fields = new java.util.LinkedHashMap<>();
+            data.forEach((k, v) -> fields.put(k, v == null ? null : String.valueOf(v)));
+            try {
+                owners.fromRequest(id, fields, fields.get("Til"));
+            } catch (RuntimeException e) {
+                org.slf4j.LoggerFactory.getLogger(StayApiController.class).warn("Mulkdor reyestriga yozilmadi (so'rov №{})", id, e);
+            }
+        }
         return ResponseEntity.ok(Map.of("ok", true, "id", id));
     }
 

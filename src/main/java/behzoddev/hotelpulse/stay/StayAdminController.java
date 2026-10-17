@@ -28,6 +28,7 @@ public class StayAdminController {
 
     private final StayRequestService requests;
     private final StayCatalogService catalog;
+    private final StayOwnerService owners;
 
     // ---------------------------------------------------------------- So'rovlar
 
@@ -133,5 +134,55 @@ public class StayAdminController {
         catalog.deleteUnit(id);
         ra.addFlashAttribute("success", "Квартира ўчирилди");
         return "redirect:/admin/stay/units";
+    }
+
+    // ---------------------------------------------------------------- Mulkdorlar
+
+    @GetMapping("/owners")
+    public String owners(@RequestParam(required = false) String status, @RequestParam(required = false) Long edit, Model model) {
+        String st = status == null || !StayOwnerService.STATUSES.containsKey(status) ? null : status;
+        model.addAttribute("owners", owners.list(st));
+        model.addAttribute("ownerCounts", owners.counts());
+        model.addAttribute("statuses", StayOwnerService.STATUSES);
+        model.addAttribute("status", st);
+        model.addAttribute("edit", edit == null ? null : owners.get(edit));
+        model.addAttribute("countNew", requests.countNew());
+        model.addAttribute("tab", "owners");
+        return "admin/stay-owners";
+    }
+
+    @PostMapping({"/owners", "/owners/{id}/edit"})
+    public String saveOwner(@PathVariable(required = false) Long id, @RequestParam String name,
+                            @RequestParam(required = false) String phone, @RequestParam(required = false) String building,
+                            @RequestParam(required = false) String apartment, @RequestParam(required = false) BigDecimal area,
+                            @RequestParam(required = false) String renovation, @RequestParam(required = false) String note,
+                            @AuthenticationPrincipal CustomUserDetails user, RedirectAttributes ra) {
+        String by = user == null ? null : user.getUsername();
+        try {
+            if (id == null) {
+                long newId = owners.add(name, phone, building, apartment, area, renovation, note, by);
+                ra.addFlashAttribute("success", "Мулкдор №" + newId + " қўшилди");
+            } else {
+                owners.edit(id, name, phone, building, apartment, area, renovation, note, by);
+                ra.addFlashAttribute("success", "Мулкдор №" + id + " сақланди");
+            }
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return id == null ? "redirect:/admin/stay/owners#owner-form" : "redirect:/admin/stay/owners?edit=" + id + "#owner-form";
+        }
+        return "redirect:/admin/stay/owners";
+    }
+
+    @PostMapping("/owners/{id}/status")
+    public String ownerStatus(@PathVariable long id, @RequestParam String status, @RequestParam(required = false) String comment,
+                              @RequestParam(required = false) String filter,
+                              @AuthenticationPrincipal CustomUserDetails user, RedirectAttributes ra) {
+        try {
+            owners.update(id, status, comment, user == null ? null : user.getUsername());
+            ra.addFlashAttribute("success", "Мулкдор №" + id + ": " + StayOwnerService.STATUSES.get(status));
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/stay/owners" + (filter == null || filter.isBlank() ? "" : "?status=" + filter) + "#owner-" + id;
     }
 }

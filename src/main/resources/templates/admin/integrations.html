@@ -323,14 +323,50 @@
         <section class="card sync-card reveal" id="1c">
             <div class="sync-head">
                 <div>
-                    <h3 class="card-title">1С:Бухгалтерия</h3>
-                    <p class="subtitle">Бухгалтерия маълумотлари (харажатлар, контрагентлар, тўловлар) — меҳмонхона компьютеридаги агент орқали.</p>
+                    <h3 class="card-title">1С:Отель</h3>
+                    <p class="subtitle">1С:Отель PMS (бронлар, яшашлар, хизматлар, тўловлар, хоналар) — 1С ўрнатилган компьютердаги агент орқали
+                        (COM уланиш). Тезкор юклаш ҳар 15 дақиқада (охирги 90 кун), тўлиқ юклаш тунда.</p>
                 </div>
                 <span class="badge" th:classappend="${row.onec.level == 'ok'} ? 'badge-ok' : (${row.onec.level == 'warn'} ? 'badge-warn' : 'badge-off')"
                       th:text="${row.onec.text}"></span>
             </div>
-            <p class="hint">1С агенти ҳозир тайёрланмоқда: аввал меҳмонхонанинг 1С базаси тузилмаси ўрганилади
-                (<code>agent/1c/discover.ps1</code>), шундан кейин маълумотлар автоматик юкланади.</p>
+            <dl class="sync-meta" th:if="${!onecGroups.isEmpty() and hotel.exelyLastSyncAt != null}">
+                <div>
+                    <dt>Охирги ҳисоблаш</dt>
+                    <dd th:text="${#temporals.format(hotel.exelyLastSyncAt, 'dd.MM.yyyy HH:mm')}"></dd>
+                </div>
+                <div>
+                    <dt>Натижа</dt>
+                    <dd th:text="${hotel.exelyLastSyncMessage} ?: '—'" th:classappend="${hotel.exelyLastSyncOk == false} ? 'text-danger'"></dd>
+                </div>
+            </dl>
+            <div class="archive" th:if="${!onecGroups.isEmpty()}">
+                <h4 class="archive-title">1С'дан олинган асосий жадваллар <span class="muted">— барчаси «PMS маълумотлари»да</span></h4>
+                <div class="archive-grid">
+                    <th:block th:each="g : ${onecGroups}">
+                        <a class="archive-item" th:each="t : ${g.tiles}" th:if="${t.main}"
+                           th:href="@{/admin/hotels/{id}/onec/data/{k}(id=${hotel.id}, k=${t.table})}" th:title="'Очиш: ' + ${t.name}">
+                            <b th:text="${@fmt.number(t.rows)}">0</b>
+                            <span th:text="${t.label}"></span>
+                        </a>
+                    </th:block>
+                </div>
+            </div>
+            <div class="sync-actions" th:if="${!onecGroups.isEmpty()}">
+                <form method="post" th:action="@{/admin/integrations/{id}/onec/import(id=${hotel.id})}">
+                    <button type="submit" class="btn btn-primary">Қайта ҳисоблаш</button>
+                </form>
+                <a class="btn btn-secondary" th:href="@{/admin/hotels/{id}/data(id=${hotel.id})}">PMS маълумотлари →</a>
+            </div>
+            <details class="howto" th:if="${onecGroups.isEmpty()}">
+                <summary>Агентни қандай ўрнатиш керак?</summary>
+                <ol>
+                    <li>1С ўрнатилган компьютерга <code>hp1c.ps1</code>ни <code>C:\ProgramData\HotelPulse\1c-agent</code>га қўйинг.</li>
+                    <li>32-битли PowerShell'да <code>-Setup</code> (1С сервер, база, логин ва пароль — пароль ўша компьютерда шифрланади),
+                        кейин <code>-Pair</code> — экранда 6 хонали код чиқади.</li>
+                    <li>Кодни қуйида киритинг, кейин <code>-Install</code> — ҳар 15 дақиқада юклаш бошланади.</li>
+                </ol>
+            </details>
             <div class="table-wrap" th:if="${!onecAgents.isEmpty()}">
                 <table class="debt-table">
                     <thead><tr><th>Агент (компьютер)</th><th>Ҳолат</th><th>Охирги юклаш</th></tr></thead>

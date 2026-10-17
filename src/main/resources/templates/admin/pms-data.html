@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('PMS маълумотлари — ' + ${hotel.name})}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-data')}"></header>
+<main class="container">
+    <div class="page-head reveal">
+        <div>
+            <a class="back-link" th:href="@{/hotels/{id}(id=${hotel.id})}">← <span th:text="${hotel.name}">Меҳмонхона</span></a>
+            <h1>PMS маълумотлари</h1>
+            <p class="subtitle">PMS'дан олиниб базада сақланаётган барча жадваллар. Тугмани босинг — жадвал очилади (қидирув ва ҳар бир ёзувнинг тўлиқ маълумоти билан).</p>
+        </div>
+        <div class="head-actions">
+            <a class="btn btn-secondary" th:href="@{/admin/integrations/{id}(id=${hotel.id})}">Интеграциялар</a>
+        </div>
+    </div>
+
+    <section class="card reveal" th:if="${!exelyTiles.isEmpty()}">
+        <h3 class="card-title">Exely</h3>
+        <div class="archive-grid">
+            <a class="archive-item" th:each="t : ${exelyTiles}" th:href="@{${t.href}}" th:title="'Очиш: ' + ${t.label}">
+                <b th:text="${@fmt.number(t.rows)}">0</b>
+                <span th:text="${t.label}"></span>
+            </a>
+        </div>
+    </section>
+
+    <section class="card reveal" th:if="${!shelterTiles.isEmpty()}">
+        <h3 class="card-title">UCS Shelter</h3>
+        <p class="hint" th:if="${agentSyncedAt != null}" th:text="'Охирги юклаш: ' + ${#temporals.format(agentSyncedAt, 'dd.MM.yyyy HH:mm')}"></p>
+        <div class="archive-grid">
+            <a class="archive-item" th:each="t : ${shelterTiles}" th:href="@{${t.href}}" th:title="'Очиш: ' + ${t.hint}">
+                <b th:text="${@fmt.number(t.rows)}">0</b>
+                <span th:text="${t.label}"></span>
+            </a>
+        </div>
+    </section>
+
+    <section class="card reveal" th:if="${!onecGroups.isEmpty()}">
+        <h3 class="card-title">1С:Отель</h3>
+        <p class="hint" th:if="${agentSyncedAt != null}" th:text="'Охирги юклаш: ' + ${#temporals.format(agentSyncedAt, 'dd.MM.yyyy HH:mm')} + ' · тезкор нусха ҳар 15 дақиқада, тўлиқ нусха тунда'"></p>
+        <details class="integration-option" th:each="g, st : ${onecGroups}" th:open="${st.index == 0}">
+            <summary class="option-head">
+                <span class="option-title" th:text="${g.title}"></span>
+                <span class="badge badge-off" th:text="${g.tiles.size()} + ' та жадвал'"></span>
+            </summary>
+            <div class="archive-grid">
+                <a class="archive-item" th:each="t : ${g.tiles}"
+                   th:href="@{/admin/hotels/{id}/onec/data/{k}(id=${hotel.id}, k=${t.table})}" th:title="'Очиш: ' + ${t.name}">
+                    <b th:text="${@fmt.number(t.rows)}">0</b>
+                    <span th:text="${t.label}"></span>
+                </a>
+            </div>
+        </details>
+    </section>
+
+    <div class="card empty reveal" th:if="${exelyTiles.isEmpty() and shelterTiles.isEmpty() and onecGroups.isEmpty()}">
+        <p><strong>PMS'дан ҳали маълумот олинмаган</strong></p>
+        <p><a th:href="@{/admin/integrations/{id}(id=${hotel.id})}">Интеграциялар</a> бўлимида PMS'ни уланг.</p>
+    </div>
+</main>
+</body>
+</html>

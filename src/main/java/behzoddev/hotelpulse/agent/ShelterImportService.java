@@ -111,7 +111,8 @@ public class ShelterImportService {
         }
     }
 
-    private static final java.util.concurrent.locks.ReentrantLock IMPORT_LOCK = new java.util.concurrent.locks.ReentrantLock();
+    /** Agent importlari (Shelter, 1C) bir vaqtda ishlamaydi — xotira. */
+    static final java.util.concurrent.locks.ReentrantLock IMPORT_LOCK = new java.util.concurrent.locks.ReentrantLock();
 
     private String doImport(long hotelId) {
         IMPORT_LOCK.lock();

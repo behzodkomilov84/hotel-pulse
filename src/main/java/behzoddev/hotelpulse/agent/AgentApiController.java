@@ -31,6 +31,7 @@ public class AgentApiController {
 
     private final AgentService agents;
     private final ShelterImportService shelterImport;
+    private final OneCImportService oneCImport;
 
     @PostMapping("/pair")
     public ResponseEntity<?> pair(@RequestParam(defaultValue = "SHELTER") String kind,
@@ -100,6 +101,8 @@ public class AgentApiController {
         agents.finishSync(agent.get(), message);
         if ("SHELTER".equals(agent.get().kind())) {
             shelterImport.importAsync(agent.get().hotelId());   // jadvallardan bronlar/daromad/to'lovlar
+        } else if ("1C".equals(agent.get().kind())) {
+            oneCImport.importAsync(agent.get().hotelId());
         }
         return ResponseEntity.ok(Map.of("ok", true));
     }

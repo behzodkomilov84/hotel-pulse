@@ -58,9 +58,11 @@ class StayDbTest {
     private CustomUserDetails owner;
 
     @Autowired private StayCatalogService catalog;
+    @Autowired private StayOwnerService owners;
 
     @BeforeEach
     void setUp() {
+        jdbc.update("delete from stay_owners");
         jdbc.update("delete from stay_requests");
         jdbc.update("delete from stay_units");
         jdbc.update("delete from stay_rate_periods");
@@ -208,5 +210,49 @@ class StayDbTest {
             org.springframework.mock.web.MockHttpServletRequest r, String host) {
         r.setServerName(host);
         return r;
+    }
+
+    @Test
+    void residentRequestGoesToOwnerRegistryAndStatusChangesReachBot() throws Exception {
+        String resident = """
+                {"_subject":"Chorvoq Stay — rezident so'rovi: uy 12, kv. 45","So'rov turi":"Rezident bo'lish (kvartira egasi)",
+                 "F.I.Sh.":"Karimov Aziz Bahodirovich","Telefon":"+998 90 111-22-33","Uy raqami":"12","Kvartira raqami":"45",
+                 "Maydon, m²":"46,5","Remont holati":"Remont va mebel bor","Izoh":"—","Til":"UZ"}""";
+        mvc.perform(post("/api/stay/requests").contentType(MediaType.APPLICATION_JSON).content(resident))
+                .andExpect(status().isOk());
+        // Qayta yuborilsa — o'sha ariza yangilanadi, ikkinchi yozuv paydo bo'lmaydi.
+        mvc.perform(post("/api/stay/requests").contentType(MediaType.APPLICATION_JSON).content(resident))
+                .andExpect(status().isOk());
+        var list = owners.list(null);
+        assertEquals(1, list.size());
+        var o = list.get(0);
+        assertEquals("Karimov Aziz Bahodirovich", o.name());
+        assertEquals("12-уй, 45-кв.", o.apartmentLabel());
+        assertEquals(0, new java.math.BigDecimal("46.5").compareTo(o.area()));
+        assertNull(o.note());
+        assertEquals("NEW", o.status());
+
+        String page = mvc.perform(get("/admin/stay/owners").with(user(owner))).andReturn().getResponse()
+                .getContentAsString(StandardCharsets.UTF_8);
+        assertTrue(page.contains("Karimov Aziz Bahodirovich") && page.contains("Мулкдорлар"), page);
+
+        // "Уланди" — kvartira ro'yxatga o'zi qo'shiladi (maydon bo'yicha toifa), botga holat xabari.
+        mvc.perform(post("/admin/stay/owners/" + o.id() + "/status").with(user(owner)).with(csrf())
+                .param("status", "CONNECTED").param("comment", "Shartnoma imzolandi")).andExpect(status().is3xxRedirection());
+        var connected = owners.get(o.id());
+        assertEquals("CONNECTED", connected.status());
+        assertEquals("12-уй, 45-кв.", connected.unitLabel());
+        assertEquals("one", jdbc.queryForObject("select c.code from stay_units u join stay_categories c on c.id = u.category_id "
+                + "where u.building = '12' and u.number = '45'", String.class));
+        verify(telegram).sendMessage(eq(777L), org.mockito.ArgumentMatchers.argThat(t -> t.contains("Янги → <b>Уланди</b>")
+                && t.contains("Shartnoma imzolandi")), isNull());
+        assertEquals("DONE", jdbc.queryForObject("select status from stay_requests order by id desc limit 1", String.class));
+
+        // Kunlik hisobot: ochiq ariza bo'lmasa — yuborilmaydi; 24 soatdan ortiq "Янги" — javobsizlar ro'yxatida.
+        assertNull(owners.digest());
+        long id = owners.add("Toshmatov Bek", "+998 91 000-00-00", "3", "7", null, null, null, "stay-owner");
+        jdbc.update("update stay_owners set created_at = now() - interval 2 day where id = ?", id);
+        String digest = owners.digest();
+        assertTrue(digest.contains("Янги: <b>1</b>") && digest.contains("Жавобсиз") && digest.contains("Toshmatov Bek"), digest);
     }
 }

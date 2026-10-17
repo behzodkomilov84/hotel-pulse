@@ -42,6 +42,7 @@ public class IntegrationController {
     private final FakturaService fakturaService;
     private final AgentService agentService;
     private final ShelterImportService shelterImport;
+    private final behzoddev.hotelpulse.agent.OneCImportService oneCImport;
     private final DidoxClient didoxClient;
 
     private final IntegrationStatus status;
@@ -75,6 +76,7 @@ public class IntegrationController {
         model.addAttribute("shelterStatus", shelterImport.status(id));
         model.addAttribute("shelterAgents", agents.stream().filter(a -> id.equals(a.hotelId()) && "SHELTER".equals(a.kind())).toList());
         model.addAttribute("onecAgents", agents.stream().filter(a -> id.equals(a.hotelId()) && "1C".equals(a.kind())).toList());
+        model.addAttribute("onecGroups", OneCDataController.groups(agentService.tables(id)));
         return "admin/integrations";
     }
 
@@ -196,6 +198,15 @@ public class IntegrationController {
         return back(id, "shelter");
     }
 
+    @PostMapping("/{id}/onec/import")
+    public String importOneC(@PathVariable Long id, RedirectAttributes ra) {
+        boolean started = oneCImport.importAsync(id);
+        ra.addFlashAttribute(started ? "success" : "error", started
+                ? "1С маълумотлари қайта ҳисобланмоқда — бир-икки дақиқада тайёр бўлади"
+                : "Бу меҳмонхона аллақачон навбатда ёки ҳисобланмоқда");
+        return back(id, "1c");
+    }
+
     // ---------------------------------------------------------------- ЭСФ оператори (Didox / Faktura.uz)
 
     @PostMapping("/{id}/faktura")
@@ -276,11 +287,11 @@ public class IntegrationController {
                 .filter(t -> byName.containsKey(t.key()))
                 .map(t -> new ShelterTile(t.key(), t.title(), byName.get(t.key())))
                 .toList();
-        return new ShelterArchive(tiles, tables.size(), rows, synced);
+        return tiles.isEmpty() ? null : new ShelterArchive(tiles, tables.size(), rows, synced);   // 1C jadvallari — o'z kartasida
     }
 
     /** Xom arxiv turlarining nomlari. */
-    private static final Map<String, String> ARCHIVE_LABELS = Map.ofEntries(
+    static final Map<String, String> ARCHIVE_LABELS = Map.ofEntries(
             Map.entry(ExelyRawStore.BOOKING, "Бронлар"),
             Map.entry(ExelyRawStore.RESERVATION, "Яшашлар"),
             Map.entry(ExelyRawStore.SERVICE, "Хизматлар (кунлик)"),
