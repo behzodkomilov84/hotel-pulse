@@ -1202,3 +1202,11 @@ tr.is-past td { opacity: .55; }
 .owner-status input[type="text"] { flex: 1 1 180px; min-width: 0; }
 .owner-status select:hover, .owner-status input[type="text"]:hover { border-color: var(--border-strong); }
 .owner-status select:focus, .owner-status input[type="text"]:focus { outline: none; border-color: var(--primary); box-shadow: var(--ring); }
+
+/* Mehmonxonani o'chirish (xavfli amal) */
+.danger-zone { border-color: color-mix(in srgb, var(--danger) 30%, var(--border)); }
+.danger-zone .card-title { color: var(--danger); }
+.danger-list { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 14px; padding: 0; list-style: none; font-size: 14px; color: var(--muted); }
+.danger-list b { color: var(--text); }
+.danger-form .field { max-width: 420px; }
+.btn-danger:disabled { opacity: .45; cursor: not-allowed; }

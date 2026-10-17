@@ -22,6 +22,7 @@ public class HotelAdminController {
 
     private final HotelService hotelService;
     private final IntegrationStatus integrationStatus;
+    private final behzoddev.hotelpulse.service.HotelDeletionService deletion;
 
     @GetMapping
     public String list(Model model) {
@@ -42,6 +43,8 @@ public class HotelAdminController {
         model.addAttribute("hotel", hotel);
         model.addAttribute("currencies", HotelService.SUPPORTED_CURRENCIES);
         model.addAttribute("integrations", integrationStatus.row(hotel));
+        model.addAttribute("deleteSummary", deletion.summary(id));
+        model.addAttribute("stayHotel", deletion.isStayHotel(id));
         return "admin/hotel-form";
     }
 
@@ -64,6 +67,21 @@ public class HotelAdminController {
         } catch (IllegalArgumentException e) {
             ra.addFlashAttribute("error", e.getMessage());
             return id == null ? "redirect:/admin/hotels/new" : "redirect:/admin/hotels/" + id;
+        }
+    }
+
+    /** Mehmonxonani barcha ma'lumotlari bilan o'chirish (tasdiq — nomini qayta yozish). */
+    @PostMapping("/{id}/delete")
+    public String delete(@PathVariable Long id, @RequestParam(required = false) String confirmName,
+                         @org.springframework.security.core.annotation.AuthenticationPrincipal
+                         behzoddev.hotelpulse.security.CustomUserDetails user, RedirectAttributes ra) {
+        try {
+            String name = deletion.delete(id, confirmName, user == null ? null : user.getUsername());
+            ra.addFlashAttribute("success", "«" + name + "» ва унинг барча маълумотлари ўчирилди");
+            return "redirect:/admin/hotels";
+        } catch (IllegalArgumentException e) {
+            ra.addFlashAttribute("error", e.getMessage());
+            return "redirect:/admin/hotels/" + id + "#delete";
         }
     }
 }

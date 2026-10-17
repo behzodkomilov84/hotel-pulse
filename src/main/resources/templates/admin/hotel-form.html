@@ -88,6 +88,43 @@
             </span>
         </div>
     </section>
+
+    <!-- ===== Mehmonxonani o'chirish ===== -->
+    <section class="card danger-zone reveal" id="delete" th:if="${hotel != null}">
+        <h3 class="card-title">Меҳмонхонани ўчириш</h3>
+        <th:block th:if="${stayHotel}">
+            <p class="hint">Бу меҳмонхона chorvoqstay.uz сайти билан боғланган — уни ўчириб бўлмайди.
+                Вақтинча кўрсатмаслик учун «Фаол» белгисини олиб ташланг.</p>
+        </th:block>
+        <th:block th:unless="${stayHotel}">
+            <p class="hint">Меҳмонхона <b>барча маълумотлари билан бутунлай</b> ўчирилади ва уни қайтариб бўлмайди.
+                Фақат вақтинча яшириш керак бўлса, «Фаол» белгисини олиб ташланг.</p>
+            <ul class="danger-list" th:if="${!deleteSummary.isEmpty()}">
+                <li th:each="e : ${deleteSummary}"><b th:text="${@fmt.number(e.value)}">0</b> <span th:text="'та ' + ${e.key}"></span></li>
+            </ul>
+            <form method="post" class="form danger-form" th:action="@{/admin/hotels/{id}/delete(id=${hotel.id})}"
+                  th:attr="data-name=${hotel.name}">
+                <div class="field">
+                    <label for="confirmName">Тасдиқлаш учун меҳмонхона номини ёзинг: <b th:text="${hotel.name}"></b></label>
+                    <input type="text" id="confirmName" name="confirmName" autocomplete="off" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-danger" disabled>Меҳмонхонани ўчириш</button>
+                </div>
+            </form>
+        </th:block>
+    </section>
 </main>
+<script>
+    // Nom to'liq yozilgandagina tugma yoqiladi; yuborishdan oldin yana bir bor so'raladi.
+    document.querySelectorAll('.danger-form').forEach(function (form) {
+        var input = form.querySelector('input[name=confirmName]'), button = form.querySelector('button[type=submit]');
+        var name = form.dataset.name.trim();
+        input.addEventListener('input', function () { button.disabled = input.value.trim() !== name; });
+        form.addEventListener('submit', function (e) {
+            if (!confirm('«' + name + '» барча маълумотлари билан ўчирилсинми? Буни қайтариб бўлмайди.')) e.preventDefault();
+        });
+    });
+</script>
 </body>
 </html>
