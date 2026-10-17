@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Бошқарув → Chorvoq Stay bo'limlari (tab — joriy bo'lim). -->
+<th:block th:fragment="head(subtitle)">
+    <div class="page-head reveal">
+        <div>
+            <h1>Chorvoq Stay</h1>
+            <p class="subtitle" th:text="${subtitle}"></p>
+        </div>
+        <a class="btn btn-secondary" href="https://chorvoqstay.uz" target="_blank" rel="noopener">chorvoqstay.uz ↗</a>
+    </div>
+    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+    <nav class="kind-tabs reveal" aria-label="Chorvoq Stay бўлимлари">
+        <a class="kind-tab" th:classappend="${tab == 'requests'} ? 'active'" th:href="@{/admin/stay}">
+            <span>Сўровлар</span><b th:if="${countNew > 0}" th:text="${countNew}">0</b></a>
+        <a class="kind-tab" th:classappend="${tab == 'catalog'} ? 'active'" th:href="@{/admin/stay/catalog}">
+            <span>Тоифалар ва нархлар</span></a>
+        <a class="kind-tab" th:classappend="${tab == 'units'} ? 'active'" th:href="@{/admin/stay/units}">
+            <span>Квартиралар</span></a>
+    </nav>
+</th:block>
+</body>
+</html>

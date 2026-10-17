@@ -1165,3 +1165,29 @@ a.integ-chip:hover { border-color: var(--primary); transform: translateY(-1px); 
     .stay-fields { grid-template-columns: 1fr; }
     .stay-fields dd { margin-bottom: 6px; }
 }
+
+/* ---------- Chorvoq Stay: toifalar, narxlar, kvartiralar ---------- */
+.stay-page > .card + .card, .stay-page > .card + .table-wrap { margin-top: 20px; }
+.stay-page .kind-tabs + .card { margin-top: 4px; }
+.stay-filter { display: flex; gap: 8px; margin-bottom: 14px; }
+.stay-cats td { vertical-align: middle; }
+.stay-cats input[type=text], .stay-cats input[type=number] {
+    width: 100%; min-width: 0; padding: 7px 9px; font-size: 13.5px; border: 1px solid var(--border);
+    border-radius: 8px; background: var(--surface); color: var(--text);
+}
+.stay-cats input:focus { outline: 2px solid color-mix(in srgb, var(--primary) 35%, transparent); border-color: var(--primary); }
+.stay-cats td.num input { text-align: right; }
+.stay-cats .w-xs { width: 64px; } .stay-cats .w-sm { width: 100px; } .stay-cats .w-md { width: 130px; }
+.stay-cats td:first-child input { min-width: 170px; }
+.stay-period-form { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; align-items: end; margin: 14px 0 18px; }
+.stay-period-form .field-wide { grid-column: span 3; }
+.stay-period-form .form-actions { margin: 0; }
+tr.is-past td { opacity: .55; }
+@media (max-width: 900px) {
+    .stay-period-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .stay-period-form .field-wide { grid-column: span 2; }
+}
+@media (max-width: 560px) {
+    .stay-period-form { grid-template-columns: 1fr; }
+    .stay-period-form .field-wide { grid-column: auto; }
+}

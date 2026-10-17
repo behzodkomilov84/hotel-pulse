@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.http.CacheControl;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -33,14 +35,16 @@ public class StayApiController {
     private static final JsonMapper JSON = JsonMapper.builder().build();
 
     private final StayRequestService requests;
+    private final StayCatalogService catalog;
     private final Clock clock;
     private final java.util.Set<String> allowedOrigins;
     private final Map<String, Deque<Instant>> hits = new ConcurrentHashMap<>();
 
-    public StayApiController(StayRequestService requests, Clock clock,
+    public StayApiController(StayRequestService requests, StayCatalogService catalog, Clock clock,
                              @Value("${app.stay.hosts:chorvoqstay.uz,www.chorvoqstay.uz}") String hosts,
                              @Value("${app.telegram.site-url:}") String siteUrl) {
         this.requests = requests;
+        this.catalog = catalog;
         this.clock = clock;
         java.util.Set<String> origins = new java.util.HashSet<>();
         for (String h : hosts.split(",")) {
@@ -86,6 +90,27 @@ public class StayApiController {
         }
         long id = requests.save(data, ip);
         return ResponseEntity.ok(Map.of("ok", true, "id", id));
+    }
+
+    /**
+     * Saytdagi xonalar: toifalarning joriy narxi ("kechasi ... so'mdan" — oddiy va kelgusi mavsumiy narxlarning eng kichigi),
+     * sig'imi va sotuvdagi kvartiralar soni. Tavsif va rejalar sayt fayllarida (js/data/rooms.js) qoladi.
+     */
+    @GetMapping("/rooms")
+    public ResponseEntity<java.util.List<Map<String, Object>>> rooms() {
+        var from = catalog.fromPrices();
+        var list = catalog.categories().stream().filter(StayCatalogService.Category::active).map(c -> {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", c.code());
+            m.put("name", c.name());
+            m.put("area", c.areaText());
+            m.put("cap", c.capacity());
+            m.put("extra", c.extraBeds());
+            m.put("price", from.getOrDefault(c.id(), c.basePrice()).longValue());
+            m.put("units", c.activeUnits());
+            return m;
+        }).toList();
+        return ResponseEntity.ok().cacheControl(CacheControl.maxAge(java.time.Duration.ofMinutes(5)).cachePublic()).body(list);
     }
 
     /** nginx ortida: haqiqiy IP X-Real-IP'da (ilova faqat nginx'dan ochiq). */

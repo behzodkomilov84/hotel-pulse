@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Chorvoq Stay — тоифалар ва нархлар')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-stay')}"></header>
+<main class="container stay-page">
+    <th:block th:replace="~{admin/stay-tabs :: head('Хона тоифалари, кечалик нархлар ва мавсумий нархлар. Ўзгариш chorvoqstay.uz сайтида дарҳол кўринади.')}"></th:block>
+
+    <!-- ===== Toifalar ===== -->
+    <section class="card reveal">
+        <div class="sync-head">
+            <div>
+                <h3 class="card-title">Тоифалар</h3>
+                <p class="subtitle">Кечалик нарх — даври белгиланмаган кунлар учун. Минимал нарх — мулкдорлар билан келишилган
+                    энг паст нарх: ундан паст нарх қўйиб бўлмайди.</p>
+            </div>
+            <a class="btn btn-secondary btn-sm" th:href="@{/hotels/{id}(id=${hotel.id})}">Дашборд →</a>
+        </div>
+        <div class="table-wrap">
+            <table class="debt-table stay-cats">
+                <thead><tr>
+                    <th>Тоифа</th><th>Майдон</th><th class="num">Сиғим</th><th class="num">+ ўрин</th>
+                    <th class="num">Кечалик нарх</th><th class="num">Минимал нарх</th><th class="num">Квартиралар</th><th>Сайтда</th><th></th>
+                </tr></thead>
+                <tbody>
+                <tr th:each="c : ${categories}">
+                    <td>
+                        <input type="text" th:form="'cat-' + ${c.id}" name="name" th:value="${c.name}" maxlength="100" required aria-label="Номи">
+                        <div class="muted mono" th:text="${c.code}"></div>
+                    </td>
+                    <td><input type="text" th:form="'cat-' + ${c.id}" name="areaText" th:value="${c.areaText}" maxlength="40" class="w-sm" aria-label="Майдон"></td>
+                    <td class="num"><input type="number" th:form="'cat-' + ${c.id}" name="capacity" th:value="${c.capacity}" min="1" max="30" class="w-xs" aria-label="Сиғим"></td>
+                    <td class="num"><input type="number" th:form="'cat-' + ${c.id}" name="extraBeds" th:value="${c.extraBeds}" min="0" max="10" class="w-xs" aria-label="Қўшимча ўрин"></td>
+                    <td class="num"><input type="number" th:form="'cat-' + ${c.id}" name="basePrice" th:value="${c.basePrice.longValue()}" min="1" step="1000" class="w-md" required aria-label="Кечалик нарх"></td>
+                    <td class="num"><input type="number" th:form="'cat-' + ${c.id}" name="minPrice" th:value="${c.minPrice != null ? c.minPrice.longValue() : ''}" min="0" step="1000" class="w-md" placeholder="—" aria-label="Минимал нарх"></td>
+                    <td class="num">
+                        <a th:href="@{/admin/stay/units}" th:text="${c.activeUnits} + ' / ' + ${c.units}"></a>
+                        <div class="muted">сотувда / жами</div>
+                    </td>
+                    <td><label class="check check-sm"><input type="checkbox" th:form="'cat-' + ${c.id}" name="active" value="true" th:checked="${c.active}"> кўрсатилсин</label></td>
+                    <td>
+                        <form method="post" th:id="'cat-' + ${c.id}" th:action="@{/admin/stay/categories/{id}(id=${c.id})}">
+                            <button type="submit" class="btn btn-primary btn-sm">Сақлаш</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Narx davrlari ===== -->
+    <section class="card reveal" id="periods">
+        <h3 class="card-title">Мавсумий ва байрам нархлари</h3>
+        <p class="subtitle">Шу кунлар кечаси учун нарх (масалан, ёз мавсуми, Наврўз, Янги йил). Бир тоифада даврлар устма-уст тушмайди.</p>
+
+        <form method="post" class="stay-period-form" th:action="@{/admin/stay/periods}">
+            <div class="field">
+                <label for="pCat">Тоифа</label>
+                <select id="pCat" name="categoryId" required>
+                    <option th:each="c : ${categories}" th:value="${c.id}"
+                            th:text="${c.name} + (${c.minPrice != null} ? ' (мин. ' + ${@fmt.number(c.minPrice)} + ')' : '')"></option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="pFrom">Биринчи кеча</label>
+                <input type="date" id="pFrom" name="from" required>
+            </div>
+            <div class="field">
+                <label for="pTo">Охирги кеча</label>
+                <input type="date" id="pTo" name="to" required>
+            </div>
+            <div class="field">
+                <label for="pPrice">Кечалик нарх, сўм</label>
+                <input type="number" id="pPrice" name="price" min="1" step="1000" required>
+            </div>
+            <div class="field field-wide">
+                <label for="pNote">Изоҳ</label>
+                <input type="text" id="pNote" name="note" maxlength="255" placeholder="масалан: Ёз мавсуми">
+            </div>
+            <div class="form-actions"><button type="submit" class="btn btn-primary">Қўшиш</button></div>
+        </form>
+
+        <div class="table-wrap" th:if="${!periods.isEmpty()}">
+            <table class="debt-table">
+                <thead><tr><th>Тоифа</th><th>Даври</th><th class="num">Кеча</th><th class="num">Кечалик нарх</th><th>Изоҳ</th><th></th></tr></thead>
+                <tbody>
+                <tr th:each="p : ${periods}" th:classappend="${p.to.isBefore(#temporals.createToday())} ? 'is-past'">
+                    <td><strong th:text="${p.categoryName}"></strong></td>
+                    <td th:text="${#temporals.format(p.from, 'dd.MM.yyyy')} + ' – ' + ${#temporals.format(p.to, 'dd.MM.yyyy')}"></td>
+                    <td class="num" th:text="${p.nights()}"></td>
+                    <td class="num"><b th:text="${@fmt.money(p.price, 'UZS')}"></b></td>
+                    <td class="wrap muted" th:text="${p.note} ?: '—'"></td>
+                    <td>
+                        <form method="post" th:action="@{/admin/stay/periods/{id}/delete(id=${p.id})}"
+                              onsubmit="return confirm('Нарх даврини ўчирасизми?')">
+                            <button type="submit" class="btn btn-secondary btn-sm">Ўчириш</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="muted" th:if="${periods.isEmpty()}">Ҳали мавсумий нарх белгиланмаган — ҳамма кунлар кечалик нарх бўйича.</p>
+    </section>
+</main>
+</body>
+</html>

@@ -57,9 +57,15 @@ class StayDbTest {
     private MockMvc mvc;
     private CustomUserDetails owner;
 
+    @Autowired private StayCatalogService catalog;
+
     @BeforeEach
     void setUp() {
         jdbc.update("delete from stay_requests");
+        jdbc.update("delete from stay_units");
+        jdbc.update("delete from stay_rate_periods");
+        jdbc.update("update stay_categories set min_price = null, active = true, base_price = case code "
+                + "when 'studio' then 600000 when 'one' then 850000 when 'two' then 1200000 when 'family' then 1900000 else 2600000 end");
         userRepository.deleteAll();
         User u = new User();
         u.setUsername("stay-owner");
@@ -138,6 +144,58 @@ class StayDbTest {
                 .content(BOOKING)).andExpect(status().isTooManyRequests());
         // Admin sahifasi — faqat platforma egasiga.
         mvc.perform(get("/admin/stay")).andExpect(status().is3xxRedirection());
+    }
+
+    @Test
+    void catalogPricesUnitsAndSiteApi() throws Exception {
+        long studio = jdbc.queryForObject("select id from stay_categories where code = 'studio'", Long.class);
+        // Minimal narx: kechalik narx undan past bo'lmaydi.
+        assertThrows(IllegalArgumentException.class, () -> catalog.updateCategory(studio, "Studio", "26 m²", 2, 0,
+                new java.math.BigDecimal("500000"), new java.math.BigDecimal("550000"), true));
+        catalog.updateCategory(studio, "Studio", "26 m²", 2, 1, new java.math.BigDecimal("650000"),
+                new java.math.BigDecimal("550000"), true);
+
+        // Narx davrlari: minimaldan past — yo'q; ustma-ust — yo'q; davr kunlari davr narxida.
+        var today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Tashkent"));
+        assertThrows(IllegalArgumentException.class, () -> catalog.addPeriod(studio, today.plusDays(10), today.plusDays(20),
+                new java.math.BigDecimal("500000"), null));
+        catalog.addPeriod(studio, today.plusDays(10), today.plusDays(20), new java.math.BigDecimal("580000"), "Kuz");
+        assertThrows(IllegalArgumentException.class, () -> catalog.addPeriod(studio, today.plusDays(20), today.plusDays(25),
+                new java.math.BigDecimal("700000"), null));
+        assertEquals(0, new java.math.BigDecimal("580000").compareTo(catalog.priceFor(studio, today.plusDays(15))));
+        assertEquals(0, new java.math.BigDecimal("650000").compareTo(catalog.priceFor(studio, today.plusDays(21))));
+        // Yangi minimal narx mavjud davrdan baland — rad etiladi.
+        assertThrows(IllegalArgumentException.class, () -> catalog.updateCategory(studio, "Studio", "26 m²", 2, 1,
+                new java.math.BigDecimal("650000"), new java.math.BigDecimal("600000"), true));
+
+        // Kvartiralar: takror raqam — yo'q; sotuvdagilar soni — Chorvoq Stay mehmonxonasining xonalari.
+        catalog.saveUnit(null, studio, "12", "45", new java.math.BigDecimal("27.5"), 3, "ACTIVE", "Aliyev Vali", "+998 90 000-00-01", null);
+        catalog.saveUnit(null, studio, "12", "46", null, null, "PREPARING", null, null, null);
+        assertThrows(IllegalArgumentException.class, () -> catalog.saveUnit(null, studio, "12", "45", null, null, "ACTIVE", null, null, null));
+        var hotel = catalog.hotel();
+        assertEquals(1, jdbc.queryForObject("select rooms_count from hotels where id = ?", Integer.class, hotel.getId()));
+        assertEquals("studio", StayCatalogService.suggestCode(new java.math.BigDecimal("27.5")));
+        assertEquals("grand", StayCatalogService.suggestCode(new java.math.BigDecimal("122")));
+
+        // Sayt API: "dan" narx — oddiy va kelgusi davrlarning eng kichigi; yashirilgan toifa chiqmaydi.
+        long grand = jdbc.queryForObject("select id from stay_categories where code = 'grand'", Long.class);
+        catalog.updateCategory(grand, "Grand Terrace Residence", "122 m²", 8, 2, new java.math.BigDecimal("2600000"), null, false);
+        String rooms = mvc.perform(get("/api/stay/rooms").with(r -> host(r, "chorvoqstay.uz"))).andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertTrue(rooms.contains("\"id\":\"studio\"") && rooms.contains("\"price\":580000") && rooms.contains("\"units\":1")
+                && rooms.contains("\"extra\":1"), rooms);
+        assertFalse(rooms.contains("\"grand\""), rooms);
+
+        // Admin sahifalari.
+        assertTrue(html("/admin/stay/catalog").contains("Мавсумий ва байрам нархлари"));
+        String units = html("/admin/stay/units");
+        assertTrue(units.contains("12-уй, 45-кв.") && units.contains("Aliyev Vali"));
+        long unitId = jdbc.queryForObject("select id from stay_units where number = '45'", Long.class);
+        assertTrue(html("/admin/stay/units?edit=" + unitId).contains("Квартирани таҳрирлаш"));
+        mvc.perform(post("/admin/stay/periods").with(user(owner)).with(csrf()).param("categoryId", String.valueOf(studio))
+                        .param("from", today.plusDays(30).toString()).param("to", today.plusDays(31).toString()).param("price", "100"))
+                .andExpect(status().is3xxRedirection());
+        assertEquals(1, jdbc.queryForObject("select count(*) from stay_rate_periods", Integer.class), "minimaldan past davr qo'shilmaydi");
     }
 
     private String html(String url) throws Exception {

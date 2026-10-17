@@ -4,22 +4,13 @@
 <body>
 <header th:replace="~{fragments/layout :: header('admin-stay')}"></header>
 <main class="container">
-    <div class="page-head reveal">
-        <div>
-            <h1>Chorvoq Stay</h1>
-            <p class="subtitle">chorvoqstay.uz саҳифасидан келган сўровлар: брон, резидент (квартира эгаси), қўнғироқ.
-                Ҳар бир сўров Telegram'га ҳам юборилади.</p>
-        </div>
-        <a class="btn btn-secondary" th:href="@{/stay/index.html}" target="_blank" rel="noopener">Сайтни очиш ↗</a>
-    </div>
-    <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+    <th:block th:replace="~{admin/stay-tabs :: head('chorvoqstay.uz саҳифасидан келган сўровлар: брон, резидент (квартира эгаси), қўнғироқ. Ҳар бир сўров Telegram орқали ҳам юборилади.')}"></th:block>
 
-    <nav class="kind-tabs reveal" aria-label="Сўровлар">
-        <a class="kind-tab" th:classappend="${show == 'new'} ? 'active'" th:href="@{/admin/stay(show='new')}">
-            <span>Янги</span><b th:text="${countNew}">0</b></a>
-        <a class="kind-tab" th:classappend="${show == 'all'} ? 'active'" th:href="@{/admin/stay(show='all')}">
-            <span>Ҳаммаси</span></a>
-    </nav>
+    <div class="stay-filter reveal">
+        <a class="btn btn-sm" th:classappend="${show == 'new'} ? 'btn-primary' : 'btn-secondary'" th:href="@{/admin/stay(show='new')}"
+           th:text="'Янги (' + ${countNew} + ')'">Янги</a>
+        <a class="btn btn-sm" th:classappend="${show == 'all'} ? 'btn-primary' : 'btn-secondary'" th:href="@{/admin/stay(show='all')}">Ҳаммаси</a>
+    </div>
 
     <div class="card table-wrap reveal" th:if="${!requests.isEmpty()}">
         <table class="debt-table stay-table">

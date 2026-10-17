@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="uz" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Chorvoq Stay — квартиралар')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header('admin-stay')}"></header>
+<main class="container stay-page">
+    <th:block th:replace="~{admin/stay-tabs :: head('Chorvoq Darvozasi мажмуасидаги квартиралар. Сотувдаги квартиралар сони — Chorvoq Stay меҳмонхонасининг хоналар сони (бандлик шундан ҳисобланади).')}"></th:block>
+
+    <!-- ===== Qo'shish / tahrirlash ===== -->
+    <section class="card reveal" id="unit-form">
+        <h3 class="card-title" th:text="${edit == null} ? 'Квартира қўшиш' : 'Квартирани таҳрирлаш: ' + ${edit.building} + '-уй, ' + ${edit.number} + '-кв.'">Квартира қўшиш</h3>
+        <form method="post" class="form" th:action="${edit == null} ? @{/admin/stay/units} : @{/admin/stay/units/{id}(id=${edit.id})}">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="uBldg">Уй рақами *</label>
+                    <input type="text" id="uBldg" name="building" maxlength="20" required th:value="${edit?.building}" placeholder="масалан: 12">
+                </div>
+                <div class="field">
+                    <label for="uNum">Квартира рақами *</label>
+                    <input type="text" id="uNum" name="number" maxlength="20" required th:value="${edit?.number}" placeholder="масалан: 45">
+                </div>
+                <div class="field">
+                    <label for="uArea">Майдон, м²</label>
+                    <input type="number" id="uArea" name="area" min="10" max="400" step="0.1" th:value="${edit?.area}">
+                    <span class="hint" id="uAreaHint"></span>
+                </div>
+                <div class="field">
+                    <label for="uFloor">Қават</label>
+                    <input type="number" id="uFloor" name="floor" min="-2" max="60" th:value="${edit?.floor}">
+                </div>
+                <div class="field">
+                    <label for="uCat">Тоифа *</label>
+                    <select id="uCat" name="categoryId" required>
+                        <option th:each="c : ${categories}" th:value="${c.id}" th:attr="data-code=${c.code}" th:text="${c.name}"
+                                th:selected="${edit != null and edit.categoryId == c.id}"></option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="uStatus">Ҳолат *</label>
+                    <select id="uStatus" name="status" required th:with="st=${edit != null ? edit.status : 'PREPARING'}">
+                        <option value="ACTIVE" th:selected="${st == 'ACTIVE'}">Сотувда</option>
+                        <option value="PREPARING" th:selected="${st == 'PREPARING'}">Тайёрланмоқда (ремонт, жиҳозлаш)</option>
+                        <option value="INACTIVE" th:selected="${st == 'INACTIVE'}">Чиқарилган</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="uOwner">Мулкдор</label>
+                    <input type="text" id="uOwner" name="ownerName" maxlength="150" th:value="${edit?.ownerName}" placeholder="Ф.И.Ш.">
+                </div>
+                <div class="field">
+                    <label for="uPhone">Мулкдор телефони</label>
+                    <input type="tel" id="uPhone" name="ownerPhone" maxlength="40" th:value="${edit?.ownerPhone}" placeholder="+998 ...">
+                </div>
+                <div class="field field-wide">
+                    <label for="uNote">Изоҳ</label>
+                    <input type="text" id="uNote" name="note" maxlength="500" th:value="${edit?.note}">
+                </div>
+            </div>
+            <div class="form-actions">
+                <a class="btn btn-secondary" th:if="${edit != null}" th:href="@{/admin/stay/units}">Бекор қилиш</a>
+                <button type="submit" class="btn btn-primary" th:text="${edit == null} ? 'Қўшиш' : 'Сақлаш'">Қўшиш</button>
+            </div>
+        </form>
+    </section>
+
+    <!-- ===== Ro'yxat ===== -->
+    <div class="card table-wrap reveal" th:if="${!units.isEmpty()}">
+        <h3 class="card-title" th:text="'Квартиралар — ' + ${units.size()} + ' та'">Квартиралар</h3>
+        <table class="debt-table">
+            <thead><tr><th>Квартира</th><th>Тоифа</th><th class="num">Майдон</th><th class="num">Қават</th><th>Ҳолат</th><th>Мулкдор</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="u : ${units}">
+                <td><strong th:text="${u.building} + '-уй, ' + ${u.number} + '-кв.'"></strong>
+                    <div class="muted wrap" th:if="${u.note != null}" th:text="${u.note}"></div></td>
+                <td th:text="${u.categoryName}"></td>
+                <td class="num" th:text="${u.area != null} ? ${u.area} + ' м²' : '—'"></td>
+                <td class="num" th:text="${u.floor} ?: '—'"></td>
+                <td>
+                    <span class="badge badge-ok" th:if="${u.status == 'ACTIVE'}">Сотувда</span>
+                    <span class="badge badge-warn" th:if="${u.status == 'PREPARING'}">Тайёрланмоқда</span>
+                    <span class="badge badge-off" th:if="${u.status == 'INACTIVE'}">Чиқарилган</span>
+                </td>
+                <td class="wrap">
+                    <span th:text="${u.ownerName} ?: '—'"></span>
+                    <div th:if="${u.ownerPhone != null}"><a th:href="'tel:' + ${#strings.replace(u.ownerPhone, ' ', '')}" th:text="${u.ownerPhone}"></a></div>
+                </td>
+                <td><div class="agent-actions">
+                    <a class="btn btn-secondary btn-sm" th:href="@{/admin/stay/units(edit=${u.id})} + '#unit-form'">Таҳрирлаш</a>
+                    <form method="post" th:action="@{/admin/stay/units/{id}/delete(id=${u.id})}"
+                          onsubmit="return confirm('Квартирани ўчирасизми? Хато қўшилган бўлса ўчиринг; сотувдан чиқариш учун ҳолатини «Чиқарилган» қилинг.')">
+                        <button type="submit" class="btn btn-secondary btn-sm">Ўчириш</button>
+                    </form>
+                </div></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card empty reveal" th:if="${units.isEmpty()}">
+        <p><strong>Ҳали квартира қўшилмаган</strong></p>
+        <p class="muted">Сайтдаги «Резидент бўлиш» сўровномасидан келган квартираларни шу ерга қўшинг.</p>
+    </div>
+</main>
+<script>
+    // Maydon bo'yicha taxminiy toifa (sayt bilan bir xil chegaralar); toifa qo'lda tanlangan bo'lsa — tegilmaydi.
+    (function () {
+        const area = document.getElementById('uArea'), cat = document.getElementById('uCat'), hint = document.getElementById('uAreaHint');
+        let touched = false;
+        cat.addEventListener('change', () => touched = true);
+        area.addEventListener('input', () => {
+            const a = parseFloat(area.value);
+            if (!a) { hint.textContent = ''; return; }
+            const code = a < 32 ? 'studio' : a < 52 ? 'one' : a < 75 ? 'two' : a < 106 ? 'family' : 'grand';
+            const opt = cat.querySelector('option[data-code="' + code + '"]');
+            if (!opt) return;
+            hint.textContent = 'Тахминий тоифа: ' + opt.textContent;
+            if (!touched) cat.value = opt.value;
+        });
+    })();
+</script>
+</body>
+</html>
