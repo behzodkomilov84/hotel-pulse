@@ -10,7 +10,7 @@
         const live = byId[ROOMS[i].id];
         if (!live){ ROOMS.splice(i, 1); continue }            // admin'da yashirilgan toifa
         ROOMS[i].name = live.name || ROOMS[i].name;
-        if (live.area) ROOMS[i].area = live.area;
+        if (live.area) ROOMS[i].area = live.area.replace(/m²/g, "м²");   // sayt faqat kirillcha
         ROOMS[i].cap = live.cap; ROOMS[i].extra = live.extra; ROOMS[i].price = live.price;
       }
       setLang(LANG);

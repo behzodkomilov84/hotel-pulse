@@ -5,12 +5,12 @@ const today = new Date(); today.setHours(0,0,0,0);
 function fillSelects(){
   ["#bbGuests","#bmGuests"].forEach(s => {
     const el = $(s), v = el.value || "2";
-    el.innerHTML = Array.from({length:10}, (_, i) => `<option value="${i+1}">${i+1} ${T("kishi","чел.")}</option>`).join("");
+    el.innerHTML = Array.from({length:10}, (_, i) => `<option value="${i+1}">${i+1} ${T("киши","чел.")}</option>`).join("");
     el.value = v;
   });
   ["#bbRoom","#bmRoom"].forEach(s => {
     const el = $(s), v = el.value || "";
-    el.innerHTML = `<option value="">${T("Har qanday","Любая")}</option>` + ROOMS.map(r => `<option value="${r.id}">${r.name}</option>`).join("");
+    el.innerHTML = `<option value="">${T("Ҳар қандай","Любая")}</option>` + ROOMS.map(r => `<option value="${r.id}">${r.name}</option>`).join("");
     el.value = v;
   });
 }
@@ -26,9 +26,9 @@ function updateSummary(){
   const n = nights(), g = +$("#bmGuests").value, r = ROOMS.find(x => x.id === $("#bmRoom").value)
     || ROOMS.find(x => x.cap + x.extra >= g) || ROOMS[ROOMS.length-1];
   const auto = !$("#bmRoom").value;
-  let rows = `<dt>${T("Kechalar","Ночей")}</dt><dd>${n > 0 ? n : "—"}</dd>`;
-  rows += `<dt>${T("Toifa","Категория")}</dt><dd>${r.name}${auto ? " · " + T("tavsiya","рекомендуем") : ""}</dd>`;
-  if (n > 0) rows += `<dt>${T("Taxminiy narx","Ориентир. стоимость")}</dt><dd>${T("","от ")}${fmt(r.price*n)} ${T("so'mdan","сум")}</dd>`;
+  let rows = `<dt>${T("Кечалар","Ночей")}</dt><dd>${n > 0 ? n : "—"}</dd>`;
+  rows += `<dt>${T("Тоифа","Категория")}</dt><dd>${r.name}${auto ? " · " + T("тавсия","рекомендуем") : ""}</dd>`;
+  if (n > 0) rows += `<dt>${T("Тахминий нарх","Ориентир. стоимость")}</dt><dd>${T("","от ")}${fmt(r.price*n)} ${T("сўмдан","сум")}</dd>`;
   box.innerHTML = rows;
 }
 function openBooking(roomId){
@@ -47,7 +47,7 @@ document.addEventListener("click", e => {
   const b = e.target.closest("[data-open-booking]"); if (b){ openBooking(b.dataset.openBooking); }
   if (e.target.closest("[data-close]") || e.target.id === "bookModal") closeBooking();
   const c = e.target.closest("[data-copy]");
-  if (c){ const t = c.dataset.copy; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast(T("Nusxalandi","Скопировано")), () => toast(t)); }
+  if (c){ const t = c.dataset.copy; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast(T("Нусхаланди","Скопировано")), () => toast(t)); }
 });
 document.addEventListener("keydown", e => { if (e.key === "Escape"){ if (!$("#bookModal").hidden) closeBooking(); else if (!$("#chat").hidden) toggleChat(false) } });
 $("#bookbar").addEventListener("submit", e => {
@@ -78,5 +78,5 @@ $("#bookForm").addEventListener("submit", async e => {
     "Taxminiy narx, so'm": fmt(rr.price*nights()),
     "Istaklar": $("#bmNote").value.trim() || "—",
     "Til": LANG.toUpperCase()
-  }, T("Rahmat! So'rovingiz qabul qilindi. Administrator tez orada siz bilan bog'lanadi.","Спасибо! Запрос принят. Администратор скоро свяжется с вами."), () => $("#bookForm").reset());
+  }, T("Раҳмат! Сўровингиз қабул қилинди. Администратор тез орада сиз билан боғланади.","Спасибо! Запрос принят. Администратор скоро свяжется с вами."), () => $("#bookForm").reset());
 });

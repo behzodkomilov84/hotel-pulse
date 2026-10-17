@@ -24,7 +24,7 @@ async function sendMail(data){
 }
 const inPreview = (() => { try { return window.self !== window.top } catch(e){ return true } })();
 async function submitTo(btn, status, data, okMsg, onOk){
-  btn.disabled = true; const label = btn.innerHTML; btn.textContent = T("Yuborilmoqda…","Отправляем…");
+  btn.disabled = true; const label = btn.innerHTML; btn.textContent = T("Юборилмоқда…","Отправляем…");
   status.hidden = true;
   try{
     await sendMail(data);
@@ -32,11 +32,11 @@ async function submitTo(btn, status, data, okMsg, onOk){
   }catch(err){
     if (inPreview){
       status.className = "status ok";
-      status.textContent = okMsg + " " + T("(Ko'rib chiqish rejimi: saytingiz domenida joylashtirilganda so'rov pochtaga yuboriladi.)","(Режим предпросмотра: на вашем домене заявка уйдёт на почту.)");
+      status.textContent = okMsg + " " + T("(Кўриб чиқиш режими: сайтингиз доменида жойлаштирилганда сўров почтага юборилади.)","(Режим предпросмотра: на вашем домене заявка уйдёт на почту.)");
       onOk && onOk();
     } else {
       status.className = "status bad";
-      status.textContent = T("So'rov yuborilmadi. Internetni tekshirib, qayta urinib ko'ring yoki qo'ng'iroq qiling: ","Заявка не отправилась. Проверьте интернет и повторите или позвоните: ") + CONFIG.PHONE;
+      status.textContent = T("Сўров юборилмади. Интернетни текшириб, қайта уриниб кўринг ёки қўнғироқ қилинг: ","Заявка не отправилась. Проверьте интернет и повторите или позвоните: ") + CONFIG.PHONE;
     }
   }
   status.hidden = false; btn.innerHTML = label; btn.disabled = false;

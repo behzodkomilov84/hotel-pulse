@@ -3,7 +3,7 @@ function areaHint(){
   const a = parseFloat($("#rArea").value), h = $("#areaHint"); if (!h) return;
   if (!a){ h.textContent = ""; return }
   const cat = a < 32 ? "Studio" : a < 52 ? "One-Bedroom Suite" : a < 75 ? "Two-Bedroom Suite" : a < 106 ? "Family Suite" : "Grand Terrace Residence";
-  h.textContent = T("Taxminiy toifa: ","Ориентировочная категория: ") + cat;
+  h.textContent = T("Тахминий тоифа: ","Ориентировочная категория: ") + cat;
 }
 $("#rArea").addEventListener("input", areaHint);
 $("#resForm").addEventListener("submit", async e => {
@@ -30,5 +30,5 @@ $("#resForm").addEventListener("submit", async e => {
     "Remont holati": cond.value,
     "Izoh": $("#rNote").value.trim() || "—",
     "Til": LANG.toUpperCase()
-  }, T("Rahmat! So'rovnomangiz qabul qilindi. Mutaxassisimiz 1 ish kuni ichida siz bilan bog'lanadi.","Спасибо! Заявка принята. Специалист свяжется с вами в течение 1 рабочего дня."), () => { f.reset(); $("#rPhone").value = "+998 "; areaHint() });
+  }, T("Раҳмат! Сўровномангиз қабул қилинди. Мутахассисимиз 1 иш куни ичида сиз билан боғланади.","Спасибо! Заявка принята. Специалист свяжется с вами в течение 1 рабочего дня."), () => { f.reset(); $("#rPhone").value = "+998 "; areaHint() });
 });
