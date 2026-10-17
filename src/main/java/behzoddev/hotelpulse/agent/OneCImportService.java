@@ -13,6 +13,7 @@ import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,6 +47,8 @@ public class OneCImportService {
     /** Agentdagi RecentDays bilan bir xil. */
     static final int RECENT_DAYS = 90;
     static final String EMPTY_REF = "00000000-0000-0000-0000-000000000000";
+    /** Bundan uzun bron — sana xato kiritilgan (masalan, 2324-yil), olinmaydi. */
+    static final int MAX_NIGHTS = 400;
     private static final JsonMapper JSON = JsonMapper.builder().build();
     private static final Pattern MEALS = Pattern.compile("(?iu)завтрак|ужин|обед|питан|breakfast|dinner|lunch|meal|board|nonushta|ovqat");
 
@@ -270,7 +273,7 @@ public class OneCImportService {
 
     // ---------------------------------------------------------------- qayta qurish
 
-    record Stay(String ref, String externalId, String number, String status, String guestName, String source,
+    record Stay(List<String> refs, String externalId, String number, String status, String guestName, String source,
                 LocalDate arrival, LocalDate departure, int rooms, int guests, BigDecimal total, BigDecimal balance,
                 LocalDateTime bookedAt, LocalDateTime cancelledAt, String roomTypeId, String roomId) {
     }
@@ -361,61 +364,48 @@ public class OneCImportService {
                 "CheckInDate", "CheckOutDate", "Room", "RoomType", "NumberOfPersons", "NumberOfRooms", "RoomQuantity",
                 "GuestFullName", "AccommodationStatus", "ReservationStatus", "Reservation");
 
-        // Yashashlar.
-        List<Stay> stays = new ArrayList<>();
+        // 1C har bir mehmonga alohida hujjat ochadi (qo'shimcha mehmonda NumberOfRooms = 0): bitta raqam, xona va
+        // sanalardagi hujjatlar — bitta bron (xona bir marta sanaladi, mehmonlar qo'shiladi, summa jamlanadi).
+        Map<String, List<Row>> accGroups = new java.util.LinkedHashMap<>();
         Set<String> converted = new HashSet<>();
         rows(hotelId, uploaded, "Document.Accommodation", "Date", stayFields, r -> {
-            if (!r.bool("Posted") || r.bool("DeletionMark")) {
-                return;
-            }
-            LocalDate in = r.date("CheckInDate"), out = r.date("CheckOutDate");
-            if (in == null || out == null) {
+            if (!r.bool("Posted") || r.bool("DeletionMark") || r.date("CheckInDate") == null || r.date("CheckOutDate") == null) {
                 return;
             }
             if (r.ref("Reservation") != null) {
                 converted.add(r.ref("Reservation"));
             }
-            Row st = r.ref("AccommodationStatus") == null ? null : accStatuses.get(r.ref("AccommodationStatus"));
-            String status;
-            if (st != null && !st.bool("IsActive")) {
-                status = "CANCELLED";
-            } else if (st != null && st.bool("IsCheckOut")) {
-                status = "CHECKED_OUT";
-            } else if (st != null && (st.bool("IsInHouse") || st.bool("IsCheckIn") || st.bool("IsRoomChange"))) {
-                status = out.isAfter(today) ? "CHECKED_IN" : "CHECKED_OUT";
-            } else {
-                status = out.isAfter(today) ? "CHECKED_IN" : "CHECKED_OUT";
-            }
-            BigDecimal total = salesByDoc.getOrDefault(r.ref("Ref"), BigDecimal.ZERO);
-            BigDecimal due = total.subtract(paidByDoc.getOrDefault(r.ref("Ref"), BigDecimal.ZERO));
-            stays.add(stay(r, "acc", status, in, out, total,
-                    status.equals("CANCELLED") ? null : due.max(BigDecimal.ZERO), customers, sources));
+            accGroups.computeIfAbsent(groupKey(r), k -> new ArrayList<>()).add(r);
         });
+        List<Stay> stays = new ArrayList<>();
+        for (List<Row> g : accGroups.values()) {
+            Row main = main(g);
+            LocalDate out = main.date("CheckOutDate");
+            String status = accommodationStatus(accStatuses.get(main.ref("AccommodationStatus")), out, today);
+            BigDecimal total = sum(g, salesByDoc), due = total.subtract(sum(g, paidByDoc));
+            stays.add(stay(g, "acc", status, total, status.equals("CANCELLED") ? null : due.max(BigDecimal.ZERO), customers, sources));
+        }
 
         // Hali kelmagan bronlar (yashashga aylanmaganlari).
+        Map<String, List<Row>> resGroups = new java.util.LinkedHashMap<>();
         rows(hotelId, uploaded, "Document.Reservation", "Date", stayFields, r -> {
-            if (!r.bool("Posted") || r.bool("DeletionMark") || converted.contains(r.ref("Ref"))) {
+            if (!r.bool("Posted") || r.bool("DeletionMark") || converted.contains(r.ref("Ref"))
+                    || r.date("CheckInDate") == null || r.date("CheckOutDate") == null) {
                 return;
             }
-            LocalDate in = r.date("CheckInDate"), out = r.date("CheckOutDate");
-            if (in == null || out == null) {
-                return;
+            if (ChronoUnit.DAYS.between(r.date("CheckInDate"), r.date("CheckOutDate")) > MAX_NIGHTS) {
+                return;   // xato kiritilgan sana (masalan, 2324-yil)
             }
-            Row st = r.ref("ReservationStatus") == null ? null : resStatuses.get(r.ref("ReservationStatus"));
-            if (st != null && st.bool("IsCheckIn")) {
-                return;   // yashash hujjati bilan sanaladi
-            }
-            String status;
-            if (st != null && (st.bool("IsAnnulation") || !st.bool("IsActive") || st.bool("IsInWaitingList"))) {
-                status = "CANCELLED";
-            } else if (st != null && st.bool("IsNoShow")) {
-                status = "NO_SHOW";
-            } else {
-                status = in.isBefore(today) ? "NO_SHOW" : "CONFIRMED";
-            }
-            BigDecimal total = salesByDoc.getOrDefault(r.ref("Ref"), BigDecimal.ZERO);
-            stays.add(stay(r, "res", status, in, out, total, null, customers, sources));
+            resGroups.computeIfAbsent(groupKey(r), k -> new ArrayList<>()).add(r);
         });
+        for (List<Row> g : resGroups.values()) {
+            Row main = main(g);
+            String status = reservationStatus(resStatuses.get(main.ref("ReservationStatus")), main.date("CheckInDate"), today);
+            if (status == null) {
+                continue;   // "Заезд" — yashash hujjati bilan sanaladi
+            }
+            stays.add(stay(g, "res", status, sum(g, salesByDoc), null, customers, sources));
+        }
 
         // Sotiladigan xonalar.
         int roomsCount = 0;
@@ -468,8 +458,10 @@ public class OneCImportService {
             Map<String, Long> ids = new HashMap<>();   // 1C hujjat Ref → bookings.id
             Map<String, String> numberByRef = new HashMap<>();
             for (Stay s : stays) {
-                ids.put(s.ref(), byExternal.get(s.externalId()));
-                numberByRef.put(s.ref(), s.number());
+                for (String ref : s.refs()) {
+                    ids.put(ref, byExternal.get(s.externalId()));
+                    numberByRef.put(ref, s.number());
+                }
             }
 
             List<Object[]> sv = new ArrayList<>();
@@ -509,20 +501,80 @@ public class OneCImportService {
                 + " та хизмат қатори, " + payments.size() + " та тўлов; " + finalRoomsCount + " та хона";
     }
 
-    private static Stay stay(Row r, String kind, String status, LocalDate in, LocalDate out, BigDecimal total,
-                             BigDecimal balance, Map<String, Row> customers, Map<String, Row> sources) {
+    /** Bitta bron: o'sha hujjat raqami, xona va sanalar (har mehmon — alohida hujjat). */
+    static String groupKey(Row r) {
+        return r.str("Number").trim() + "|" + r.str("Room") + "|" + r.date("CheckInDate") + "|" + r.date("CheckOutDate");
+    }
+
+    /** Asosiy mehmon hujjati — xona sanalgani (NumberOfRooms > 0), bo'lmasa birinchisi. */
+    static Row main(List<Row> group) {
+        return group.stream().filter(r -> r.num("NumberOfRooms").signum() > 0).findFirst().orElse(group.get(0));
+    }
+
+    private static BigDecimal sum(List<Row> group, Map<String, BigDecimal> byDoc) {
+        BigDecimal s = BigDecimal.ZERO;
+        for (Row r : group) {
+            s = s.add(byDoc.getOrDefault(r.ref("Ref"), BigDecimal.ZERO));
+        }
+        return s;
+    }
+
+    /**
+     * Yashash holati: "Аннуляция" (IsActive yo'q) — bekor; IsInHouse — mehmon xonada (ketish sanasi o'tib ketgan bo'lsa
+     * ham, chiqarilmaguncha); qolganlari — ketgan (yoki boshqa xonaga ko'chgan). IsCheckOut bayrog'i "Заезд"da ham bor —
+     * unga qaralmaydi.
+     */
+    static String accommodationStatus(Row st, LocalDate out, LocalDate today) {
+        if (st == null) {
+            return out.isAfter(today) ? "CHECKED_IN" : "CHECKED_OUT";
+        }
+        if (!st.bool("IsActive")) {
+            return "CANCELLED";
+        }
+        return st.bool("IsInHouse") ? "CHECKED_IN" : "CHECKED_OUT";
+    }
+
+    /**
+     * Bron holati; null — "Заезд" (yashash hujjati bilan sanaladi). "Незаезд" bazada IsNoShow'siz bo'lishi mumkin —
+     * nomidan ham aniqlanadi.
+     */
+    static String reservationStatus(Row st, LocalDate in, LocalDate today) {
+        if (st == null) {
+            return in.isBefore(today) ? "NO_SHOW" : "CONFIRMED";
+        }
+        if (st.bool("IsCheckIn")) {
+            return null;
+        }
+        String name = lower(st.str("Description"));
+        if (st.bool("IsNoShow") || name.contains("незаезд") || name.contains("no show") || name.contains("no-show")) {
+            return "NO_SHOW";
+        }
+        if (st.bool("IsAnnulation") || !st.bool("IsActive") || st.bool("IsInWaitingList")) {
+            return "CANCELLED";
+        }
+        return in.isBefore(today) ? "NO_SHOW" : "CONFIRMED";
+    }
+
+    private static Stay stay(List<Row> group, String kind, String status, BigDecimal total, BigDecimal balance,
+                             Map<String, Row> customers, Map<String, Row> sources) {
+        Row r = main(group);
+        LocalDate in = r.date("CheckInDate"), out = r.date("CheckOutDate");
         if (!out.isAfter(in)) {
             out = in.plusDays(1);   // kunduzgi yashash — bitta kecha
         }
-        int rooms = r.num("NumberOfRooms").intValue();
-        if (rooms <= 0) {
-            rooms = Math.max(1, r.num("RoomQuantity").intValue());
+        int rooms = 0, guests = 0;
+        List<String> refs = new ArrayList<>();
+        for (Row x : group) {
+            rooms += Math.max(0, x.num("NumberOfRooms").intValue());
+            guests += Math.max(1, x.num("NumberOfPersons").intValue());
+            refs.add(x.ref("Ref"));
         }
-        LocalDateTime booked = r.dateTime("Date") != null ? r.dateTime("Date") : in.atStartOfDay();
+        LocalDateTime booked = group.stream().map(x -> x.dateTime("Date")).filter(java.util.Objects::nonNull)
+                .min(LocalDateTime::compareTo).orElse(in.atStartOfDay());
         String number = r.str("Number").trim().replaceFirst("^0+(?=\\d)", "");
-        return new Stay(r.ref("Ref"), externalId(kind, number, r.ref("Ref")), number, status,
+        return new Stay(refs, externalId(kind, number, r.ref("Ref")), number, status,
                 blankToNull(cut(r.str("GuestFullName"), 150)), cut(source(r, customers, sources), 64), in, out,
-                rooms, Math.max(1, r.num("NumberOfPersons").intValue()), total,
+                Math.max(1, rooms), Math.max(1, guests), total,
                 balance == null || balance.signum() == 0 ? null : balance, booked,
                 status.equals("CANCELLED") ? booked : null, compact(r.ref("RoomType")), compact(r.ref("Room")));
     }

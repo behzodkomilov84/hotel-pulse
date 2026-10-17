@@ -44,6 +44,7 @@ class OneCImportDbTest {
 
     private static final String ACC = "11111111-0000-0000-0000-000000000001";
     private static final String ACC_OLD = "11111111-0000-0000-0000-000000000002";
+    private static final String ACC_EXTRA = "11111111-0000-0000-0000-000000000003";
     private static final String RES = "22222222-0000-0000-0000-000000000001";
     private static final String RES_CONVERTED = "22222222-0000-0000-0000-000000000002";
     private static final String ST_IN = "33333333-0000-0000-0000-000000000001";
@@ -99,12 +100,15 @@ class OneCImportDbTest {
         put("Catalog.PaymentMethods", List.of("Ref", "Description", "DeletionMark"), List.of(List.of(ref(CASH), s("Наличные"), b(false))));
 
         List<String> stayCols = List.of("Ref", "DeletionMark", "Number", "Date", "Posted", "Customer", "Agent", "CheckInDate",
-                "CheckOutDate", "Room", "RoomType", "NumberOfPersons", "GuestFullName", "AccommodationStatus", "Reservation");
+                "CheckOutDate", "Room", "RoomType", "NumberOfPersons", "GuestFullName", "AccommodationStatus", "Reservation", "NumberOfRooms");
         put("Document.Accommodation", stayCols, List.of(
                 List.of(ref(ACC), b(false), s("0000000123"), dt(today.minusDays(2)), b(true), ref(EMPTY), ref(CUST),
-                        dt(today.minusDays(2)), dt(today.plusDays(1)), ref(ROOM1), ref(RT), n(2), s("Ivanov Ivan"), ref(ST_IN), ref(RES_CONVERTED)),
+                        dt(today.minusDays(2)), dt(today.plusDays(1)), ref(ROOM1), ref(RT), n(2), s("Ivanov Ivan"), ref(ST_IN), ref(RES_CONVERTED), n(1)),
+                // Qo'shimcha mehmon (o'sha raqam, xona, sanalar; NumberOfRooms = 0) — o'sha bronga qo'shiladi.
+                List.of(ref(ACC_EXTRA), b(false), s("0000000123"), dt(today.minusDays(2)), b(true), ref(EMPTY), ref(CUST),
+                        dt(today.minusDays(2)), dt(today.plusDays(1)), ref(ROOM1), ref(RT), n(1), s("Ivanova Maria"), ref(ST_IN), ref(EMPTY), n(0)),
                 List.of(ref(ACC_OLD), b(false), s("0000000100"), dt(today.minusDays(10)), b(true), ref(EMPTY), ref(EMPTY),
-                        dt(today.minusDays(10)), dt(today.minusDays(8)), ref(ROOM2), ref(RT), n(1), s("Petrov"), ref(ST_OUT), ref(EMPTY))));
+                        dt(today.minusDays(10)), dt(today.minusDays(8)), ref(ROOM2), ref(RT), n(1), s("Petrov"), ref(ST_OUT), ref(EMPTY), n(1))));
         List<String> resCols = List.of("Ref", "DeletionMark", "Number", "Date", "Posted", "Customer", "Agent", "CheckInDate",
                 "CheckOutDate", "Room", "RoomType", "NumberOfPersons", "GuestFullName", "ReservationStatus");
         put("Document.Reservation", resCols, List.of(
@@ -138,6 +142,8 @@ class OneCImportDbTest {
         assertEquals("Booking.com", stay.get("source"));
         assertEquals(0, new BigDecimal("1650000").compareTo((BigDecimal) stay.get("total_amount")));
         assertEquals(0, new BigDecimal("650000").compareTo((BigDecimal) stay.get("balance_due")));
+        assertEquals(1, stay.get("rooms"));
+        assertEquals(3, stay.get("guests"));
         assertEquals(ROOM1.replace("-", ""), stay.get("room_id"));
         assertTrue(((String) stay.get("external_id")).startsWith("oc:123#a"), (String) stay.get("external_id"));
 
