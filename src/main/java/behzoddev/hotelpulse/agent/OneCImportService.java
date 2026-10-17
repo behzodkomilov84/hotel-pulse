@@ -458,14 +458,19 @@ public class OneCImportService {
                 });
             }
         }
-        int[] counts = new int[6];   // bron: +, ~, −; xizmat va to'lov: +, ~, −
+        int[] counts = new int[7];   // bron: +, ~, −; xizmat va to'lov: +, ~, −; o'chirilmay qolgan (himoya)
+        // Tungi to'liq nusxa + tezkor nusxa (ikkalasi ham to'liq kelgani tekshirilgan) = 1C'ning to'liq ko'rinishi: ularda yo'q
+        // yozuv 1C'da ham yo'q — o'chiriladi (hisobot 1C bilan bir xil). To'liq nusxa hali bo'lmasa — faqat aniq dalil bilan.
+        boolean fullStays = uploaded.containsKey("Document.Accommodation") && uploaded.containsKey("Document.Reservation");
+        boolean fullSales = uploaded.containsKey("AccumulationRegister.Sales");
+        boolean fullPayments = uploaded.containsKey("AccumulationRegister.Payments");
         tx.executeWithoutResult(status -> {
             // Exely Connect bronlari (1C ulanguncha kelgan) — 1C bilan takrorlanmasin.
             jdbc.update("delete from payments where hotel_id = ? and origin = 'EXELY'", hotelId);
             jdbc.update("delete from bookings where hotel_id = ? and origin = 'EXELY'", hotelId);
 
             // ---- Bronlar: yangisi qo'shiladi, o'zgargani yangilanadi (id saqlanadi), o'zgarmaganiga tegilmaydi.
-            // Yangi ma'lumotda yo'q bron — faqat 1C uni aniq olib tashlagan bo'lsa o'chiriladi (aks holda saqlanadi).
+            // Yangi ma'lumotda yo'q bron — 1C'da ham yo'q (to'liq nusxa bo'lsa) yoki 1C uni aniq olib tashlagan.
             List<Object[]> fresh = new ArrayList<>();
             for (Stay s : stays) {
                 fresh.add(new Object[]{s.externalId(), s.source(), s.status(), s.guestName(), Date.valueOf(s.arrival()),
@@ -485,11 +490,12 @@ public class OneCImportService {
                         guests = ?, total_amount = ?, booked_at = ?, cancelled_at = ?, balance_due = ?, room_type_id = ?, room_id = ?
                     where id = ?""", "delete from bookings where id = ?", ext -> {
                         int hash = ext.indexOf('#');
-                        return hash > 0 && ext.length() > hash + 2 && removedCompact.contains(ext.substring(hash + 2));
-                    }, false);
+                        return fullStays || hash > 0 && ext.length() > hash + 2 && removedCompact.contains(ext.substring(hash + 2));
+                    }, true);
             counts[0] = b.inserted();
             counts[1] = b.updated();
             counts[2] = b.deleted();
+            counts[6] = b.deleteSkipped();
             Map<String, Long> byExternal = new HashMap<>();
 
             Map<String, Long> ids = new HashMap<>();   // 1C hujjat Ref → bookings.id
@@ -512,11 +518,11 @@ public class OneCImportService {
                 sv.add(new Object[]{x[0], Date.valueOf((LocalDate) x[1]), x[2], x[3], x[4], x[5],
                         doc == null ? null : numberByRef.get(doc), doc == null ? null : ids.get(doc)});
             }
-            // Registr qatori yangi ma'lumotda yo'q — faqat uni yozgan 1C hujjati olib tashlangan (o'tkazilmagan /
+            // Registr qatori yangi ma'lumotda yo'q — 1C'da ham yo'q (to'liq nusxa bo'lsa), yoki uni yozgan hujjat olib tashlangan (o'tkazilmagan /
             // o'chirishga belgilangan) yoki qayta o'tkazilib, qatorlari o'zgargan bo'lsa o'chiriladi.
             Set<String> freshRecorders = new HashSet<>();
             sv.forEach(x -> freshRecorders.add(recorder((String) x[0])));
-            Predicate<String> recorderGone = ext -> removed.contains(recorder(ext)) || freshRecorders.contains(recorder(ext));
+            Predicate<String> recorderGone = ext -> fullSales || removed.contains(recorder(ext)) || freshRecorders.contains(recorder(ext));
             RowMerge.Result rv = RowMerge.merge(jdbc, hotelId, """
                     select id, external_id, service_date, kind, name, category, amount, booking_number, reservation_id
                     from service_revenue where hotel_id = ? and external_id like 'oc:%'""", sv, """
@@ -524,7 +530,7 @@ public class OneCImportService {
                         booking_number, reservation_id, currency)
                     values (?, ?, ?, ?, ?, ?, ?, ?, ?, 'UZS')""", """
                     update service_revenue set service_date = ?, kind = ?, name = ?, category = ?, amount = ?, booking_number = ?,
-                        reservation_id = ? where id = ?""", "delete from service_revenue where id = ?", recorderGone, false);
+                        reservation_id = ? where id = ?""", "delete from service_revenue where id = ?", recorderGone, true);
 
             // ---- To'lovlar.
             List<Object[]> pv = new ArrayList<>();
@@ -541,10 +547,11 @@ public class OneCImportService {
                     values (?, ?, ?, ?, ?, ?, 'ONEC')""", """
                     update payments set booking_id = ?, amount = ?, method = ?, paid_at = ? where id = ?""",
                     "delete from payments where id = ?",
-                    ext -> removed.contains(recorder(ext)) || payRecorders.contains(recorder(ext)), false);
+                    ext -> fullPayments || removed.contains(recorder(ext)) || payRecorders.contains(recorder(ext)), true);
             counts[3] = rv.inserted() + pm.inserted();
             counts[4] = rv.updated() + pm.updated();
             counts[5] = rv.deleted() + pm.deleted();
+            counts[6] += rv.deleteSkipped() + pm.deleteSkipped();
 
             jdbc.update("delete from exely_raw where hotel_id = ? and kind in ('room_type', 'room')", hotelId);
             jdbc.batchUpdate("insert into exely_raw (hotel_id, kind, external_id, payload, fetched_at) values (?, ?, ?, ?, ?)", raw);
@@ -560,7 +567,7 @@ public class OneCImportService {
         return "1С:Отель: " + stays.size() + " та брон/яшаш (ҳозир " + inHouse + " та яшаяпти), " + revenue.size()
                 + " та хизмат қатори, " + payments.size() + " та тўлов; " + finalRoomsCount + " та хона. Ўзгаришлар: брон +"
                 + counts[0] + " ~" + counts[1] + " −" + counts[2] + "; хизмат ва тўлов +" + counts[3] + " ~" + counts[4]
-                + " −" + counts[5];
+                + " −" + counts[5] + (counts[6] > 0 ? "; ⚠ " + counts[6] + " та ёзув 1С'да йўқ, лекин жуда кўп бўлгани учун ўчирилмади (текширинг)" : "");
     }
 
     /** "oc:{Recorder}:{qator}[:x]" yoki "oc:pay:{Recorder}:{qator}" → Recorder (1C hujjati). */

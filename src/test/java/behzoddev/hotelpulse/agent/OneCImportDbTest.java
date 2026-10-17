@@ -169,12 +169,20 @@ class OneCImportDbTest {
         assertEquals(stayId, jdbc.queryForObject("select id from bookings where hotel_id = ? and guest_name = 'Ivanov Ivan'", Long.class, id));
         assertEquals(paymentId, jdbc.queryForObject("select min(id) from payments where hotel_id = ?", Long.class, id));
 
-        // Yangi ma'lumotda hujjat shunchaki yo'q (1C uni olib tashlamagan) — bazadagi bron saqlanadi.
-        put("Recent.Document.Accommodation", stayCols, List.of());
-        put("Recent.Document.Reservation", resCols, List.of());
-        String partial = importer.importNow(id);
-        assertEquals(3, jdbc.queryForObject("select count(*) from bookings where hotel_id = ?", Integer.class, id), partial);
+        // 1C'da hujjat bevosita o'chirildi (belgisiz): tezkor nusxada yo'q — to'liq nusxa bor, demak 1C'da ham yo'q,
+        // bron o'chiriladi (hisobot 1C bilan bir xil); qolganlariga tegilmaydi.
+        put("Recent.Document.Accommodation", stayCols, List.of(
+                List.of(ref(ACC), b(false), s("0000000123"), dt(today.minusDays(2)), b(true), ref(EMPTY), ref(CUST),
+                        dt(today.minusDays(2)), dt(today.plusDays(1)), ref(ROOM1), ref(RT), n(2), s("Ivanov Ivan"), ref(ST_IN), ref(RES_CONVERTED), n(1)),
+                List.of(ref(ACC_EXTRA), b(false), s("0000000123"), dt(today.minusDays(2)), b(true), ref(EMPTY), ref(CUST),
+                        dt(today.minusDays(2)), dt(today.plusDays(1)), ref(ROOM1), ref(RT), n(1), s("Ivanova Maria"), ref(ST_IN), ref(EMPTY), n(0))));
+        String deleted = importer.importNow(id);
+        assertTrue(deleted.contains("брон +0 ~0 −1"), deleted);
+        assertEquals(0, jdbc.queryForObject("select count(*) from bookings where hotel_id = ? and guest_name = 'Petrov'", Integer.class, id));
+        assertEquals(stayId, jdbc.queryForObject("select id from bookings where hotel_id = ? and guest_name = 'Ivanov Ivan'", Long.class, id));
         jdbc.update("delete from agent_tables where hotel_id = ? and table_name like 'Recent.%'", id);
+        importer.importNow(id);   // to'liq nusxadan qayta tiklanadi
+        assertEquals(3, jdbc.queryForObject("select count(*) from bookings where hotel_id = ?", Integer.class, id));
 
         // Sahifalar: umumiy "PMS маълумотлари" va 1C jadvali (havola — nomi bilan).
         User u = new User();
