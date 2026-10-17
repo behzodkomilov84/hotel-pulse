@@ -60,6 +60,7 @@ class OneCImportDbTest {
     private static final String EMPTY = OneCImportService.EMPTY_REF;
 
     @Autowired private OneCImportService importer;
+    @Autowired private AgentService agents;
     @Autowired private HotelRepository hotelRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private JdbcTemplate jdbc;
@@ -180,9 +181,74 @@ class OneCImportDbTest {
         assertTrue(search.contains("1 та ёзув"), search);
     }
 
+    /**
+     * 1C'da tozalangan (o'tkazilmagan) hujjat keyingi tezkor yuklashda yo'qoladi; yuklash yarmida uzilsa — oldingi to'liq
+     * nusxa qoladi va import chala jadvaldan bronlarni o'chirmaydi.
+     */
+    @Test
+    void cleanedDocumentDisappearsAndInterruptedUploadKeepsPreviousCopy() throws Exception {
+        long id = hotel.getId();
+        put("Catalog.AccommodationStatuses", List.of("Ref", "Description", "IsActive", "IsInHouse", "IsCheckIn", "IsCheckOut", "IsRoomChange"),
+                List.of(List.of(ref(ST_IN), s("Заезд"), b(true), b(true), b(true), b(true), b(false))));
+        List<String> stayCols = List.of("Ref", "DeletionMark", "Number", "Date", "Posted", "CheckInDate", "CheckOutDate", "Room",
+                "NumberOfRooms", "NumberOfPersons", "GuestFullName", "AccommodationStatus");
+        List<String> salesCols = List.of("Period", "Recorder", "LineNumber", "Active", "Service", "ParentDoc", "Sales", "RoomRevenue", "RoomsRented");
+        // To'liq (tungi) nusxa: bitta mehmon ikki marta joylashtirilgan (№123 va №9211 — takror).
+        put("Document.Accommodation", stayCols, List.of(
+                List.of(ref(ACC), b(false), s("0000000123"), dt(today.minusDays(1)), b(true), dt(today.minusDays(1)), dt(today.plusDays(1)),
+                        ref(ROOM1), n(1), n(1), s("Masson"), ref(ST_IN)),
+                List.of(ref(ACC_OLD), b(false), s("0000009211"), dt(today.minusDays(1)), b(true), dt(today.minusDays(1)), dt(today.plusDays(1)),
+                        ref(ROOM1), n(1), n(1), s("Masson"), ref(ST_IN))));
+        put("AccumulationRegister.Sales", salesCols, List.of(
+                List.of(dt(today.minusDays(1)), ref(ACC), n(1), b(true), ref(SVC_ROOM), ref(ACC), n(1100000), n(1100000), n(1)),
+                List.of(dt(today.minusDays(1)), ref(ACC_OLD), n(1), b(true), ref(SVC_ROOM), ref(ACC_OLD), n(860000), n(860000), n(1))));
+        importer.importNow(id);
+        assertEquals(2, jdbc.queryForObject("select count(*) from bookings where hotel_id = ?", Integer.class, id));
+
+        // Xodim 1C'da takrorni tozaladi (№9211 o'tkazilmagan) — tezkor nusxada u Posted=false, savdosi yo'q.
+        put("Recent.Document.Accommodation", stayCols, List.of(
+                List.of(ref(ACC), b(false), s("0000000123"), dt(today.minusDays(1)), b(true), dt(today.minusDays(1)), dt(today.plusDays(1)),
+                        ref(ROOM1), n(1), n(1), s("Masson"), ref(ST_IN)),
+                List.of(ref(ACC_OLD), b(false), s("0000009211"), dt(today.minusDays(1)), b(false), dt(today.minusDays(1)), dt(today.plusDays(1)),
+                        ref(ROOM1), n(1), n(1), s("Masson"), ref(ST_IN))));
+        put("Recent.AccumulationRegister.Sales", salesCols, List.of(
+                List.of(dt(today.minusDays(1)), ref(ACC), n(1), b(true), ref(SVC_ROOM), ref(ACC), n(1100000), n(1100000), n(1))));
+        importer.importNow(id);
+        assertEquals(1, jdbc.queryForObject("select count(*) from bookings where hotel_id = ?", Integer.class, id));
+        assertEquals(0, new BigDecimal("1100000").compareTo(jdbc.queryForObject(
+                "select sum(amount) from service_revenue where hotel_id = ? and kind = 0", BigDecimal.class, id)));
+
+        // Keyingi yuklash yarmida uzildi: 2 qismdan faqat 0-qism keldi — jadval o'zgarmaydi, import natijasi ham.
+        var agent = new AgentService.Authenticated(0, id, "1C");
+        agents.saveTablePart(agent, "Recent.Document.Accommodation", 0, 2, 0, "sync-2", chunk(stayCols, List.of()));
+        assertEquals(2, agents.tables(id).stream().filter(t -> t.name().equals("Recent.Document.Accommodation"))
+                .findFirst().orElseThrow().rows());
+        importer.importNow(id);
+        assertEquals(1, jdbc.queryForObject("select count(*) from bookings where hotel_id = ?", Integer.class, id));
+
+        // To'liq kelgan yuklash (ikkala qism) — almashtiriladi.
+        agents.saveTablePart(agent, "Recent.Document.Accommodation", 0, 2, 1, "sync-3", chunk(stayCols, List.of(
+                List.of(ref(ACC), b(false), s("0000000123"), dt(today.minusDays(1)), b(true), dt(today.minusDays(1)), dt(today.plusDays(1)),
+                        ref(ROOM1), n(1), n(2), s("Masson"), ref(ST_IN)))));
+        agents.saveTablePart(agent, "Recent.Document.Accommodation", 1, 2, 0, "sync-3", chunk(stayCols, List.of()));
+        assertEquals(1, agents.tables(id).stream().filter(t -> t.name().equals("Recent.Document.Accommodation"))
+                .findFirst().orElseThrow().rows());
+        assertTrue(agents.tables(id).stream().noneMatch(t -> t.name().startsWith("~")));
+        importer.importNow(id);
+        assertEquals(2, jdbc.queryForObject("select guests from bookings where hotel_id = ?", Integer.class, id));
+    }
+
     // ---------------------------------------------------------------- XDTO yordamchilari
 
     private void put(String table, List<String> columns, List<List<Map<String, Object>>> rows) throws Exception {
+        jdbc.update("delete from agent_tables where hotel_id = ? and table_name = ?", hotel.getId(), table);
+        jdbc.update("""
+                insert into agent_tables (hotel_id, table_name, part, parts, row_count, sync_id, payload, uploaded_at)
+                values (?, ?, 0, 1, ?, 't', ?, ?)""", hotel.getId(), table, rows.size(), chunk(columns, rows),
+                Timestamp.valueOf(LocalDateTime.now()));
+    }
+
+    private static byte[] chunk(List<String> columns, List<List<Map<String, Object>>> rows) throws Exception {
         StringBuilder sb = new StringBuilder("{\"#type\":\"jv8:ValueTable\",\"#value\":{\"column\":[");
         for (int i = 0; i < columns.size(); i++) {
             sb.append(i > 0 ? "," : "").append("{\"Name\":{\"#type\":\"jxs:NCName\",\"#value\":\"").append(columns.get(i)).append("\"}}");
@@ -204,10 +270,7 @@ class OneCImportDbTest {
         try (GZIPOutputStream gz = new GZIPOutputStream(bytes)) {
             gz.write(sb.toString().getBytes(StandardCharsets.UTF_8));
         }
-        jdbc.update("""
-                insert into agent_tables (hotel_id, table_name, part, parts, row_count, sync_id, payload, uploaded_at)
-                values (?, ?, 0, 1, ?, 't', ?, ?)""", hotel.getId(), table, rows.size(), bytes.toByteArray(),
-                Timestamp.valueOf(LocalDateTime.now()));
+        return bytes.toByteArray();
     }
 
     private static Map<String, Object> ref(String v) {

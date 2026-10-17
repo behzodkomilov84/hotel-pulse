@@ -26,6 +26,7 @@ import java.util.Optional;
  * kiritib mehmonxonani tanlaydi → kalit yaratiladi; agent so'rov bilan uni BIR MARTA oladi (bazada vaqtincha shifrlangan,
  * berilgach o'chiriladi; doimiy saqlanadigani — faqat SHA-256 xeshi). Hech kim kalitni qo'lda ko'chirmaydi.
  */
+@lombok.extern.slf4j.Slf4j
 @Service
 @RequiredArgsConstructor
 public class AgentService {
@@ -188,19 +189,40 @@ public class AgentService {
 
     // ------------------------------------------------------------------ jadval sinxronlashi
 
-    /** Jadval qismini saqlaydi (gzip JSON Lines). 0-qism kelganda — shu jadvalning eski qismlari o'chiriladi. */
+    /** Yuklanayotgan (hali to'liq kelmagan) jadval nusxasi shu prefiks bilan saqlanadi — importlar uni ko'rmaydi. */
+    static final String STAGING = "~";
+
+    /**
+     * Jadval qismini saqlaydi (gzip JSON Lines). Qismlar avval vaqtinchalik nusxaga ("~" + nom) yig'iladi; oxirgi qism
+     * kelib, barcha qismlar (o'sha syncId bilan) to'liq bo'lgandagina eski nusxa almashtiriladi. Yuklash yarmida uzilsa
+     * (masalan, 1C'ga xodim kirib qolsa) — oldingi to'liq nusxa saqlanib qoladi, importlar chala jadvaldan ishlamaydi.
+     */
     @Transactional
     public void saveTablePart(Authenticated a, String table, int part, int parts, int rows, String syncId, byte[] gzip) {
-        String t = cut(clean(table, "UNKNOWN"), 64);
+        String t = cut(clean(table, "UNKNOWN"), 63);
+        String staging = STAGING + t;
         if (part == 0) {
-            jdbc.update("delete from agent_tables where hotel_id = ? and table_name = ?", a.hotelId(), t);
+            jdbc.update("delete from agent_tables where hotel_id = ? and table_name = ?", a.hotelId(), staging);
         }
         jdbc.update("""
                 insert into agent_tables (hotel_id, table_name, part, parts, row_count, sync_id, payload, uploaded_at)
                 values (?, ?, ?, ?, ?, ?, ?, ?)
                 on duplicate key update parts = values(parts), row_count = values(row_count), sync_id = values(sync_id),
                     payload = values(payload), uploaded_at = values(uploaded_at)""",
-                a.hotelId(), t, part, parts, rows, cut(syncId, 40), gzip, Timestamp.valueOf(LocalDateTime.now(clock)));
+                a.hotelId(), staging, part, parts, rows, cut(syncId, 40), gzip, Timestamp.valueOf(LocalDateTime.now(clock)));
+        if (part != parts - 1) {
+            return;
+        }
+        Integer complete = jdbc.queryForObject("""
+                select count(*) from agent_tables where hotel_id = ? and table_name = ? and parts = ?
+                  and (sync_id <=> ?) and part between 0 and ?""",
+                Integer.class, a.hotelId(), staging, parts, cut(syncId, 40), parts - 1);
+        if (complete == null || complete != parts) {
+            log.warn("Agent jadvali {} (mehmonxona {}) to'liq kelmadi: {}/{} qism — oldingi nusxa qoldi", t, a.hotelId(), complete, parts);
+            return;
+        }
+        jdbc.update("delete from agent_tables where hotel_id = ? and table_name = ?", a.hotelId(), t);
+        jdbc.update("update agent_tables set table_name = ? where hotel_id = ? and table_name = ?", t, a.hotelId(), staging);
     }
 
     /** Sinxronlash yakuni (agent xabari). */
@@ -217,7 +239,7 @@ public class AgentService {
     public List<TableInfo> tables(long hotelId) {
         return jdbc.query("""
                 select table_name, max(parts), sum(row_count), sum(length(payload)), max(uploaded_at)
-                from agent_tables where hotel_id = ? group by table_name order by table_name""",
+                from agent_tables where hotel_id = ? and table_name not like '~%' group by table_name order by table_name""",
                 (rs, i) -> new TableInfo(rs.getString(1), rs.getInt(2), rs.getLong(3), rs.getLong(4), ts(rs.getTimestamp(5))),
                 hotelId);
     }
