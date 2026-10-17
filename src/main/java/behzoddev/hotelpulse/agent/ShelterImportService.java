@@ -170,10 +170,8 @@ public class ShelterImportService {
             throw new IllegalStateException("ROOM_SCHEDULE bo'sh — agent hali sinxronlamagan");
         }
         LocalDateTime now = LocalDateTime.now(clock);
+        RowMerge.Result[] changes = new RowMerge.Result[2];
         tx.executeWithoutResult(status -> {
-            jdbc.update("delete from payments where hotel_id = ? and origin = 'SHELTER'", hotelId);
-            jdbc.update("delete from bookings where hotel_id = ? and origin = 'SHELTER'", hotelId);
-            jdbc.update("delete from service_revenue where hotel_id = ? and external_id like 'sh:%'", hotelId);
             jdbc.update("delete from company_debts where hotel_id = ?", hotelId);
             List<Object[]> cd = new ArrayList<>();
             for (ShelterMapper.CompanyDebt c : r.companyDebts()) {
@@ -198,19 +196,27 @@ public class ShelterImportService {
                         services, paid, period_from, period_to, rooms, guests, stays_json)
                     values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", cd);
 
+            // Bronlar, xizmatlar, to'lovlar — faqat o'zgarishlar (yangisi qo'shiladi, o'zgargani yangilanadi, id saqlanadi).
+            // Shelter har safar butun jadvalni yuboradi (to'liq kelgani tekshirilgan) — unda yo'q qator Shelter'da
+            // o'chirilgan/bekor qilingan; lekin bir martada juda ko'p o'chirish chiqsa — o'chirish bajarilmaydi.
             List<Object[]> b = new ArrayList<>();
             for (ShelterMapper.Stay s : r.stays()) {
                 LocalDateTime booked = s.bookedAt() != null ? s.bookedAt() : s.arrival().atStartOfDay();
-                b.add(new Object[]{hotelId, s.externalId(), s.source(), s.status().name(), s.guestName(),
+                b.add(new Object[]{s.externalId(), s.source(), s.status().name(), s.guestName(),
                         Date.valueOf(s.arrival()), Date.valueOf(s.departure()), s.guests(), s.total(),
                         Timestamp.valueOf(booked), s.cancelledAt() == null ? null : Timestamp.valueOf(s.cancelledAt()),
                         s.balance(), s.roomTypeId(), s.roomId()});
             }
-            jdbc.batchUpdate("""
-                    insert into bookings (hotel_id, origin, external_id, source, status, guest_name, arrival_date,
-                        departure_date, rooms, guests, total_amount, booked_at, cancelled_at, balance_due, currency,
-                        room_type_id, room_id)
-                    values (?, 'SHELTER', ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, 'UZS', ?, ?)""", b);
+            RowMerge.Result bm = RowMerge.merge(jdbc, hotelId, """
+                    select id, external_id, source, status, guest_name, arrival_date, departure_date, guests, total_amount,
+                        booked_at, cancelled_at, balance_due, room_type_id, room_id
+                    from bookings where hotel_id = ? and origin = 'SHELTER'""", b, """
+                    insert into bookings (hotel_id, external_id, source, status, guest_name, arrival_date, departure_date, guests,
+                        total_amount, booked_at, cancelled_at, balance_due, room_type_id, room_id, origin, rooms, currency)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'SHELTER', 1, 'UZS')""", """
+                    update bookings set source = ?, status = ?, guest_name = ?, arrival_date = ?, departure_date = ?, guests = ?,
+                        total_amount = ?, booked_at = ?, cancelled_at = ?, balance_due = ?, room_type_id = ?, room_id = ?
+                    where id = ?""", "delete from bookings where id = ?", ext -> true, true);
 
             Map<String, Long> ids = new HashMap<>();
             jdbc.query("select external_id, id from bookings where hotel_id = ? and origin = 'SHELTER'",
@@ -220,22 +226,32 @@ public class ShelterImportService {
 
             List<Object[]> sv = new ArrayList<>();
             for (ShelterMapper.Service s : r.services()) {
-                sv.add(new Object[]{hotelId, s.externalId(), Date.valueOf(s.date()), s.kind(), s.name(), s.category(),
+                sv.add(new Object[]{s.externalId(), Date.valueOf(s.date()), s.kind(), s.name(), s.category(),
                         s.amount(), s.bookingNumber(), s.reservationId()});
             }
-            jdbc.batchUpdate("""
+            RowMerge.Result sm = RowMerge.merge(jdbc, hotelId, """
+                    select id, external_id, service_date, kind, name, category, amount, booking_number, reservation_id
+                    from service_revenue where hotel_id = ? and external_id like 'sh:%'""", sv, """
                     insert into service_revenue (hotel_id, external_id, service_date, kind, name, category, amount,
-                        currency, booking_number, reservation_id)
-                    values (?, ?, ?, ?, ?, ?, ?, 'UZS', ?, ?)""", sv);
+                        booking_number, reservation_id, currency)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, 'UZS')""", """
+                    update service_revenue set service_date = ?, kind = ?, name = ?, category = ?, amount = ?, booking_number = ?,
+                        reservation_id = ? where id = ?""", "delete from service_revenue where id = ?", ext -> true, true);
 
             List<Object[]> pv = new ArrayList<>();
             for (ShelterMapper.Pay p : r.payments()) {
-                pv.add(new Object[]{hotelId, p.bookingExternalId() == null ? null : ids.get(p.bookingExternalId()),
-                        p.externalId(), p.amount(), p.method(), Timestamp.valueOf(p.paidAt())});
+                pv.add(new Object[]{p.externalId(), p.bookingExternalId() == null ? null : ids.get(p.bookingExternalId()),
+                        p.amount(), p.method(), Timestamp.valueOf(p.paidAt())});
             }
-            jdbc.batchUpdate("""
-                    insert into payments (hotel_id, booking_id, origin, external_id, amount, method, paid_at)
-                    values (?, ?, 'SHELTER', ?, ?, ?, ?)""", pv);
+            RowMerge.Result pm = RowMerge.merge(jdbc, hotelId, """
+                    select id, external_id, booking_id, amount, method, paid_at
+                    from payments where hotel_id = ? and origin = 'SHELTER'""", pv, """
+                    insert into payments (hotel_id, external_id, booking_id, amount, method, paid_at, origin)
+                    values (?, ?, ?, ?, ?, ?, 'SHELTER')""", """
+                    update payments set booking_id = ?, amount = ?, method = ?, paid_at = ? where id = ?""",
+                    "delete from payments where id = ?", ext -> true, true);
+            changes[0] = bm;
+            changes[1] = sm.plus(pm);
 
             // Hisobotlarda xona turi va xona nomlari (Exely bilan bir xil joydan o'qiladi).
             jdbc.update("delete from exely_raw where hotel_id = ? and kind in ('room_type', 'room')", hotelId);
@@ -264,7 +280,12 @@ public class ShelterImportService {
         });
         String msg = "UCS Shelter: " + r.stays().size() + " та яшаш, " + r.services().size() + " та хизмат, "
                 + r.payments().size() + " та тўлов; " + r.roomsCount() + " та сотиладиган хона; "
-                + r.companyDebts().size() + " та корхона ҳисобида қарз";
+                + r.companyDebts().size() + " та корхона ҳисобида қарз. Ўзгаришлар: брон +" + changes[0].inserted()
+                + " ~" + changes[0].updated() + " −" + changes[0].deleted() + "; хизмат ва тўлов +" + changes[1].inserted()
+                + " ~" + changes[1].updated() + " −" + changes[1].deleted()
+                + (changes[0].deleteSkipped() + changes[1].deleteSkipped() > 0
+                ? "; ⚠ " + (changes[0].deleteSkipped() + changes[1].deleteSkipped())
+                + " та ёзув Shelter'да йўқ, лекин жуда кўп бўлгани учун ўчирилмади (текширинг)" : "");
         log.info("Shelter import (mehmonxona {}): {}", hotelId, msg);
         return msg;
     }

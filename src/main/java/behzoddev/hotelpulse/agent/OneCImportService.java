@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 /**
@@ -372,8 +373,14 @@ public class OneCImportService {
         // sanalardagi hujjatlar — bitta bron (xona bir marta sanaladi, mehmonlar qo'shiladi, summa jamlanadi).
         Map<String, List<Row>> accGroups = new java.util.LinkedHashMap<>();
         Set<String> converted = new HashSet<>();
+        // 1C aniq "olib tashlangan" deb ko'rsatgan hujjatlar (o'tkazilmagan / o'chirishga belgilangan) — faqat shular o'chiriladi.
+        Set<String> removed = new HashSet<>();
         rows(hotelId, uploaded, "Document.Accommodation", "Date", stayFields, r -> {
-            if (!r.bool("Posted") || r.bool("DeletionMark") || r.date("CheckInDate") == null || r.date("CheckOutDate") == null) {
+            if (!r.bool("Posted") || r.bool("DeletionMark")) {
+                removed.add(r.ref("Ref"));
+                return;
+            }
+            if (r.date("CheckInDate") == null || r.date("CheckOutDate") == null) {
                 return;
             }
             if (r.ref("Reservation") != null) {
@@ -394,8 +401,11 @@ public class OneCImportService {
         // Hali kelmagan bronlar (yashashga aylanmaganlari).
         Map<String, List<Row>> resGroups = new java.util.LinkedHashMap<>();
         rows(hotelId, uploaded, "Document.Reservation", "Date", stayFields, r -> {
-            if (!r.bool("Posted") || r.bool("DeletionMark") || converted.contains(r.ref("Ref"))
-                    || r.date("CheckInDate") == null || r.date("CheckOutDate") == null) {
+            if (!r.bool("Posted") || r.bool("DeletionMark") || converted.contains(r.ref("Ref"))) {
+                removed.add(r.ref("Ref"));   // bekor qilingan hujjat yoki yashashga aylangan bron
+                return;
+            }
+            if (r.date("CheckInDate") == null || r.date("CheckOutDate") == null) {
                 return;
             }
             if (ChronoUnit.DAYS.between(r.date("CheckInDate"), r.date("CheckOutDate")) > MAX_NIGHTS) {
@@ -437,31 +447,57 @@ public class OneCImportService {
             throw new IllegalStateException("1С'да яшашлар топилмади");
         }
         int finalRoomsCount = roomsCount;
+        // Savdo va to'lov qatorlarini yozgan boshqa hujjatlar: o'tkazilmagan / o'chirishga belgilanganlari.
+        for (String t : List.of("Document.Charge", "Document.Payment", "Document.Return", "Document.Settlement",
+                "Document.CustomerPayment", "Document.ChargeTransfer", "Document.DepositTransfer")) {
+            if (uploaded.containsKey(t) || uploaded.containsKey("Recent." + t)) {
+                rows(hotelId, uploaded, t, "Date", Set.of("Ref", "Posted", "DeletionMark"), r -> {
+                    if (r.ref("Ref") != null && (!r.bool("Posted") || r.bool("DeletionMark"))) {
+                        removed.add(r.ref("Ref"));
+                    }
+                });
+            }
+        }
+        int[] counts = new int[6];   // bron: +, ~, −; xizmat va to'lov: +, ~, −
         tx.executeWithoutResult(status -> {
-            // Exely Connect ma'lumoti (agar bo'lsa) 1C bilan takrorlanmasin — 1C to'liq manba.
-            jdbc.update("delete from payments where hotel_id = ? and origin in ('ONEC', 'EXELY')", hotelId);
-            jdbc.update("delete from bookings where hotel_id = ? and origin in ('ONEC', 'EXELY')", hotelId);
-            jdbc.update("delete from service_revenue where hotel_id = ? and external_id like 'oc:%'", hotelId);
+            // Exely Connect bronlari (1C ulanguncha kelgan) — 1C bilan takrorlanmasin.
+            jdbc.update("delete from payments where hotel_id = ? and origin = 'EXELY'", hotelId);
+            jdbc.update("delete from bookings where hotel_id = ? and origin = 'EXELY'", hotelId);
 
-            List<Object[]> b = new ArrayList<>();
+            // ---- Bronlar: yangisi qo'shiladi, o'zgargani yangilanadi (id saqlanadi), o'zgarmaganiga tegilmaydi.
+            // Yangi ma'lumotda yo'q bron — faqat 1C uni aniq olib tashlagan bo'lsa o'chiriladi (aks holda saqlanadi).
+            List<Object[]> fresh = new ArrayList<>();
             for (Stay s : stays) {
-                b.add(new Object[]{hotelId, s.externalId(), s.source(), s.status(), s.guestName(), Date.valueOf(s.arrival()),
+                fresh.add(new Object[]{s.externalId(), s.source(), s.status(), s.guestName(), Date.valueOf(s.arrival()),
                         Date.valueOf(s.departure()), s.rooms(), s.guests(), s.total(), Timestamp.valueOf(s.bookedAt()),
                         s.cancelledAt() == null ? null : Timestamp.valueOf(s.cancelledAt()), s.balance(), s.roomTypeId(), s.roomId()});
             }
-            jdbc.batchUpdate("""
-                    insert into bookings (hotel_id, origin, external_id, source, status, guest_name, arrival_date,
-                        departure_date, rooms, guests, total_amount, booked_at, cancelled_at, balance_due, currency,
-                        room_type_id, room_id)
-                    values (?, 'ONEC', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'UZS', ?, ?)""", b);
-
+            Set<String> removedCompact = new HashSet<>();
+            removed.forEach(x -> removedCompact.add(compact(x)));
+            RowMerge.Result b = RowMerge.merge(jdbc, hotelId, """
+                    select id, external_id, source, status, guest_name, arrival_date, departure_date, rooms, guests, total_amount,
+                        booked_at, cancelled_at, balance_due, room_type_id, room_id
+                    from bookings where hotel_id = ? and origin = 'ONEC'""", fresh, """
+                    insert into bookings (hotel_id, external_id, source, status, guest_name, arrival_date, departure_date, rooms,
+                        guests, total_amount, booked_at, cancelled_at, balance_due, room_type_id, room_id, origin, currency)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ONEC', 'UZS')""", """
+                    update bookings set source = ?, status = ?, guest_name = ?, arrival_date = ?, departure_date = ?, rooms = ?,
+                        guests = ?, total_amount = ?, booked_at = ?, cancelled_at = ?, balance_due = ?, room_type_id = ?, room_id = ?
+                    where id = ?""", "delete from bookings where id = ?", ext -> {
+                        int hash = ext.indexOf('#');
+                        return hash > 0 && ext.length() > hash + 2 && removedCompact.contains(ext.substring(hash + 2));
+                    }, false);
+            counts[0] = b.inserted();
+            counts[1] = b.updated();
+            counts[2] = b.deleted();
             Map<String, Long> byExternal = new HashMap<>();
+
+            Map<String, Long> ids = new HashMap<>();   // 1C hujjat Ref → bookings.id
+            Map<String, String> numberByRef = new HashMap<>();
             jdbc.query("select external_id, id from bookings where hotel_id = ? and origin = 'ONEC'",
                     rs -> {
                         byExternal.put(rs.getString(1), rs.getLong(2));
                     }, hotelId);
-            Map<String, Long> ids = new HashMap<>();   // 1C hujjat Ref → bookings.id
-            Map<String, String> numberByRef = new HashMap<>();
             for (Stay s : stays) {
                 for (String ref : s.refs()) {
                     ids.put(ref, byExternal.get(s.externalId()));
@@ -469,27 +505,46 @@ public class OneCImportService {
                 }
             }
 
+            // ---- Kunlik xizmatlar (savdo registri qatorlari).
             List<Object[]> sv = new ArrayList<>();
             for (Object[] x : revenue) {
                 String doc = (String) x[6];
-                Long reservationId = doc == null ? null : ids.get(doc);
-                sv.add(new Object[]{hotelId, x[0], Date.valueOf((LocalDate) x[1]), x[2], x[3], x[4], x[5],
-                        doc == null ? null : numberByRef.get(doc), reservationId});
+                sv.add(new Object[]{x[0], Date.valueOf((LocalDate) x[1]), x[2], x[3], x[4], x[5],
+                        doc == null ? null : numberByRef.get(doc), doc == null ? null : ids.get(doc)});
             }
-            jdbc.batchUpdate("""
+            // Registr qatori yangi ma'lumotda yo'q — faqat uni yozgan 1C hujjati olib tashlangan (o'tkazilmagan /
+            // o'chirishga belgilangan) yoki qayta o'tkazilib, qatorlari o'zgargan bo'lsa o'chiriladi.
+            Set<String> freshRecorders = new HashSet<>();
+            sv.forEach(x -> freshRecorders.add(recorder((String) x[0])));
+            Predicate<String> recorderGone = ext -> removed.contains(recorder(ext)) || freshRecorders.contains(recorder(ext));
+            RowMerge.Result rv = RowMerge.merge(jdbc, hotelId, """
+                    select id, external_id, service_date, kind, name, category, amount, booking_number, reservation_id
+                    from service_revenue where hotel_id = ? and external_id like 'oc:%'""", sv, """
                     insert into service_revenue (hotel_id, external_id, service_date, kind, name, category, amount,
-                        currency, booking_number, reservation_id)
-                    values (?, ?, ?, ?, ?, ?, ?, 'UZS', ?, ?)""", sv);
+                        booking_number, reservation_id, currency)
+                    values (?, ?, ?, ?, ?, ?, ?, ?, ?, 'UZS')""", """
+                    update service_revenue set service_date = ?, kind = ?, name = ?, category = ?, amount = ?, booking_number = ?,
+                        reservation_id = ? where id = ?""", "delete from service_revenue where id = ?", recorderGone, false);
 
+            // ---- To'lovlar.
             List<Object[]> pv = new ArrayList<>();
             for (Object[] p : payments) {
                 String doc = (String) p[1];
-                pv.add(new Object[]{hotelId, doc == null ? null : ids.get(doc), p[0], p[2], p[3],
-                        Timestamp.valueOf((LocalDateTime) p[4])});
+                pv.add(new Object[]{p[0], doc == null ? null : ids.get(doc), p[2], p[3], Timestamp.valueOf((LocalDateTime) p[4])});
             }
-            jdbc.batchUpdate("""
-                    insert into payments (hotel_id, booking_id, origin, external_id, amount, method, paid_at)
-                    values (?, ?, 'ONEC', ?, ?, ?, ?)""", pv);
+            Set<String> payRecorders = new HashSet<>();
+            pv.forEach(x -> payRecorders.add(recorder((String) x[0])));
+            RowMerge.Result pm = RowMerge.merge(jdbc, hotelId, """
+                    select id, external_id, booking_id, amount, method, paid_at
+                    from payments where hotel_id = ? and origin = 'ONEC'""", pv, """
+                    insert into payments (hotel_id, external_id, booking_id, amount, method, paid_at, origin)
+                    values (?, ?, ?, ?, ?, ?, 'ONEC')""", """
+                    update payments set booking_id = ?, amount = ?, method = ?, paid_at = ? where id = ?""",
+                    "delete from payments where id = ?",
+                    ext -> removed.contains(recorder(ext)) || payRecorders.contains(recorder(ext)), false);
+            counts[3] = rv.inserted() + pm.inserted();
+            counts[4] = rv.updated() + pm.updated();
+            counts[5] = rv.deleted() + pm.deleted();
 
             jdbc.update("delete from exely_raw where hotel_id = ? and kind in ('room_type', 'room')", hotelId);
             jdbc.batchUpdate("insert into exely_raw (hotel_id, kind, external_id, payload, fetched_at) values (?, ?, ?, ?, ?)", raw);
@@ -503,7 +558,16 @@ public class OneCImportService {
         });
         long inHouse = stays.stream().filter(s -> s.status().equals("CHECKED_IN")).count();
         return "1С:Отель: " + stays.size() + " та брон/яшаш (ҳозир " + inHouse + " та яшаяпти), " + revenue.size()
-                + " та хизмат қатори, " + payments.size() + " та тўлов; " + finalRoomsCount + " та хона";
+                + " та хизмат қатори, " + payments.size() + " та тўлов; " + finalRoomsCount + " та хона. Ўзгаришлар: брон +"
+                + counts[0] + " ~" + counts[1] + " −" + counts[2] + "; хизмат ва тўлов +" + counts[3] + " ~" + counts[4]
+                + " −" + counts[5];
+    }
+
+    /** "oc:{Recorder}:{qator}[:x]" yoki "oc:pay:{Recorder}:{qator}" → Recorder (1C hujjati). */
+    static String recorder(String externalId) {
+        String s = externalId.startsWith("oc:pay:") ? externalId.substring(7) : externalId.substring(3);
+        int colon = s.indexOf(':');
+        return colon < 0 ? s : s.substring(0, colon);
     }
 
     /** Bitta bron: o'sha hujjat raqami, xona va sanalar (har mehmon — alohida hujjat). */

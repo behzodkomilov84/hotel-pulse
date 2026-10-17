@@ -160,9 +160,21 @@ class OneCImportDbTest {
                 "select sum(amount) from service_revenue where hotel_id = ? and kind = 1 and category = 'Meals'", BigDecimal.class, id)));
         assertEquals(2, jdbc.queryForObject("select count(*) from payments where hotel_id = ? and origin = 'ONEC' and booking_id is not null", Integer.class, id));
 
-        // Qayta import — takrorlanmaydi.
-        importer.importNow(id);
+        // Qayta import — takrorlanmaydi, hech narsa qayta yozilmaydi (id'lar saqlanadi).
+        Long stayId = jdbc.queryForObject("select id from bookings where hotel_id = ? and guest_name = 'Ivanov Ivan'", Long.class, id);
+        Long paymentId = jdbc.queryForObject("select min(id) from payments where hotel_id = ?", Long.class, id);
+        String again = importer.importNow(id);
+        assertTrue(again.endsWith("брон +0 ~0 −0; хизмат ва тўлов +0 ~0 −0"), again);
         assertEquals(3, jdbc.queryForObject("select count(*) from bookings where hotel_id = ?", Integer.class, id));
+        assertEquals(stayId, jdbc.queryForObject("select id from bookings where hotel_id = ? and guest_name = 'Ivanov Ivan'", Long.class, id));
+        assertEquals(paymentId, jdbc.queryForObject("select min(id) from payments where hotel_id = ?", Long.class, id));
+
+        // Yangi ma'lumotda hujjat shunchaki yo'q (1C uni olib tashlamagan) — bazadagi bron saqlanadi.
+        put("Recent.Document.Accommodation", stayCols, List.of());
+        put("Recent.Document.Reservation", resCols, List.of());
+        String partial = importer.importNow(id);
+        assertEquals(3, jdbc.queryForObject("select count(*) from bookings where hotel_id = ?", Integer.class, id), partial);
+        jdbc.update("delete from agent_tables where hotel_id = ? and table_name like 'Recent.%'", id);
 
         // Sahifalar: umumiy "PMS маълумотлари" va 1C jadvali (havola — nomi bilan).
         User u = new User();
@@ -204,6 +216,7 @@ class OneCImportDbTest {
                 List.of(dt(today.minusDays(1)), ref(ACC_OLD), n(1), b(true), ref(SVC_ROOM), ref(ACC_OLD), n(860000), n(860000), n(1))));
         importer.importNow(id);
         assertEquals(2, jdbc.queryForObject("select count(*) from bookings where hotel_id = ?", Integer.class, id));
+        Long keptId = jdbc.queryForObject("select id from bookings where hotel_id = ? and external_id like 'oc:123#%'", Long.class, id);
 
         // Xodim 1C'da takrorni tozaladi (№9211 o'tkazilmagan) — tezkor nusxada u Posted=false, savdosi yo'q.
         put("Recent.Document.Accommodation", stayCols, List.of(
@@ -215,6 +228,7 @@ class OneCImportDbTest {
                 List.of(dt(today.minusDays(1)), ref(ACC), n(1), b(true), ref(SVC_ROOM), ref(ACC), n(1100000), n(1100000), n(1))));
         importer.importNow(id);
         assertEquals(1, jdbc.queryForObject("select count(*) from bookings where hotel_id = ?", Integer.class, id));
+        assertEquals(keptId, jdbc.queryForObject("select id from bookings where hotel_id = ?", Long.class, id), "қолган броннинг id'си ўзгармайди");
         assertEquals(0, new BigDecimal("1100000").compareTo(jdbc.queryForObject(
                 "select sum(amount) from service_revenue where hotel_id = ? and kind = 0", BigDecimal.class, id)));
 
@@ -236,6 +250,36 @@ class OneCImportDbTest {
         assertTrue(agents.tables(id).stream().noneMatch(t -> t.name().startsWith("~")));
         importer.importNow(id);
         assertEquals(2, jdbc.queryForObject("select guests from bookings where hotel_id = ?", Integer.class, id));
+    }
+
+    /** Faqat o'zgarishlar yoziladi; to'liq nusxadan bir martada juda ko'p "yo'qolgan" qator — o'chirilmaydi. */
+    @Test
+    void rowMergeWritesOnlyChangesAndGuardsMassDelete() {
+        long id = hotel.getId();
+        String select = "select id, external_id, service_date, kind, amount from service_revenue where hotel_id = ? and external_id like 't:%'";
+        String insert = "insert into service_revenue (hotel_id, external_id, service_date, kind, amount) values (?, ?, ?, ?, ?)";
+        String update = "update service_revenue set service_date = ?, kind = ?, amount = ? where id = ?";
+        String delete = "delete from service_revenue where id = ?";
+        java.sql.Date day = java.sql.Date.valueOf(today);
+        List<Object[]> rows = new ArrayList<>();
+        for (int i = 0; i < 30; i++) {
+            rows.add(new Object[]{"t:" + i, day, 0, new BigDecimal("100.00")});
+        }
+        var first = RowMerge.merge(jdbc, id, select, rows, insert, update, delete, ext -> true, true);
+        assertEquals(30, first.inserted());
+
+        // Bitta summa o'zgardi, bittasi manbadan yo'qoldi — 1 yangilanadi, 1 o'chiriladi, qolganiga tegilmaydi.
+        List<Object[]> next = new ArrayList<>(rows.subList(0, 29));
+        next.set(0, new Object[]{"t:0", day, 0, new BigDecimal("150")});
+        var second = RowMerge.merge(jdbc, id, select, next, insert, update, delete, ext -> true, true);
+        assertEquals(List.of(0, 1, 1, 0), List.of(second.inserted(), second.updated(), second.deleted(), second.deleteSkipped()));
+
+        // Manba bo'sh keldi (xato/chala) — 29 ta o'chirish shubhali, bajarilmaydi.
+        var third = RowMerge.merge(jdbc, id, select, List.of(), insert, update, delete, ext -> true, true);
+        assertEquals(0, third.deleted());
+        assertEquals(29, third.deleteSkipped());
+        assertEquals(29, jdbc.queryForObject("select count(*) from service_revenue where hotel_id = ? and external_id like 't:%'",
+                Integer.class, id));
     }
 
     // ---------------------------------------------------------------- XDTO yordamchilari
