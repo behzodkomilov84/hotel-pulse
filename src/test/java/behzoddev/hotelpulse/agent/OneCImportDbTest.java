@@ -117,16 +117,16 @@ class OneCImportDbTest {
                 List.of(ref(RES_CONVERTED), b(false), s("0000000122"), dt(today.minusDays(5)), b(true), ref(EMPTY), ref(EMPTY),
                         dt(today.minusDays(2)), dt(today.plusDays(1)), ref(ROOM1), ref(RT), n(2), s("Ivanov Ivan"), ref(EMPTY))));
 
-        List<String> salesCols = List.of("Period", "Recorder", "LineNumber", "Active", "Service", "ParentDoc", "Sales", "RoomRevenue");
+        List<String> salesCols = List.of("Period", "Recorder", "LineNumber", "Active", "Service", "ParentDoc", "Sales", "RoomRevenue", "RoomsRented");
         List<List<Map<String, Object>>> sales = new ArrayList<>();
         for (int i = 0; i < 3; i++) {   // 3 kecha × 500 000 yashash + nonushta 50 000
             sales.add(List.of(dt(today.minusDays(2 - i)), ref("99999999-0000-0000-0000-00000000000" + i), n(1), b(true),
-                    ref(SVC_ROOM), ref(ACC), n(500000), n(500000)));
+                    ref(SVC_ROOM), ref(ACC), n(500000), n(500000), n(1)));
             sales.add(List.of(dt(today.minusDays(2 - i)), ref("99999999-0000-0000-0000-00000000000" + i), n(2), b(true),
-                    ref(SVC_BREAKFAST), ref(ACC), n(50000), n(0)));
+                    ref(SVC_BREAKFAST), ref(ACC), n(50000), n(0), n(0)));
         }
         sales.add(List.of(dt(today.minusDays(10)), ref("99999999-0000-0000-0000-000000000009"), n(1), b(true),
-                ref(SVC_ROOM), ref(ACC_OLD), n(400000), n(400000)));
+                ref(SVC_ROOM), ref(ACC_OLD), n(400000), n(400000), n(1)));
         put("AccumulationRegister.Sales", salesCols, sales);
         put("AccumulationRegister.Payments", List.of("Period", "Recorder", "LineNumber", "Active", "PaymentMethod", "ParentDoc", "Sum"),
                 List.of(List.of(dt(today.minusDays(2)), ref("aaaaaaaa-0000-0000-0000-000000000001"), n(1), b(true), ref(CASH), ref(ACC), n(1000000)),

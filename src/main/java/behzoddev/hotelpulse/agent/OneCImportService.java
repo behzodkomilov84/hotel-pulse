@@ -301,10 +301,11 @@ public class OneCImportService {
 
         // Savdo (kunlik daromad) — bron bo'yicha jami ham (bron narxi va qarz uchun).
         Map<String, BigDecimal> salesByDoc = new HashMap<>();
+        Set<String> roomDocs = new HashSet<>();   // 1C xona sotgan hujjatlar (RoomsRented > 0) — bandlik 1C bilan bir xil
         List<Object[]> revenue = new ArrayList<>();
         LocalDate[] range = {null, null};
         rows(hotelId, uploaded, "AccumulationRegister.Sales", "Period",
-                Set.of("Recorder", "LineNumber", "Active", "Service", "ParentDoc", "Sales", "RoomRevenue"), r -> {
+                Set.of("Recorder", "LineNumber", "Active", "Service", "ParentDoc", "Sales", "RoomRevenue", "RoomsRented"), r -> {
                     if (!r.bool("Active")) {
                         return;
                     }
@@ -316,6 +317,9 @@ public class OneCImportService {
                     String doc = r.ref("ParentDoc");
                     if (doc != null) {
                         salesByDoc.merge(doc, sales, BigDecimal::add);
+                        if (r.num("RoomsRented").signum() > 0) {
+                            roomDocs.add(doc);
+                        }
                     }
                     Row svc = r.ref("Service") == null ? null : services.get(r.ref("Service"));
                     String svcName = svc == null ? null : cut(svc.str("Description"), 128);
@@ -383,7 +387,8 @@ public class OneCImportService {
             LocalDate out = main.date("CheckOutDate");
             String status = accommodationStatus(accStatuses.get(main.ref("AccommodationStatus")), out, today);
             BigDecimal total = sum(g, salesByDoc), due = total.subtract(sum(g, paidByDoc));
-            stays.add(stay(g, "acc", status, total, status.equals("CANCELLED") ? null : due.max(BigDecimal.ZERO), customers, sources));
+            stays.add(stay(g, "acc", status, total, status.equals("CANCELLED") ? null : due.max(BigDecimal.ZERO), roomDocs,
+                    customers, sources));
         }
 
         // Hali kelmagan bronlar (yashashga aylanmaganlari).
@@ -404,7 +409,7 @@ public class OneCImportService {
             if (status == null) {
                 continue;   // "Заезд" — yashash hujjati bilan sanaladi
             }
-            stays.add(stay(g, "res", status, sum(g, salesByDoc), null, customers, sources));
+            stays.add(stay(g, "res", status, sum(g, salesByDoc), null, null, customers, sources));
         }
 
         // Sotiladigan xonalar.
@@ -531,7 +536,8 @@ public class OneCImportService {
         if (!st.bool("IsActive")) {
             return "CANCELLED";
         }
-        return st.bool("IsInHouse") ? "CHECKED_IN" : "CHECKED_OUT";
+        // Ketish sanasi o'tgan, lekin 1C'da chiqarilmagan (xodim "Выезд" qilmagan) — ketgan deb olinadi.
+        return st.bool("IsInHouse") && !out.isBefore(today) ? "CHECKED_IN" : "CHECKED_OUT";
     }
 
     /**
@@ -555,7 +561,7 @@ public class OneCImportService {
         return in.isBefore(today) ? "NO_SHOW" : "CONFIRMED";
     }
 
-    private static Stay stay(List<Row> group, String kind, String status, BigDecimal total, BigDecimal balance,
+    private static Stay stay(List<Row> group, String kind, String status, BigDecimal total, BigDecimal balance, Set<String> roomDocs,
                              Map<String, Row> customers, Map<String, Row> sources) {
         Row r = main(group);
         LocalDate in = r.date("CheckInDate"), out = r.date("CheckOutDate");
@@ -569,12 +575,16 @@ public class OneCImportService {
             guests += Math.max(1, x.num("NumberOfPersons").intValue());
             refs.add(x.ref("Ref"));
         }
+        if (roomDocs != null && total.signum() != 0) {
+            // Yashash: 1C sotgan xonalar (RoomsRented) — qo'shimcha mehmon va xona sotmagan hujjatlar sanalmaydi.
+            rooms = (int) refs.stream().filter(roomDocs::contains).count();
+        }
         LocalDateTime booked = group.stream().map(x -> x.dateTime("Date")).filter(java.util.Objects::nonNull)
                 .min(LocalDateTime::compareTo).orElse(in.atStartOfDay());
         String number = r.str("Number").trim().replaceFirst("^0+(?=\\d)", "");
         return new Stay(refs, externalId(kind, number, r.ref("Ref")), number, status,
                 blankToNull(cut(r.str("GuestFullName"), 150)), cut(source(r, customers, sources), 64), in, out,
-                Math.max(1, rooms), Math.max(1, guests), total,
+                roomDocs != null ? rooms : Math.max(1, rooms), Math.max(1, guests), total,
                 balance == null || balance.signum() == 0 ? null : balance, booked,
                 status.equals("CANCELLED") ? booked : null, compact(r.ref("RoomType")), compact(r.ref("Room")));
     }
